@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>AGame</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(OS)' == 'WINDOWS_NT'">
+    <DefineConstants>_WINDOWS</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(OS)' == 'OSX'">
+    <DefineConstants>_OSX</DefineConstants>
+  </PropertyGroup>
+</Project>
