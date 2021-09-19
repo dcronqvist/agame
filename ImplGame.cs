@@ -17,7 +17,10 @@ namespace AGame
 
         public override void Update()
         {
-
+            if (Input.IsMouseButtonPressed(MouseButton.Left))
+            {
+                Console.WriteLine("Hej");
+            }
         }
 
         public override void Render()
