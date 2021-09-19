@@ -14,4 +14,8 @@
   <PropertyGroup Condition=" '$(OS)' == 'OSX'">
     <DefineConstants>_OSX</DefineConstants>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StbImageSharp" Version="2.22.6" />
+  </ItemGroup>
 </Project>
