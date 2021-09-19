@@ -16,6 +16,26 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ResourceFiles Include="$(ProjectDir)\res\**\*.*" />
+    <LibDlls Include="$(ProjectDir)\libs\win\**\*.*"/>
     <PackageReference Include="StbImageSharp" Version="2.22.6" />
   </ItemGroup>
+
+  <Target Name="CopyGameResources" AfterTargets="Build">
+    <Message Text="Copying game resources to output directory..." Importance="High"/>
+
+    <Copy 
+      SourceFiles="@(ResourceFiles)"
+      DestinationFolder="$(OutDir)\res"
+    />
+  </Target>
+
+  <Target Name="CopyLibDlls" AfterTargets="Build">
+    <Message Text="Copying dlls to output directory..." Importance="High"/>
+
+    <Copy 
+      SourceFiles="@(LibDlls)"
+      DestinationFolder="$(OutDir)"
+    />
+  </Target>
 </Project>

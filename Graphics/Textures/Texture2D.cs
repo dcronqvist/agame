@@ -1,3 +1,7 @@
+using static OpenGL.GL;
+using StbImageSharp;
+using System.IO;
+
 namespace AGame.Graphics.Textures
 {
     class Texture2D

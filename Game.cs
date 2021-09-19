@@ -1,4 +1,5 @@
 using AGame.Graphics;
+using GLFW;
 
 namespace AGame
 {
@@ -18,9 +19,14 @@ namespace AGame
 
             LoadContent();
 
+            GameTime.DeltaTime = 0;
+            GameTime.TotalElapsedSeconds = 0;
+
             while (!DisplayManager.GetWindowShouldClose())
             {
-                DisplayManager.SwapBuffers();
+                GameTime.DeltaTime = (float)Glfw.Time - GameTime.TotalElapsedSeconds;
+                GameTime.TotalElapsedSeconds = (float)Glfw.Time;
+
                 DisplayManager.PollEvents();
 
                 Input.Begin();
