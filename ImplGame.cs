@@ -1,5 +1,6 @@
 using System;
 using GLFW;
+using AGame.Graphics;
 
 namespace AGame
 {
@@ -17,10 +18,7 @@ namespace AGame
 
         public override void Update()
         {
-            if (Input.IsMouseButtonPressed(MouseButton.Left))
-            {
-                Console.WriteLine("Hej");
-            }
+            DisplayManager.SetWindowTitle(Input.GetMousePosition().ToString());
         }
 
         public override void Render()

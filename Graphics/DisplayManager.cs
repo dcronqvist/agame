@@ -9,6 +9,7 @@ namespace AGame.Graphics
     class DisplayManager
     {
         public static Window WindowHandle { get; set; }
+        public static EventHandler<Vector2> OnFramebufferResize;
 
         private static void PrepareContext()
         {
@@ -42,8 +43,12 @@ namespace AGame.Graphics
         {
             PrepareContext();
             WindowHandle = CreateWindow(width, height, title);
-
             Input.Init();
+
+            Glfw.SetFramebufferSizeCallback(WindowHandle, (Window, width, height) =>
+            {
+                OnFramebufferResize?.Invoke(null, new Vector2(width, height));
+            });
         }
 
         public static void CloseWindow()
@@ -79,6 +84,11 @@ namespace AGame.Graphics
         public static void PollEvents()
         {
             Glfw.PollEvents();
+        }
+
+        public static void SetWindowTitle(string title)
+        {
+            Glfw.SetWindowTitle(WindowHandle, title);
         }
     }
 }

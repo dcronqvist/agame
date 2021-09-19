@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GLFW;
 using AGame.Graphics;
+using System.Numerics;
 
 namespace AGame
 {
@@ -15,6 +16,8 @@ namespace AGame
         public static Dictionary<MouseButton, bool> currentMouseState;
         public static Dictionary<MouseButton, bool> previousMouseState;
 
+        public static EventHandler<char> OnChar;
+
         public static void Init()
         {
             currentKeyboardState = GetKeyboardState();
@@ -22,6 +25,11 @@ namespace AGame
 
             currentMouseState = GetMouseState();
             previousMouseState = currentMouseState;
+
+            Glfw.SetCharCallback(DisplayManager.WindowHandle, (Window, codePoint) =>
+            {
+                OnChar?.Invoke(null, (char)codePoint);
+            });
         }
 
         public static Dictionary<Keys, bool> GetKeyboardState()
@@ -94,6 +102,13 @@ namespace AGame
         public static bool IsMouseButtonReleased(MouseButton button)
         {
             return !currentMouseState[button] && previousMouseState[button];
+        }
+
+        public static Vector2 GetMousePosition()
+        {
+            Glfw.GetCursorPosition(DisplayManager.WindowHandle, out double x, out double y);
+
+            return new Vector2((float)x, (float)y);
         }
     }
 }
