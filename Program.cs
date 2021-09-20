@@ -1,6 +1,5 @@
 ﻿using System;
-using GLFW;
-using static OpenGL.GL;
+using AGame;
 
 namespace AGame
 {

@@ -1,10 +1,10 @@
 using System;
-using GLFW;
-using AGame.Graphics;
-using AGame.Graphics.Shaders;
-using AGame.Graphics.Cameras;
-using AGame.Graphics.Textures;
-using static OpenGL.GL;
+using AGame.Engine.GLFW;
+using AGame.Engine.Graphics;
+using AGame.Engine.Graphics.Shaders;
+using AGame.Engine.Graphics.Cameras;
+using AGame.Engine.Graphics.Textures;
+using static AGame.Engine.OpenGL.GL;
 using System.IO;
 using System.Numerics;
 
@@ -126,9 +126,7 @@ namespace AGame
 
             cam = new Camera2D(DisplayManager.GetWindowSizeInPixels() / 2f, 2.5f);
 
-            Console.WriteLine(Directory.GetCurrentDirectory() + @"/pine_tree.png");
-
-            tex = new Texture2D(Directory.GetCurrentDirectory() + @"/pine_tree.png");
+            tex = new Texture2D(Directory.GetCurrentDirectory() + @"/res/pine_tree.png");
 
             ///// TEXTURE MAKING
 

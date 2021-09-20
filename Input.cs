@@ -2,8 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using GLFW;
-using AGame.Graphics;
+using AGame.Engine.GLFW;
+using AGame.Engine.Graphics;
 using System.Numerics;
 
 namespace AGame

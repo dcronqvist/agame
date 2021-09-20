@@ -1,5 +1,5 @@
-using AGame.Graphics;
-using GLFW;
+using AGame.Engine.Graphics;
+using AGame.Engine.GLFW;
 
 namespace AGame
 {
