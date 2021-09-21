@@ -16,26 +16,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FreeTypeSharp" Version="1.1.3" />
     <ResourceFiles Include="$(ProjectDir)\res\**\*.*" />
-    <LibDlls Include="$(ProjectDir)\libs\win\**\*.*"/>
+    <LibDlls Include="$(ProjectDir)\libs\win\**\*.*" />
     <PackageReference Include="StbImageSharp" Version="2.22.6" />
   </ItemGroup>
 
   <Target Name="CopyGameResources" AfterTargets="Build">
-    <Message Text="Copying game resources to output directory..." Importance="High"/>
+    <Message Text="Copying game resources to output directory..." Importance="High" />
 
-    <Copy 
-      SourceFiles="@(ResourceFiles)"
-      DestinationFolder="$(OutDir)\res"
-    />
+    <Copy SourceFiles="@(ResourceFiles)" DestinationFolder="$(OutDir)\res" />
   </Target>
 
   <Target Name="CopyLibDlls" AfterTargets="Build">
-    <Message Text="Copying dlls to output directory..." Importance="High"/>
+    <Message Text="Copying dlls to output directory..." Importance="High" />
 
-    <Copy 
-      SourceFiles="@(LibDlls)"
-      DestinationFolder="$(OutDir)"
-    />
+    <Copy SourceFiles="@(LibDlls)" DestinationFolder="$(OutDir)" />
   </Target>
 </Project>

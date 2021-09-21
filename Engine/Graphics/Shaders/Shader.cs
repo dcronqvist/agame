@@ -2,6 +2,7 @@ using System;
 using static AGame.Engine.OpenGL.GL;
 using System.IO;
 using System.Numerics;
+using System.Diagnostics;
 
 namespace AGame.Engine.Graphics.Shaders
 {
@@ -36,7 +37,7 @@ namespace AGame.Engine.Graphics.Shaders
                 string error = glGetShaderInfoLog(vs, 1024);
                 // TODO: This shouldn't be debug.writeline
 
-                //Debug.WriteLine("ERROR COMPILING VERTEX SHADER: " + error);
+                Debug.WriteLine("ERROR COMPILING VERTEX SHADER: " + error);
                 return;
             }
 
@@ -50,7 +51,7 @@ namespace AGame.Engine.Graphics.Shaders
             {
                 // Compile failed
                 string error = glGetShaderInfoLog(fs, 1024);
-                //Debug.WriteLine("ERROR COMPILING FRAGMENT SHADER: " + error);
+                Debug.WriteLine("ERROR COMPILING FRAGMENT SHADER: " + error);
                 return;
             }
 
@@ -81,7 +82,9 @@ namespace AGame.Engine.Graphics.Shaders
                 fragmentShaderCode = sr.ReadToEnd();
             }
 
-            return new Shader(vertexShaderCode, fragmentShaderCode);
+            Shader s = new Shader(vertexShaderCode, fragmentShaderCode);
+            s.Load();
+            return s;
         }
 
         public void Use()
