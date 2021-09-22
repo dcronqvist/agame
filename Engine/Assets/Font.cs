@@ -19,7 +19,7 @@ namespace AGame.Engine.Assets
         public int Advance { get; set; }
     }
 
-    class Font : Asset
+    public class Font : Asset
     {
         /// <summary>
         /// Enum for choosing which GL_TEXTURE_MAG_FILTER or GL_TEXTURE_MIN_FILTER during initialization.

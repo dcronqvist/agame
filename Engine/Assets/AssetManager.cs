@@ -31,7 +31,8 @@ namespace AGame.Engine.Assets
             BaseDirectory = Utilities.GetExecutableDirectory();
 
             AssetLoaders = new Dictionary<string, IAssetLoader>() {
-                { ".ttf", new FontLoader() }
+                { ".ttf", new FontLoader() },
+                { ".shader", new ShaderLoader() }
             };
         }
 

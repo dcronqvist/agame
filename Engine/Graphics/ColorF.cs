@@ -1,6 +1,6 @@
 namespace AGame.Engine.Graphics
 {
-    struct ColorF
+    public struct ColorF
     {
         public float R { get; set; }
         public float G { get; set; }

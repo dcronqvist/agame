@@ -4,7 +4,6 @@ using AGame.Engine.Graphics;
 
 namespace MyMod
 {
-
     class MyCommand : ICommand
     {
         public CommandResult Execute(string[] args)

@@ -4,9 +4,9 @@ using System.IO;
 using System.Numerics;
 using System.Diagnostics;
 
-namespace AGame.Engine.Graphics.Shaders
+namespace AGame.Engine.Assets
 {
-    class Shader
+    public class Shader : Asset
     {
         // internal fields for the shader GLSL code
         string vertexCode;

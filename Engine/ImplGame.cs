@@ -1,7 +1,6 @@
 using System;
 using AGame.Engine.GLFW;
 using AGame.Engine.Graphics;
-using AGame.Engine.Graphics.Shaders;
 using AGame.Engine.Graphics.Cameras;
 using AGame.Engine.Graphics.Textures;
 using static AGame.Engine.OpenGL.GL;
@@ -17,9 +16,6 @@ namespace AGame.Engine
 {
     class ImplGame : Game
     {
-        TextRenderer textRenderer;
-        Font font;
-
         Camera2D cam;
 
         public override void Initialize()
@@ -33,21 +29,14 @@ namespace AGame.Engine
             GameConsole.Initialize();
             AssetManager.LoadAllAssets();
 
+            Renderer.Init();
+
             glEnable(GL_BLEND);
             glDisable(GL_DEPTH_TEST);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glViewport(0, 0, (int)DisplayManager.GetWindowSizeInPixels().X, (int)DisplayManager.GetWindowSizeInPixels().Y);
 
-            Shader textShader = Shader.LoadFromFiles(Utilities.GetExecutableDirectory() + "/res/basic_text.vs", Utilities.GetExecutableDirectory() + "/res/basic_text.fs");
-
-            font = AssetManager.GetAsset<Font>("font_rainyhearts");
-
-            textRenderer = new TextRenderer(textShader);
-
             cam = new Camera2D(DisplayManager.GetWindowSizeInPixels() / 2f, 1f);
-
-            GameConsole.RunLine("bitch ayo 1 two 3");
-            GameConsole.RunLine("whoami ayo 1 two 3");
         }
 
         public override void Update()
@@ -62,7 +51,7 @@ namespace AGame.Engine
             glClearColor(0, 0, 0, 0);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            GameConsole.Render(font, textRenderer, cam);
+            GameConsole.Render(AssetManager.GetAsset<Font>("font_rainyhearts"), Renderer.Text, cam);
 
             DisplayManager.SwapBuffers();
         }
