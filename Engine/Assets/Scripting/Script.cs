@@ -7,13 +7,11 @@ namespace AGame.Engine.Assets.Scripting
     {
         public Assembly Assembly { get; set; }
         public string Name { get; set; }
-        private string Namespace { get; set; }
 
         public Script(Assembly ass, string name)
         {
             this.Assembly = ass;
             this.Name = name;
-            this.Namespace = ass.GetName().Name;
         }
 
         public Type[] GetTypes()
@@ -34,11 +32,7 @@ namespace AGame.Engine.Assets.Scripting
 
         public T CreateInstance<T>(string type)
         {
-            if (Namespace == "?")
-            {
-                return (T)Assembly.CreateInstance(type);
-            }
-            return (T)Assembly.CreateInstance(Namespace + "." + type);
+            return (T)Assembly.CreateInstance(type);
         }
 
         public T CreateInstance<T>(string type, params object[] args)
@@ -46,17 +40,12 @@ namespace AGame.Engine.Assets.Scripting
             if (args == null)
                 return CreateInstance<T>(type);
 
-            return (T)Assembly.CreateInstance(Namespace + "." + type, false, BindingFlags.Public, null, args, null, null);
+            return (T)Assembly.CreateInstance(type, false, BindingFlags.Public, null, args, null, null);
         }
 
         public object CreateInstance(string type)
         {
-            return Assembly.CreateInstance(Namespace + "." + type);
-        }
-
-        public override string ToString()
-        {
-            return "Script - " + Name;
+            return Assembly.CreateInstance(type);
         }
     }
 }

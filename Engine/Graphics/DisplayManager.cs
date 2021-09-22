@@ -1,4 +1,5 @@
 using System;
+using AGame.Engine;
 using AGame.Engine.GLFW;
 using System.Drawing;
 using AGame.Engine.OpenGL;
@@ -6,10 +7,11 @@ using System.Numerics;
 
 namespace AGame.Engine.Graphics
 {
-    class DisplayManager
+    public static class DisplayManager
     {
         public static Window WindowHandle { get; set; }
         public static EventHandler<Vector2> OnFramebufferResize;
+        private static bool manuallySetClose;
 
         private static void PrepareContext()
         {
@@ -20,6 +22,8 @@ namespace AGame.Engine.Graphics
             Glfw.WindowHint(Hint.OpenglProfile, Profile.Core);
             Glfw.WindowHint(Hint.Doublebuffer, true);
             Glfw.WindowHint(Hint.Decorated, true);
+
+            manuallySetClose = false;
         }
 
         private static Window CreateWindow(int width, int height, string title)
@@ -70,9 +74,14 @@ namespace AGame.Engine.Graphics
             Glfw.SetWindowSize(WindowHandle, (int)size.X, (int)size.Y);
         }
 
+        public static void SetWindowShouldClose(bool value)
+        {
+            manuallySetClose = value;
+        }
+
         public static bool GetWindowShouldClose()
         {
-            return Glfw.WindowShouldClose(WindowHandle);
+            return Glfw.WindowShouldClose(WindowHandle) || manuallySetClose;
         }
 
         public static void SwapBuffers(int swapInterval = 0)

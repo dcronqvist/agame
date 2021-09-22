@@ -6,7 +6,7 @@ using AGame.Engine.GLFW;
 using AGame.Engine.Graphics;
 using System.Numerics;
 
-namespace AGame
+namespace AGame.Engine
 {
     static class Input
     {
@@ -17,6 +17,7 @@ namespace AGame
         public static Dictionary<MouseButton, bool> previousMouseState;
 
         public static EventHandler<char> OnChar;
+        public static EventHandler OnBackspace;
 
         public static void Init()
         {
@@ -29,6 +30,17 @@ namespace AGame
             Glfw.SetCharCallback(DisplayManager.WindowHandle, (Window, codePoint) =>
             {
                 OnChar?.Invoke(null, (char)codePoint);
+            });
+
+            Glfw.SetKeyCallback(DisplayManager.WindowHandle, (Window, key, scanCode, state, mods) =>
+            {
+                if (key == Keys.Backspace)
+                {
+                    if (state != InputState.Release)
+                    {
+                        OnBackspace?.Invoke(null, EventArgs.Empty);
+                    }
+                }
             });
         }
 

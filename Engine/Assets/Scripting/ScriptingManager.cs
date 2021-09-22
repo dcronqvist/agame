@@ -6,6 +6,7 @@ using System.CodeDom;
 using System.CodeDom.Compiler;
 using Microsoft.CSharp;
 using Microsoft.CodeAnalysis;
+using System.Linq;
 
 namespace AGame.Engine.Assets.Scripting
 {
@@ -59,9 +60,20 @@ namespace AGame.Engine.Assets.Scripting
         {
             foreach (Type t in types)
             {
-                if (!TypeToScript.ContainsKey(t.Name))
-                    TypeToScript.Add(t.Name, Scripts[key]);
+                if (!TypeToScript.ContainsKey(t.FullName))
+                    TypeToScript.Add(t.FullName, Scripts[key]);
             }
+        }
+
+        public static Type[] GetAllTypesWithBaseType<T>()
+        {
+            List<Type> types = new List<Type>();
+            foreach (KeyValuePair<string, Script> kvp in Scripts)
+            {
+                Type[] scriptTypes = kvp.Value.GetTypes();
+                types.AddRange(scriptTypes.Where(x => x.IsAssignableTo(typeof(T))));
+            }
+            return types.ToArray();
         }
 
         public static void LoadScripts()
@@ -79,7 +91,7 @@ namespace AGame.Engine.Assets.Scripting
                 {
                     // All went well, just add the script to the dictionary of scripts.
                     AddScript(fileName, sc); // Add script to Scripts dictionary
-                    PointTypesToScript(sc.GetTypes(), fileName); // Point all types in this script to this script to this script
+                    PointTypesToScript(sc.GetTypes(), fileName); // Point all types in this script to this script
                     Console.WriteLine($"Loaded script: {fileName}");
                 }
                 else

@@ -54,22 +54,12 @@ namespace AGame.Engine.Graphics.Rendering
             float x = position.X;
             float y = position.Y;
 
-            float max = 0;
-
-            foreach (char c in text)
-            {
-                FontCharacter ch = f.Characters[c];
-
-                if (ch.Size.Y > max)
-                    max = ch.Size.Y;
-            }
-
             foreach (char c in text)
             {
                 FontCharacter ch = f.Characters[c];
 
                 float xPos = x + ch.Bearing.X * scale;
-                float yPos = y + (max - ch.Bearing.Y) * scale;
+                float yPos = y + (f.MaxY - ch.Bearing.Y) * scale;
 
                 float w = ch.Size.X * scale;
                 float h = ch.Size.Y * scale;

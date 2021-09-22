@@ -55,6 +55,8 @@ namespace AGame.Engine.Assets
         /// </summary>
         public FontFilter MinFilter { get; set; }
 
+        public float MaxY { get; private set; }
+
         public Font(string ttfFile, uint size, FontFilter magFilter, FontFilter minFilter)
         {
             this.Characters = new Dictionary<char, FontCharacter>();
@@ -86,7 +88,7 @@ namespace AGame.Engine.Assets
             FreeTypeFaceFacade ftff = new FreeTypeFaceFacade(Lib, aFace);
 
             // Loop 128 times, first 128 characters for this font
-            for (uint i = 0; i < 128; i++)
+            for (uint i = 0; i < 256; i++)
             {
                 // Check if the character exists for this font.
                 FT_Error error = FT_Load_Char(aFace, i, FT_LOAD_RENDER);
@@ -128,6 +130,11 @@ namespace AGame.Engine.Assets
                     Chara = ((char)i).ToString(),
                 };
 
+                if (character.Size.Y > MaxY)
+                {
+                    this.MaxY = character.Size.Y;
+                }
+
                 // Add it to the character dictionary
                 Characters.Add((char)i, character);
             }
@@ -138,20 +145,16 @@ namespace AGame.Engine.Assets
 
         public Vector2 MeasureString(string text, float scale)
         {
-            float maxY = 0;
             float sizeX = 0;
 
             foreach (char c in text)
             {
                 FontCharacter ch = Characters[c];
 
-                if (ch.Size.Y * scale > maxY)
-                    maxY = ch.Size.Y * scale;
-
                 sizeX += ch.Advance * scale;
             }
 
-            return new Vector2(sizeX, maxY);
+            return new Vector2(sizeX, this.MaxY * scale);
         }
     }
 }

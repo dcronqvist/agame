@@ -30,6 +30,7 @@ namespace AGame
         public unsafe override void LoadContent()
         {
             ScriptingManager.LoadScripts();
+            GameConsole.Initialize();
             AssetManager.LoadAllAssets();
 
             glEnable(GL_BLEND);
@@ -45,15 +46,15 @@ namespace AGame
 
             cam = new Camera2D(DisplayManager.GetWindowSizeInPixels() / 2f, 1f);
 
-            ICommand bigCommand = ScriptingManager.CreateInstance<ICommand>("MyCommand");
-
-            CommandResult cr = bigCommand.Execute();
-            Console.WriteLine(cr.Message);
+            GameConsole.RunLine("bitch ayo 1 two 3");
+            GameConsole.RunLine("whoami ayo 1 two 3");
         }
 
         public override void Update()
         {
             DisplayManager.SetWindowTitle(Input.GetMousePosition().ToString());
+
+            GameConsole.Update();
         }
 
         public override void Render()
@@ -61,7 +62,7 @@ namespace AGame
             glClearColor(0, 0, 0, 0);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            textRenderer.RenderText(font, "Hello World!", Input.GetMousePosition(), 1f, ColorF.White, cam);
+            GameConsole.Render(font, textRenderer, cam);
 
             DisplayManager.SwapBuffers();
         }

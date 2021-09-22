@@ -1,0 +1,20 @@
+{
+	"New command": {
+		"scope": "csharp",
+		"prefix": "newcommand",
+		"body": [
+			"class ${1:CommandName} : ICommand",
+    		"{",
+			"\tpublic CommandResult Execute(string[] args)",
+			"\t{",
+			"\t\t$0",
+			"\t\treturn CommandResult.CreateOk($\"Default command.\");",
+			"\t}",
+			"\tpublic string GetHandle()",
+			"\t{",
+			"\t\treturn \"${2:handle}\";",
+			"\t}",
+			"}"
+		]
+	}
+}
