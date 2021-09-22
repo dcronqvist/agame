@@ -2,6 +2,7 @@ using AGame.Engine.Graphics.Shaders;
 using static AGame.Engine.OpenGL.GL;
 using System.Numerics;
 using AGame.Engine.Graphics.Cameras;
+using AGame.Engine.Assets;
 
 namespace AGame.Engine.Graphics.Rendering
 {

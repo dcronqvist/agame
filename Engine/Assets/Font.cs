@@ -6,8 +6,9 @@ using static AGame.Engine.OpenGL.GL;
 using static FreeTypeSharp.Native.FT;
 using System;
 using System.Diagnostics;
+using AGame.Engine.Assets;
 
-namespace AGame.Engine.Graphics.Rendering
+namespace AGame.Engine.Assets
 {
     public struct FontCharacter
     {
@@ -18,7 +19,7 @@ namespace AGame.Engine.Graphics.Rendering
         public int Advance { get; set; }
     }
 
-    class Font
+    class Font : Asset
     {
         /// <summary>
         /// Enum for choosing which GL_TEXTURE_MAG_FILTER or GL_TEXTURE_MIN_FILTER during initialization.

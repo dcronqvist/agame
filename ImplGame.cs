@@ -9,6 +9,7 @@ using System.IO;
 using System.Numerics;
 using AGame.Engine.Graphics.Rendering;
 using AGame.Engine;
+using AGame.Engine.Assets;
 
 namespace AGame
 {
@@ -34,6 +35,8 @@ namespace AGame
 
         public unsafe override void LoadContent()
         {
+            AssetManager.LoadAllAssets();
+
             glEnable(GL_BLEND);
             glDisable(GL_DEPTH_TEST);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -41,7 +44,7 @@ namespace AGame
 
             textShader = Shader.LoadFromFiles(Utilities.GetExecutableDirectory() + "/res/basic_text.vs", Utilities.GetExecutableDirectory() + "/res/basic_text.fs");
 
-            font = new Font(Utilities.GetExecutableDirectory() + "/res/rainyhearts.ttf", 16, Font.FontFilter.NearestNeighbour, Font.FontFilter.NearestNeighbour);
+            font = AssetManager.GetAsset<Font>("font_rainyhearts");
 
             textRenderer = new TextRenderer(textShader);
 
