@@ -7,6 +7,7 @@ using System.CodeDom.Compiler;
 using Microsoft.CSharp;
 using Microsoft.CodeAnalysis;
 using System.Linq;
+using AGame.Engine.DebugTools;
 
 namespace AGame.Engine.Assets.Scripting
 {
@@ -38,7 +39,7 @@ namespace AGame.Engine.Assets.Scripting
                 byte[] iass = sc.Compile(filePath, out string[] errorMsgs);
                 if (errorMsgs.Length > 0)
                 {
-                    ex = null;
+                    ex = new Exception(errorMsgs[0]);
                     script = null;
                     return false;
                 }
@@ -99,12 +100,13 @@ namespace AGame.Engine.Assets.Scripting
                     // All went well, just add the script to the dictionary of scripts.
                     AddScript(fileName, sc); // Add script to Scripts dictionary
                     PointTypesToScript(sc.GetTypes(), fileName); // Point all types in this script to this script
-                    Console.WriteLine($"Loaded script: {fileName}");
+                    GameConsole.WriteLine("SCRIPTS", $"Loaded script {fileName} successfully!");
                 }
                 else
                 {
                     // Something went wrong, tell user.
                     // TODO: Add some kind of debug log so you can see what goes wrong.
+                    GameConsole.WriteLine("SCRIPTS", $"Error when loading script {fileName}: {ex.Message}");
                     throw ex;
                 }
             }

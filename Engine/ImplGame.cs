@@ -25,8 +25,10 @@ namespace AGame.Engine
 
         public unsafe override void LoadContent()
         {
-            ScriptingManager.LoadScripts();
             GameConsole.Initialize();
+            ScriptingManager.LoadScripts();
+            GameConsole.LoadCommands();
+
             AssetManager.LoadAllAssets();
 
             Renderer.Init();
@@ -51,7 +53,9 @@ namespace AGame.Engine
             glClearColor(0, 0, 0, 0);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            GameConsole.Render(AssetManager.GetAsset<Font>("font_rainyhearts"), Renderer.Text, cam);
+            RenderTexture rt = GameConsole.Render(AssetManager.GetAsset<Font>("font_rainyhearts"));
+
+            Renderer.RenderRenderTexture(rt);
 
             DisplayManager.SwapBuffers();
         }

@@ -8,10 +8,16 @@ namespace AGame.Engine.Assets
 {
     class ShaderLoader : IAssetLoader
     {
-        struct ShaderAssetDescription
+        class ShaderAssetDescription
         {
             public string vertexShaderFile;
             public string fragmentShaderFile;
+
+            public ShaderAssetDescription()
+            {
+                this.vertexShaderFile = "";
+                this.fragmentShaderFile = "";
+            }
         }
 
         public string AssetPrefix()

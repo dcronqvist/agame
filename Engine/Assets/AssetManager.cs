@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using AGame.Engine.DebugTools;
 
 namespace AGame.Engine.Assets
 {
@@ -55,7 +56,7 @@ namespace AGame.Engine.Assets
         public static void AddAsset(string assetName, Asset asset)
         {
             Assets.Add(assetName, asset);
-            Console.WriteLine($"Loaded asset {assetName} successfully!");
+            GameConsole.WriteLine("ASSETS", $"Loaded asset {assetName} successfully!");
         }
 
         private static string[] GetAllAssets()

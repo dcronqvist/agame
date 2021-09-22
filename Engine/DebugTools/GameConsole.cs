@@ -19,6 +19,8 @@ namespace AGame.Engine.DebugTools
 
         private static StringBuilder currentLine;
 
+        private static RenderTexture canvas;
+
         static GameConsole()
         {
             ConsoleLines = new List<ConsoleLine>();
@@ -28,7 +30,6 @@ namespace AGame.Engine.DebugTools
         public static void Initialize()
         {
             currentLine = new StringBuilder();
-            LoadCommands();
             Input.OnChar += (sender, c) =>
             {
                 currentLine.Append(c);
@@ -38,11 +39,17 @@ namespace AGame.Engine.DebugTools
                 if (currentLine.Length > 0)
                     currentLine.Remove(currentLine.Length - 1, 1);
             };
+            canvas = new RenderTexture(DisplayManager.GetWindowSizeInPixels());
         }
 
         public static void WriteLine(ICommand sender, string message)
         {
             ConsoleLines.Add(new ConsoleLine(sender.GetHandle(), message));
+        }
+
+        public static void WriteLine(string sender, string message)
+        {
+            ConsoleLines.Add(new ConsoleLine(sender, message));
         }
 
         public static void LoadCommands()
@@ -82,18 +89,25 @@ namespace AGame.Engine.DebugTools
             }
         }
 
-        public static void Render(Font font, TextRenderer renderer, Camera2D cam)
+        public static RenderTexture Render(Font font)
         {
+            Renderer.SetRenderTarget(canvas, null);
+            Renderer.Clear(ColorF.Black * 0.3f);
+
             Vector2 basePosition = Vector2.Zero;
             float rowHeight = 16f;
 
             for (int i = 0; i < ConsoleLines.Count; i++)
             {
                 Vector2 offset = new Vector2(0, i * rowHeight);
-                renderer.RenderText(font, GameConsole.ConsoleLines[i].ToString(), basePosition + offset, 1f, ColorF.White, cam);
+                Renderer.Text.RenderText(font, GameConsole.ConsoleLines[i].ToString(), basePosition + offset, 1f, ColorF.White, Renderer.Camera);
             }
             Vector2 curroffset = new Vector2(0, ConsoleLines.Count * rowHeight);
-            renderer.RenderText(font, currentLine.ToString(), basePosition + curroffset, 1f, ColorF.White, cam);
+            Renderer.Text.RenderText(font, currentLine.ToString(), basePosition + curroffset, 1f, ColorF.White, Renderer.Camera);
+
+            Renderer.SetRenderTarget(null, null);
+
+            return canvas;
         }
     }
 }
