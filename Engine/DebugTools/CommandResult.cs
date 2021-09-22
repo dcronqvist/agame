@@ -7,41 +7,28 @@ namespace AGame.Engine.DebugTools
         Warning
     }
 
-    public class CommandResult
+    public class CommandResult : ConsoleLine
     {
         public CommandResultType Type { get; set; }
-        public string Message { get; set; }
+
+        public CommandResult(CommandResultType crt, string mess) : base(crt.ToString().ToUpper(), mess)
+        {
+
+        }
 
         public static CommandResult CreateOk(string message)
         {
-            return new CommandResult()
-            {
-                Type = CommandResultType.Ok,
-                Message = message
-            };
+            return new CommandResult(CommandResultType.Ok, message);
         }
 
         public static CommandResult CreateWarning(string message)
         {
-            return new CommandResult()
-            {
-                Type = CommandResultType.Warning,
-                Message = message
-            };
+            return new CommandResult(CommandResultType.Warning, message);
         }
 
         public static CommandResult CreateError(string message)
         {
-            return new CommandResult()
-            {
-                Type = CommandResultType.Error,
-                Message = message
-            };
-        }
-
-        public override string ToString()
-        {
-            return $"[{this.Type.ToString().ToUpper()}]: {this.Message}";
+            return new CommandResult(CommandResultType.Error, message);
         }
     }
 }

@@ -33,7 +33,7 @@ namespace AGame.Engine.Assets.Scripting
 
                     foreach (var diagnostic in failures)
                     {
-                        errors.Add($"{diagnostic.Id}: {diagnostic.GetMessage()}");
+                        errors.Add($"{diagnostic.Id}: {diagnostic.GetMessage()} at {sourceCode.Substring(diagnostic.Location.SourceSpan.Start, diagnostic.Location.SourceSpan.Length)}");
                     }
 
                     errorMsgs = errors.ToArray();

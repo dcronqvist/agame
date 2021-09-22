@@ -36,6 +36,13 @@ namespace AGame.Engine.Assets.Scripting
             {
                 ScriptCompiler sc = new ScriptCompiler();
                 byte[] iass = sc.Compile(filePath, out string[] errorMsgs);
+                if (errorMsgs.Length > 0)
+                {
+                    ex = null;
+                    script = null;
+                    return false;
+                }
+
                 //Assembly assembly = Assembly.LoadFile(filePath);
                 Assembly assembly = Assembly.Load(iass);
                 ex = null;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using AGame.Engine.DebugTools;
 using AGame.Engine.Graphics;
 
@@ -60,6 +61,26 @@ namespace MyMod
         public string GetHandle()
         {
             return "exit";
+        }
+    }
+
+    class CommandsCommand : ICommand
+    {
+        public CommandResult Execute(string[] args)
+        {
+            Dictionary<string, ICommand> commands = GameConsole.AvailableCommands;
+
+            foreach (KeyValuePair<string, ICommand> kvp in commands)
+            {
+                GameConsole.WriteLine(this, kvp.Key);
+            }
+
+            return CommandResult.CreateOk($"Listed all commands.");
+        }
+
+        public string GetHandle()
+        {
+            return "commands";
         }
     }
 }

@@ -12,16 +12,16 @@ using System.Text;
 
 namespace AGame.Engine.DebugTools
 {
-    static class GameConsole
+    public static class GameConsole
     {
-        static Dictionary<string, ICommand> AvailableCommands { get; set; }
-        public static List<CommandResult> ExecutedCommands { get; private set; }
+        public static Dictionary<string, ICommand> AvailableCommands { get; set; }
+        public static List<ConsoleLine> ConsoleLines { get; private set; }
 
         private static StringBuilder currentLine;
 
         static GameConsole()
         {
-            ExecutedCommands = new List<CommandResult>();
+            ConsoleLines = new List<ConsoleLine>();
             AvailableCommands = new Dictionary<string, ICommand>();
         }
 
@@ -38,6 +38,11 @@ namespace AGame.Engine.DebugTools
                 if (currentLine.Length > 0)
                     currentLine.Remove(currentLine.Length - 1, 1);
             };
+        }
+
+        public static void WriteLine(ICommand sender, string message)
+        {
+            ConsoleLines.Add(new ConsoleLine(sender.GetHandle(), message));
         }
 
         public static void LoadCommands()
@@ -59,13 +64,13 @@ namespace AGame.Engine.DebugTools
 
             if (!AvailableCommands.ContainsKey(commandHandle))
             {
-                ExecutedCommands.Add(CommandResult.CreateError("Invalid command."));
+                ConsoleLines.Add(CommandResult.CreateError("Invalid command."));
                 return;
             }
 
             ICommand ic = AvailableCommands[commandHandle];
             CommandResult cr = ic.Execute(splitLine.Skip(1).ToArray());
-            ExecutedCommands.Add(cr);
+            ConsoleLines.Add(cr);
         }
 
         public static void Update()
@@ -82,12 +87,12 @@ namespace AGame.Engine.DebugTools
             Vector2 basePosition = Vector2.Zero;
             float rowHeight = 16f;
 
-            for (int i = 0; i < ExecutedCommands.Count; i++)
+            for (int i = 0; i < ConsoleLines.Count; i++)
             {
                 Vector2 offset = new Vector2(0, i * rowHeight);
-                renderer.RenderText(font, GameConsole.ExecutedCommands[i].ToString(), basePosition + offset, 1f, ColorF.White, cam);
+                renderer.RenderText(font, GameConsole.ConsoleLines[i].ToString(), basePosition + offset, 1f, ColorF.White, cam);
             }
-            Vector2 curroffset = new Vector2(0, ExecutedCommands.Count * rowHeight);
+            Vector2 curroffset = new Vector2(0, ConsoleLines.Count * rowHeight);
             renderer.RenderText(font, currentLine.ToString(), basePosition + curroffset, 1f, ColorF.White, cam);
         }
     }
