@@ -33,7 +33,8 @@ namespace AGame.Engine.Assets
 
             AssetLoaders = new Dictionary<string, IAssetLoader>() {
                 { ".ttf", new FontLoader() },
-                { ".shader", new ShaderLoader() }
+                { ".shader", new ShaderLoader() },
+                { ".png", new TextureLoader() }
             };
         }
 

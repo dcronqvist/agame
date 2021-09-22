@@ -3,6 +3,7 @@ using static AGame.Engine.OpenGL.GL;
 using System.IO;
 using System.Numerics;
 using System.Diagnostics;
+using AGame.Engine.Graphics.Cameras;
 
 namespace AGame.Engine.Assets
 {

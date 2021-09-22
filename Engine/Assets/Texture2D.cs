@@ -1,14 +1,17 @@
 using static AGame.Engine.OpenGL.GL;
 using StbImageSharp;
 using System.IO;
+using AGame.Engine.Assets;
+using System.Numerics;
 
-namespace AGame.Engine.Graphics.Textures
+namespace AGame.Engine.Assets
 {
-    class Texture2D
+    public class Texture2D : Asset
     {
         public uint ID { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
+        public Vector2 Middle { get; set; }
 
         private byte[] pixelData;
 
@@ -66,6 +69,7 @@ namespace AGame.Engine.Graphics.Textures
                 this.Width = imageResult.Width;
                 this.Height = imageResult.Height;
                 this.pixelData = imageResult.Data;
+                this.Middle = new Vector2(imageResult.Width / 2.0f, imageResult.Height / 2.0f);
                 return true;
             }
             catch

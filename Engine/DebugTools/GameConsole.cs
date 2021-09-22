@@ -18,13 +18,14 @@ namespace AGame.Engine.DebugTools
         public static List<ConsoleLine> ConsoleLines { get; private set; }
 
         private static StringBuilder currentLine;
-
         private static RenderTexture canvas;
+        private static bool enabled;
 
         static GameConsole()
         {
             ConsoleLines = new List<ConsoleLine>();
             AvailableCommands = new Dictionary<string, ICommand>();
+            enabled = false;
         }
 
         public static void Initialize()
@@ -32,14 +33,25 @@ namespace AGame.Engine.DebugTools
             currentLine = new StringBuilder();
             Input.OnChar += (sender, c) =>
             {
-                currentLine.Append(c);
+                if (enabled)
+                {
+                    currentLine.Append(c);
+                }
             };
             Input.OnBackspace += (sender, e) =>
             {
-                if (currentLine.Length > 0)
-                    currentLine.Remove(currentLine.Length - 1, 1);
+                if (enabled)
+                {
+                    if (currentLine.Length > 0)
+                        currentLine.Remove(currentLine.Length - 1, 1);
+                }
             };
             canvas = new RenderTexture(DisplayManager.GetWindowSizeInPixels());
+        }
+
+        public static void SetEnabled(bool val)
+        {
+            enabled = val;
         }
 
         public static void WriteLine(ICommand sender, string message)
@@ -92,7 +104,7 @@ namespace AGame.Engine.DebugTools
         public static RenderTexture Render(Font font)
         {
             Renderer.SetRenderTarget(canvas, null);
-            Renderer.Clear(ColorF.Black * 0.3f);
+            Renderer.Clear(ColorF.Black * 0.2f);
 
             Vector2 basePosition = Vector2.Zero;
             float rowHeight = 16f;

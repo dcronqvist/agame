@@ -7,6 +7,8 @@ namespace AGame.Engine.Graphics.Rendering
     public static class Renderer
     {
         public static TextRenderer Text { get; private set; }
+        public static TextureRenderer Texture { get; private set; }
+
         public static ColorF ClearColor { get; set; }
         public static Camera2D Camera { get; set; }
 
@@ -19,6 +21,10 @@ namespace AGame.Engine.Graphics.Rendering
             Shader textRendererShader = AssetManager.GetAsset<Shader>("shader_basictext");
 
             Text = new TextRenderer(textRendererShader);
+
+            Shader textureShader = AssetManager.GetAsset<Shader>("shader_texture");
+
+            Texture = new TextureRenderer(textureShader);
 
             defaultCamera = new Camera2D(DisplayManager.GetWindowSizeInPixels() / 2.0f, 1.0f);
 
