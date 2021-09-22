@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -53,7 +54,7 @@ namespace AGame.Engine.Assets
         public static void AddAsset(string assetName, Asset asset)
         {
             Assets.Add(assetName, asset);
-            Debug.WriteLine($"Loaded asset {assetName} successfully!");
+            Console.WriteLine($"Loaded asset {assetName} successfully!");
         }
 
         private static string[] GetAllAssets()
@@ -62,7 +63,7 @@ namespace AGame.Engine.Assets
             string[] files = Directory.GetFiles(ResourceDirectory, "*.*", SearchOption.AllDirectories);
             // Remove all files that are in the scripts directory and remove the resource.types file.
             // files = files.Where(x => !x.Contains(ScriptManager.ScriptDirectory) && x != ResourceTypeFile && ResourceTypes.Keys.Contains(Path.GetExtension(x)) && !x.Contains("screen.ing")).ToArray();
-            files = files.Where(x => AssetLoaders.ContainsKey(Path.GetExtension(x))).ToArray();
+            files = files.Where(x => AssetLoaders.ContainsKey(Path.GetExtension(x)) && Path.GetExtension(x) != ".cs").ToArray();
             return files;
         }
 

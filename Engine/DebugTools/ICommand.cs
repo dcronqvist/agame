@@ -1,6 +1,6 @@
 namespace AGame.Engine.DebugTools
 {
-    interface ICommand
+    public interface ICommand
     {
         string GetHandle();
         CommandResult Execute();
