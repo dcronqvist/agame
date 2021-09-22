@@ -1,4 +1,4 @@
-namespace AGame
+namespace AGame.Engine
 {
     static class GameTime
     {

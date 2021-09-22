@@ -13,7 +13,7 @@ using AGame.Engine.Assets;
 using AGame.Engine.Assets.Scripting;
 using AGame.Engine.DebugTools;
 
-namespace AGame
+namespace AGame.Engine
 {
     class ImplGame : Game
     {
