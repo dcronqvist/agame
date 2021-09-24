@@ -16,7 +16,12 @@ namespace AGame.Engine.Graphics.Cameras
 
         public Matrix4x4 GetProjectionMatrix()
         {
-            Vector2 windowSize = DisplayManager.GetWindowSizeInPixels();
+            return GetProjectionMatrix(DisplayManager.GetWindowSizeInPixels());
+        }
+
+        public Matrix4x4 GetProjectionMatrix(Vector2 viewSize)
+        {
+            Vector2 windowSize = viewSize;
 
             float left = FocusPosition.X - windowSize.X / 2f;
             float right = FocusPosition.X + windowSize.X / 2f;

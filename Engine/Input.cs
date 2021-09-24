@@ -5,6 +5,7 @@ using System.Linq;
 using AGame.Engine.GLFW;
 using AGame.Engine.Graphics;
 using System.Numerics;
+using AGame.Engine.Graphics.Cameras;
 
 namespace AGame.Engine
 {
@@ -116,11 +117,14 @@ namespace AGame.Engine
             return !currentMouseState[button] && previousMouseState[button];
         }
 
-        public static Vector2 GetMousePosition()
+        public static Vector2 GetMousePosition(Camera2D offsetCamera)
         {
+            Vector2 windowSize = DisplayManager.GetWindowSizeInPixels();
+            Vector2 topLeft = new Vector2(offsetCamera.FocusPosition.X - ((windowSize.X / 2f) * offsetCamera.Zoom), offsetCamera.FocusPosition.Y - ((windowSize.Y / 2f) * offsetCamera.Zoom));
+
             Glfw.GetCursorPosition(DisplayManager.WindowHandle, out double x, out double y);
 
-            return new Vector2((float)x, (float)y);
+            return topLeft + (new Vector2((float)x, (float)y)) * offsetCamera.Zoom;
         }
     }
 }

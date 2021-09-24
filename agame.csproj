@@ -6,6 +6,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>AGame</RootNamespace>
     <DefaultItemExcludes>$(DefaultItemExcludes);$(ProjectDir)\res\**\*.*</DefaultItemExcludes>
+    <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(OS)' == 'WINDOWS_NT'">

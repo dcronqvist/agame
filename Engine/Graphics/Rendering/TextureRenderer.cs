@@ -56,12 +56,18 @@ namespace AGame.Engine.Graphics.Rendering
                 // Assign new texture coordinates based on the src rectangle.
                 float[][] newTex = new float[][]
                 {
-                    new float[] { (float)sourceRectangle.X / texture.Width, ((float)sourceRectangle.Y + sourceRectangle.Height) / texture.Height },
-                    new float[] { (float)(sourceRectangle.X + sourceRectangle.Width) / texture.Width, (float)sourceRectangle.Y / texture.Height },
-                    new float[] { (float)sourceRectangle.X / texture.Width, (float)sourceRectangle.Y / texture.Height },
-                    new float[] { (float)sourceRectangle.X / texture.Width, ((float)sourceRectangle.Y + sourceRectangle.Height) / texture.Height },
-                    new float[] { (float)(sourceRectangle.X + sourceRectangle.Width) / texture.Width, ((float)sourceRectangle.Y + sourceRectangle.Height) / texture.Height },
-                    new float[] { (float)(sourceRectangle.X + sourceRectangle.Width) / texture.Width, (float)sourceRectangle.Y / texture.Height }
+                    // down left
+                    new float[] { sourceRectangle.X / texture.Width, (sourceRectangle.Y + sourceRectangle.Height) / texture.Height },
+                    // top right
+                    new float[] { (sourceRectangle.X + sourceRectangle.Width) / texture.Width, sourceRectangle.Y / texture.Height },
+                    // top left
+                    new float[] { sourceRectangle.X / texture.Width, sourceRectangle.Y / texture.Height },
+                    // down left
+                    new float[] { sourceRectangle.X / texture.Width, (sourceRectangle.Y + sourceRectangle.Height) / texture.Height },
+                    // down right
+                    new float[] { (sourceRectangle.X + sourceRectangle.Width) / texture.Width, (sourceRectangle.Y + sourceRectangle.Height) / texture.Height },
+                    // top right
+                    new float[] { (sourceRectangle.X + sourceRectangle.Width) / texture.Width, sourceRectangle.Y / texture.Height },
                 };
 
                 fixed (float* tex1 = &newTex[0][0], tex2 = &newTex[1][0], tex3 = &newTex[2][0], tex4 = &newTex[3][0], tex5 = &newTex[4][0], tex6 = &newTex[5][0])
@@ -93,13 +99,13 @@ namespace AGame.Engine.Graphics.Rendering
 
             float[] vertices = { 
                 // pos      // tex
-                0.0f, 1.0f, 0.0f, 1.0f, //downLeft
-                1.0f, 0.0f, 1.0f, 0.0f, //topRight
-                0.0f, 0.0f, 0.0f, 0.0f, //topLeft
+                0.0f, 1.0f, 0.0f, 0.0f, //downLeft
+                1.0f, 0.0f, 1.0f, 1.0f, //topRight
+                0.0f, 0.0f, 0.0f, 1.0f, //topLeft
 
-                0.0f, 1.0f, 0.0f, 1.0f, //downLeft
-                1.0f, 1.0f, 1.0f, 1.0f, //downRight
-                1.0f, 0.0f, 1.0f, 0.0f  //
+                0.0f, 1.0f, 0.0f, 0.0f, //downLeft
+                1.0f, 1.0f, 1.0f, 0.0f, //downRight
+                1.0f, 0.0f, 1.0f, 1.0f  //topRight
             };
 
             glBindBuffer(GL_ARRAY_BUFFER, VBO);

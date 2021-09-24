@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using AGame.Engine;
 using AGame.Engine.DebugTools;
 using AGame.Engine.Graphics;
+using static AGame.Engine.OpenGL.GL;
 
 namespace MyMod
 {
@@ -81,6 +83,76 @@ namespace MyMod
         public string GetHandle()
         {
             return "commands";
+        }
+    }
+
+    class ToggleWireframeCommand : ICommand
+    {
+        public CommandResult Execute(string[] args)
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            return CommandResult.CreateOk($"Set to wireframe.");
+        }
+        public string GetHandle()
+        {
+            return "wireframe";
+        }
+    }
+
+    class NormalMode : ICommand
+    {
+        public CommandResult Execute(string[] args)
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            return CommandResult.CreateOk($"Removed wireframe.");
+        }
+        public string GetHandle()
+        {
+            return "normal";
+        }
+    }
+
+    class WindowSizeCommand : ICommand
+    {
+        public CommandResult Execute(string[] args)
+        {
+            int x = int.Parse(args[0]);
+            int y = int.Parse(args[1]);
+
+            DisplayManager.SetWindowSizeInPixels(new System.Numerics.Vector2(x, y));
+
+            return CommandResult.CreateOk($"Set window size to: {new System.Numerics.Vector2(x, y)}");
+        }
+        public string GetHandle()
+        {
+            return "windowsize";
+        }
+    }
+
+    class RowHeightCommand : ICommand
+    {
+        public CommandResult Execute(string[] args)
+        {
+            int height = int.Parse(args[0]);
+            GameConsole.RowHeight = height;
+            return CommandResult.CreateOk($"Set GameConsole's rowheight to {height} pixels.");
+        }
+        public string GetHandle()
+        {
+            return "rowheight";
+        }
+    }
+
+    class FPSCommand : ICommand
+    {
+        public CommandResult Execute(string[] args)
+        {
+            float fps = 1.0f / GameTime.DeltaTime;
+            return CommandResult.CreateOk($"FPS is {MathF.Round(fps)}");
+        }
+        public string GetHandle()
+        {
+            return "checkfps";
         }
     }
 }

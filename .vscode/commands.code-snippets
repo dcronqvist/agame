@@ -16,5 +16,12 @@
 			"\t}",
 			"}"
 		]
+	},
+	"Get Asset": {
+		"scope": "csharp",
+		"prefix": "getasset",
+		"body": [
+			"AssetManager.GetAsset<${1:AssetClass}>(\"${2:assetname}\")"
+		]
 	}
 }

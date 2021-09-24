@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Numerics;
 using static AGame.Engine.OpenGL.GL;
 
@@ -19,10 +20,25 @@ namespace AGame.Engine.Graphics.Rendering
             this.Width = width;
             this.Height = height;
 
-            this.InitRenderData();
+            this.InitRenderData(width, height);
+
+            DisplayManager.OnFramebufferResize += (window, size) =>
+            {
+                this.Resize((int)size.X, (int)size.Y);
+            };
         }
 
-        public unsafe void InitRenderData()
+        public unsafe void Resize(int width, int height)
+        {
+            this.Width = width;
+            this.Height = height;
+
+            glBindTexture(GL_TEXTURE_2D, this.renderedTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+
+        public unsafe void InitRenderData(int width, int height)
         {
             this.framebuffer = glGenFramebuffer();
             glBindFramebuffer(GL_FRAMEBUFFER, this.framebuffer);
@@ -30,7 +46,7 @@ namespace AGame.Engine.Graphics.Rendering
             this.renderedTexture = glGenTexture();
             glBindTexture(GL_TEXTURE_2D, this.renderedTexture);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this.Width, this.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -40,13 +56,13 @@ namespace AGame.Engine.Graphics.Rendering
 
             float[] vertices = { 
                 // pos      // tex
-                -1.0f,  1.0f,  0.0f, 1.0f,
-                -1.0f, -1.0f,  0.0f, 0.0f,
-                1.0f, -1.0f,  1.0f, 0.0f,
+                0.0f, 1.0f, 0.0f, 0.0f, //downLeft
+                1.0f, 0.0f, 1.0f, 1.0f, //topRight
+                0.0f, 0.0f, 0.0f, 1.0f, //topLeft
 
-                -1.0f,  1.0f,  0.0f, 1.0f,
-                1.0f, -1.0f,  1.0f, 0.0f,
-                1.0f,  1.0f,  1.0f, 1.0f
+                0.0f, 1.0f, 0.0f, 0.0f, //downLeft
+                1.0f, 1.0f, 1.0f, 0.0f, //downRight
+                1.0f, 0.0f, 1.0f, 1.0f  //topRight
             };
 
             this.quadVao = glGenVertexArray();

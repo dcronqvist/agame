@@ -9,6 +9,7 @@ using AGame.Engine.Assets;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Cameras;
 using System.Text;
+using static AGame.Engine.OpenGL.GL;
 
 namespace AGame.Engine.DebugTools
 {
@@ -20,6 +21,11 @@ namespace AGame.Engine.DebugTools
         private static StringBuilder currentLine;
         private static RenderTexture canvas;
         private static bool enabled;
+
+        public static float RowHeight = 14.0f;
+        private static string caret = "";
+        private static float caretInterval = 0.6f;
+        private static float currentCaretTime = 0f;
 
         static GameConsole()
         {
@@ -99,6 +105,19 @@ namespace AGame.Engine.DebugTools
                 RunLine(currentLine.ToString());
                 currentLine.Clear();
             }
+
+            while (ConsoleLines.Count > 20)
+            {
+                ConsoleLines.RemoveAt(0);
+            }
+
+            currentCaretTime += GameTime.DeltaTime;
+            if (currentCaretTime > caretInterval)
+            {
+                currentCaretTime = 0f;
+
+                caret = caret == "" ? "_" : "";
+            }
         }
 
         public static RenderTexture Render(Font font)
@@ -106,19 +125,20 @@ namespace AGame.Engine.DebugTools
             Renderer.SetRenderTarget(canvas, null);
             Renderer.Clear(ColorF.Black * 0.2f);
 
-            Vector2 basePosition = Vector2.Zero;
-            float rowHeight = 16f;
+            float margin = 20f;
+
+            float rowHeight = RowHeight;
+            float dist = 5;
+            Vector2 basePosition = new Vector2(margin, DisplayManager.GetWindowSizeInPixels().Y - rowHeight - margin);
 
             for (int i = 0; i < ConsoleLines.Count; i++)
             {
-                Vector2 offset = new Vector2(0, i * rowHeight);
-                Renderer.Text.RenderText(font, GameConsole.ConsoleLines[i].ToString(), basePosition + offset, 1f, ColorF.White, Renderer.Camera);
+                Vector2 offset = new Vector2(0, -(i + 1) * rowHeight - dist);
+                Renderer.Text.RenderText(font, GameConsole.ConsoleLines[ConsoleLines.Count - i - 1].ToString(), basePosition + offset, 1f, ColorF.White, Renderer.Camera);
             }
-            Vector2 curroffset = new Vector2(0, ConsoleLines.Count * rowHeight);
-            Renderer.Text.RenderText(font, currentLine.ToString(), basePosition + curroffset, 1f, ColorF.White, Renderer.Camera);
+            Renderer.Text.RenderText(font, $"> {currentLine.ToString()}{caret}", basePosition, 1f, ColorF.White, Renderer.Camera);
 
             Renderer.SetRenderTarget(null, null);
-
             return canvas;
         }
     }

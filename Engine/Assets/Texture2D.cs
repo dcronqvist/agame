@@ -15,6 +15,13 @@ namespace AGame.Engine.Assets
 
         private byte[] pixelData;
 
+        public Texture2D(uint framebuffer, int width, int height)
+        {
+            this.ID = framebuffer;
+            this.Width = width;
+            this.Height = height;
+        }
+
         public Texture2D(string file)
         {
             if (TryLoadFromFile(file))

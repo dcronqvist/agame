@@ -1,6 +1,7 @@
 using AGame.Engine.Graphics;
 using AGame.Engine.GLFW;
 using AGame.Engine;
+using System.Threading;
 
 namespace AGame.Engine
 {
@@ -37,6 +38,12 @@ namespace AGame.Engine
                 Render();
 
                 Input.End();
+
+                if (DisplayManager.TargetFPS != 0)
+                {
+                    float waitTime = DisplayManager.FrameTime;
+                    while (Glfw.Time < GameTime.TotalElapsedSeconds + waitTime) { }
+                }
             }
 
             Unload();

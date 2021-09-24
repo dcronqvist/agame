@@ -45,6 +45,12 @@ namespace AGame.Engine.Graphics.Rendering
         {
             this.shader.Use();
             this.shader.SetMatrix4x4("projection", cam.GetProjectionMatrix());
+
+            Matrix4x4 transPos = Matrix4x4.CreateTranslation(new Vector3(position, 0.0f));
+            Matrix4x4 mscale = Matrix4x4.CreateScale(scale);
+
+            shader.SetMatrix4x4("model", mscale * transPos);
+
             this.shader.SetInt("text", 0);
             this.shader.SetVec4("textColor", color.R, color.G, color.B, color.A);
             glActiveTexture(GL_TEXTURE0);

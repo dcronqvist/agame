@@ -82,6 +82,8 @@ namespace AGame.Engine.Assets
         /// </summary>
         public static void LoadAllAssets()
         {
+            //StbImageSharp.StbImage.stbi_set_flip_vertically_on_load(1);
+
             string[] assetFiles = GetAllAssets();
 
             foreach (string file in assetFiles)

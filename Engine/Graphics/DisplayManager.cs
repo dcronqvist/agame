@@ -10,8 +10,16 @@ namespace AGame.Engine.Graphics
     public static class DisplayManager
     {
         public static Window WindowHandle { get; set; }
-        public static EventHandler<Vector2> OnFramebufferResize;
+        public static event EventHandler<Vector2> OnFramebufferResize;
         private static bool manuallySetClose;
+        public static int TargetFPS { get; set; }
+        public static float FrameTime
+        {
+            get
+            {
+                return 1.0f / TargetFPS;
+            }
+        }
 
         private static void PrepareContext()
         {
@@ -24,6 +32,11 @@ namespace AGame.Engine.Graphics
             Glfw.WindowHint(Hint.Decorated, true);
 
             manuallySetClose = false;
+        }
+
+        public static void SetTargetFPS(int fps)
+        {
+            TargetFPS = fps;
         }
 
         private static Window CreateWindow(int width, int height, string title)
