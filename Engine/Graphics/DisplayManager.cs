@@ -4,6 +4,7 @@ using AGame.Engine.GLFW;
 using System.Drawing;
 using AGame.Engine.OpenGL;
 using System.Numerics;
+using AGame.Engine.Assets;
 
 namespace AGame.Engine.Graphics
 {
@@ -85,6 +86,16 @@ namespace AGame.Engine.Graphics
         public static void SetWindowSizeInPixels(Vector2 size)
         {
             Glfw.SetWindowSize(WindowHandle, (int)size.X, (int)size.Y);
+        }
+
+        public unsafe static void SetWindowIcon(Texture2D tex)
+        {
+            byte[] pixelData = tex.GetPixelData();
+            fixed (byte* pix = &pixelData[0])
+            {
+                IntPtr ip = new IntPtr(pix);
+                Glfw.SetWindowIcon(WindowHandle, 1, new Image[] { new Image(tex.Width, tex.Height, ip) });
+            }
         }
 
         public static void SetWindowShouldClose(bool value)

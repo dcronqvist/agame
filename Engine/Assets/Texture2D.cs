@@ -58,6 +58,11 @@ namespace AGame.Engine.Assets
             glBindTexture(GL_TEXTURE_2D, ID);
         }
 
+        public byte[] GetPixelData()
+        {
+            return this.pixelData;
+        }
+
         public static bool TryLoadFromFile(string file, out Texture2D tex)
         {
             try

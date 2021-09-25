@@ -17,7 +17,7 @@ namespace AGame.Engine.Assets.Scripting
         {
             get
             {
-                return AssetManager.ResourceDirectory + @"/scripts";
+                return AssetManager.AssetDirectory + @"/scripts";
             }
         }
 
@@ -28,35 +28,6 @@ namespace AGame.Engine.Assets.Scripting
         {
             Scripts = new Dictionary<string, Script>();
             TypeToScript = new Dictionary<string, Script>();
-        }
-
-        private static bool LoadScript(string filePath, out Script script, out Exception ex)
-        {
-            // Attempt to load script
-            try
-            {
-                ScriptCompiler sc = new ScriptCompiler();
-                byte[] iass = sc.Compile(filePath, out string[] errorMsgs);
-                if (errorMsgs.Length > 0)
-                {
-                    ex = new Exception(errorMsgs[0]);
-                    script = null;
-                    return false;
-                }
-
-                //Assembly assembly = Assembly.LoadFile(filePath);
-                Assembly assembly = Assembly.Load(iass);
-                ex = null;
-                script = new Script(assembly, Path.GetFileNameWithoutExtension(filePath));
-                return true;
-            }
-            catch (Exception e)
-            {
-                script = null;
-                ex = e;
-                return false;
-            }
-
         }
 
         private static void AddScript(string key, Script script)

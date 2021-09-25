@@ -29,12 +29,47 @@ namespace AGame.Engine
             GameConsole.Initialize();
             DisplayManager.SetTargetFPS(144);
 
+            DisplayManager.OnFramebufferResize += (window, size) =>
+            {
+                glViewport(0, 0, (int)size.X, (int)size.Y);
+                GameConsole.WriteLine("Window Change", $"new size: {size}");
+                Renderer.DefaultCamera.FocusPosition = size / 2.0f;
+            };
+
             AssetManager.OnAllAssetsLoaded += (sender, e) =>
             {
                 GameConsole.WriteLine("ASSETS", "All assets loaded.");
             };
+
+            AssetManager.OnAssetLoaded += (sender, asset) =>
+            {
+                GameConsole.WriteLine("ASSETS", $"Successfully loaded asset '{asset.Name}'");
+            };
+
+            AssetManager.OnFinalizeStart += (sender, e) =>
+            {
+                GameConsole.WriteLine("ASSETS", $"Finalizing assets...");
+            };
+
+            AssetManager.OnFinalizeEnd += (sender, e) =>
+            {
+                GameConsole.WriteLine("ASSETS", $"Finalizing complete!");
+
+                ScriptingManager.LoadScripts();
+                GameConsole.LoadCommands();
+
+                ScreenManager.Init();
+                ScreenManager.GoToScreen("testscreen");
+            };
+
+            AssetManager.OnAllCoreAssetsLoaded += (sender, e) =>
+            {
+                GameConsole.WriteLine("ASSETS", "All core assets loaded!");
+                DisplayManager.SetWindowIcon(AssetManager.GetAsset<Texture2D>("tex_pine_tree"));
+                Renderer.Init();
+            };
+
             AssetManager.LoadAllAssetsAsync();
-            Renderer.Init();
 
             glEnable(GL_BLEND);
             glDisable(GL_DEPTH_TEST);
@@ -48,19 +83,6 @@ namespace AGame.Engine
             if (AssetManager.AllAssetsLoaded && ScreenManager.CurrentScreen == null)
             {
                 AssetManager.FinalizeAssets();
-                ScriptingManager.LoadScripts();
-                GameConsole.LoadCommands();
-
-
-                DisplayManager.OnFramebufferResize += (window, size) =>
-                {
-                    glViewport(0, 0, (int)size.X, (int)size.Y);
-                    GameConsole.WriteLine("Window Change", $"new size: {size}");
-                    Renderer.DefaultCamera.FocusPosition = size / 2.0f;
-                };
-
-                ScreenManager.Init();
-                ScreenManager.GoToScreen("testscreen");
             }
 
             if (!inConsole)

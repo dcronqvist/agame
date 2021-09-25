@@ -21,10 +21,14 @@ namespace AGame.Engine.Assets
         private static Dictionary<string, IAssetLoader> AssetLoaders { get; set; }
 
         public static string BaseDirectory { get; set; }
-        public static string ResourceDirectory { get => BaseDirectory + @"/res"; }
+        public static string AssetDirectory { get => BaseDirectory + @"/res"; }
+        public static string CoreDirectory { get => AssetDirectory + @"/core"; }
 
         public static event EventHandler OnAllAssetsLoaded;
-        public static event EventHandler OnAssetLoaded;
+        public static event EventHandler OnAllCoreAssetsLoaded;
+        public static event EventHandler<Asset> OnAssetLoaded;
+        public static event EventHandler OnFinalizeStart;
+        public static event EventHandler OnFinalizeEnd;
 
         public static bool AllAssetsLoaded { get; set; }
         public static int TotalAssetsToLoad { get; set; }
@@ -61,6 +65,11 @@ namespace AGame.Engine.Assets
             AllAssetsLoaded = false;
         }
 
+        private static bool FilterOnlyFilesWithAssetExtensions(string file)
+        {
+            return AssetLoaders.ContainsKey(Path.GetExtension(file));
+        }
+
         public static T GetAsset<T>(string resName) where T : Asset
         {
             return (T)Assets[resName];
@@ -80,8 +89,7 @@ namespace AGame.Engine.Assets
         public static void AddAsset(string assetName, Asset asset)
         {
             Assets.Add(assetName, asset);
-            GameConsole.WriteLine("ASSETS", $"Loaded asset {assetName} successfully!");
-            OnAssetLoaded?.Invoke(null, EventArgs.Empty);
+            OnAssetLoaded?.Invoke(null, asset);
         }
 
         private static string[] GetAllAssets()
@@ -89,10 +97,10 @@ namespace AGame.Engine.Assets
             List<string> coreAssets = GetCoreAssets().Select(x => Path.GetFileName(x)).ToList();
 
             // Get all files resources directory
-            string[] files = Directory.GetFiles(ResourceDirectory, "*.*", SearchOption.AllDirectories);
+            string[] files = Directory.GetFiles(AssetDirectory, "*.*", SearchOption.AllDirectories);
             // Remove all files that are in the scripts directory and remove the resource.types file.
             // files = files.Where(x => !x.Contains(ScriptManager.ScriptDirectory) && x != ResourceTypeFile && ResourceTypes.Keys.Contains(Path.GetExtension(x)) && !x.Contains("screen.ing")).ToArray();
-            files = files.Where(x => AssetLoaders.ContainsKey(Path.GetExtension(x)) && !coreAssets.Contains(Path.GetFileName(x))).ToArray();
+            files = files.Where(x => FilterOnlyFilesWithAssetExtensions(x) && !coreAssets.Contains(Path.GetFileName(x))).ToArray();
             return files;
         }
 
@@ -105,17 +113,8 @@ namespace AGame.Engine.Assets
 
         private static string[] GetCoreAssets()
         {
-            using (StreamReader sr = new StreamReader(ResourceDirectory + "/core_assets.json"))
-            {
-                string[] assets = JsonConvert.DeserializeObject<string[]>(sr.ReadToEnd());
-
-                for (int i = 0; i < assets.Length; i++)
-                {
-                    assets[i] = ResourceDirectory + "/" + assets[i];
-                }
-
-                return assets;
-            }
+            string[] files = Directory.GetFiles(CoreDirectory, "*.*", SearchOption.AllDirectories).Where(FilterOnlyFilesWithAssetExtensions).ToArray();
+            return files;
         }
 
         private static void LoadAllCoreAssets()
@@ -136,6 +135,8 @@ namespace AGame.Engine.Assets
 
                 AssetsLoaded++;
             }
+
+            OnAllCoreAssetsLoaded?.Invoke(null, EventArgs.Empty);
         }
 
         /// <summary>
@@ -185,10 +186,14 @@ namespace AGame.Engine.Assets
 
         public static void FinalizeAssets()
         {
+            OnFinalizeStart?.Invoke(null, EventArgs.Empty);
+
             foreach (KeyValuePair<string, Asset> kvp in Assets.Where(x => !x.Value.IsCore))
             {
                 kvp.Value.InitOpenGL();
             }
+
+            OnFinalizeEnd?.Invoke(null, EventArgs.Empty);
         }
     }
 }
