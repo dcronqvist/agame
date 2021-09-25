@@ -4,6 +4,8 @@ using System.IO;
 using System.Numerics;
 using System.Diagnostics;
 using AGame.Engine.Graphics.Cameras;
+using System.Threading;
+using AGame.Engine.DebugTools;
 
 namespace AGame.Engine.Assets
 {
@@ -38,7 +40,7 @@ namespace AGame.Engine.Assets
                 string error = glGetShaderInfoLog(vs, 1024);
                 // TODO: This shouldn't be debug.writeline
 
-                Debug.WriteLine("ERROR COMPILING VERTEX SHADER: " + error);
+                GameConsole.WriteLine("ERROR", "ERROR COMPILING VERTEX SHADER: " + error);
                 return;
             }
 
@@ -52,7 +54,7 @@ namespace AGame.Engine.Assets
             {
                 // Compile failed
                 string error = glGetShaderInfoLog(fs, 1024);
-                Debug.WriteLine("ERROR COMPILING FRAGMENT SHADER: " + error);
+                GameConsole.WriteLine("Error", "ERROR COMPILING FRAGMENT SHADER: " + error);
                 return;
             }
 
@@ -117,6 +119,12 @@ namespace AGame.Engine.Assets
                 m.M31, m.M32, m.M33, m.M34,
                 m.M41, m.M42, m.M43, m.M44
             };
+        }
+
+        public override bool InitOpenGL()
+        {
+            Load();
+            return true;
         }
     }
 }

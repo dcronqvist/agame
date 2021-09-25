@@ -3,6 +3,8 @@ using StbImageSharp;
 using System.IO;
 using AGame.Engine.Assets;
 using System.Numerics;
+using System.Threading;
+using System;
 
 namespace AGame.Engine.Assets
 {
@@ -15,17 +17,12 @@ namespace AGame.Engine.Assets
 
         private byte[] pixelData;
 
-        public Texture2D(uint framebuffer, int width, int height)
+        public Texture2D(int width, int height, byte[] pixelData)
         {
-            this.ID = framebuffer;
             this.Width = width;
             this.Height = height;
-        }
-
-        public Texture2D(string file)
-        {
-            if (TryLoadFromFile(file))
-                ID = InitGL(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST);
+            this.Middle = new Vector2(width / 2f, height / 2f);
+            this.pixelData = pixelData;
         }
 
         public unsafe uint InitGL(int wrapS, int wrapT, int minFilter, int magFilter)
@@ -61,7 +58,7 @@ namespace AGame.Engine.Assets
             glBindTexture(GL_TEXTURE_2D, ID);
         }
 
-        public bool TryLoadFromFile(string file)
+        public static bool TryLoadFromFile(string file, out Texture2D tex)
         {
             try
             {
@@ -72,11 +69,7 @@ namespace AGame.Engine.Assets
                     imageResult = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
                 }
 
-                // Setting a couple of properties
-                this.Width = imageResult.Width;
-                this.Height = imageResult.Height;
-                this.pixelData = imageResult.Data;
-                this.Middle = new Vector2(imageResult.Width / 2.0f, imageResult.Height / 2.0f);
+                tex = new Texture2D(imageResult.Width, imageResult.Height, imageResult.Data);
                 return true;
             }
             catch
@@ -84,8 +77,16 @@ namespace AGame.Engine.Assets
 
             }
 
+            tex = null;
+
             //Failsafe
             return false;
+        }
+
+        public override bool InitOpenGL()
+        {
+            this.ID = InitGL(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST);
+            return true;
         }
     }
 }

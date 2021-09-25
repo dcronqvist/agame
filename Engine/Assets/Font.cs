@@ -7,6 +7,7 @@ using static FreeTypeSharp.Native.FT;
 using System;
 using System.Diagnostics;
 using AGame.Engine.Assets;
+using System.Threading;
 
 namespace AGame.Engine.Assets
 {
@@ -65,8 +66,6 @@ namespace AGame.Engine.Assets
 
             this.MagFilter = magFilter;
             this.MinFilter = minFilter;
-
-            Load();
         }
 
         private void Load()
@@ -155,6 +154,12 @@ namespace AGame.Engine.Assets
             }
 
             return new Vector2(sizeX, this.MaxY * scale);
+        }
+
+        public override bool InitOpenGL()
+        {
+            Load();
+            return true;
         }
     }
 }

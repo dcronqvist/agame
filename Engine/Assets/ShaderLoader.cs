@@ -38,8 +38,6 @@ namespace AGame.Engine.Assets
 
                 Shader s = new Shader(File.ReadAllText(vsFile), File.ReadAllText(fsFile));
 
-                s.Load();
-
                 return s;
             }
         }

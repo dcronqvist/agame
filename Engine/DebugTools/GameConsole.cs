@@ -95,7 +95,9 @@ namespace AGame.Engine.DebugTools
 
             ICommand ic = AvailableCommands[commandHandle];
             CommandResult cr = ic.Execute(splitLine.Skip(1).ToArray());
-            ConsoleLines.Add(cr);
+
+            if (cr != null)
+                ConsoleLines.Add(cr);
         }
 
         public static void Update()

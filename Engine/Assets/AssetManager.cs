@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using AGame.Engine.DebugTools;
+using Newtonsoft.Json;
 
 namespace AGame.Engine.Assets
 {
@@ -21,6 +23,24 @@ namespace AGame.Engine.Assets
         public static string BaseDirectory { get; set; }
         public static string ResourceDirectory { get => BaseDirectory + @"/res"; }
 
+        public static event EventHandler OnAllAssetsLoaded;
+        public static event EventHandler OnAssetLoaded;
+
+        public static bool AllAssetsLoaded { get; set; }
+        public static int TotalAssetsToLoad { get; set; }
+        public static int AssetsLoaded { get; set; }
+        public static float LoadedPercentage
+        {
+            get
+            {
+                if (TotalAssetsToLoad == 0)
+                {
+                    return 0f;
+                }
+                return AssetsLoaded / TotalAssetsToLoad;
+            }
+        }
+
         //-------------------------------------------------------------------------//
 
         /// <summary>
@@ -34,8 +54,11 @@ namespace AGame.Engine.Assets
             AssetLoaders = new Dictionary<string, IAssetLoader>() {
                 { ".ttf", new FontLoader() },
                 { ".shader", new ShaderLoader() },
-                { ".png", new TextureLoader() }
+                { ".png", new TextureLoader() },
+                { ".cs", new ScriptLoader() }
             };
+
+            AllAssetsLoaded = false;
         }
 
         public static T GetAsset<T>(string resName) where T : Asset
@@ -58,15 +81,18 @@ namespace AGame.Engine.Assets
         {
             Assets.Add(assetName, asset);
             GameConsole.WriteLine("ASSETS", $"Loaded asset {assetName} successfully!");
+            OnAssetLoaded?.Invoke(null, EventArgs.Empty);
         }
 
         private static string[] GetAllAssets()
         {
+            List<string> coreAssets = GetCoreAssets().Select(x => Path.GetFileName(x)).ToList();
+
             // Get all files resources directory
             string[] files = Directory.GetFiles(ResourceDirectory, "*.*", SearchOption.AllDirectories);
             // Remove all files that are in the scripts directory and remove the resource.types file.
             // files = files.Where(x => !x.Contains(ScriptManager.ScriptDirectory) && x != ResourceTypeFile && ResourceTypes.Keys.Contains(Path.GetExtension(x)) && !x.Contains("screen.ing")).ToArray();
-            files = files.Where(x => AssetLoaders.ContainsKey(Path.GetExtension(x)) && Path.GetExtension(x) != ".cs").ToArray();
+            files = files.Where(x => AssetLoaders.ContainsKey(Path.GetExtension(x)) && !coreAssets.Contains(Path.GetFileName(x))).ToArray();
             return files;
         }
 
@@ -77,12 +103,50 @@ namespace AGame.Engine.Assets
             return assetLoader.LoadAsset(file);
         }
 
+        private static string[] GetCoreAssets()
+        {
+            using (StreamReader sr = new StreamReader(ResourceDirectory + "/core_assets.json"))
+            {
+                string[] assets = JsonConvert.DeserializeObject<string[]>(sr.ReadToEnd());
+
+                for (int i = 0; i < assets.Length; i++)
+                {
+                    assets[i] = ResourceDirectory + "/" + assets[i];
+                }
+
+                return assets;
+            }
+        }
+
+        private static void LoadAllCoreAssets()
+        {
+            string[] coreAssets = GetCoreAssets();
+            TotalAssetsToLoad = coreAssets.Length;
+
+            foreach (string file in coreAssets)
+            {
+                // Load each resource file
+                string assetName = Path.GetFileNameWithoutExtension(file);
+                Asset asset = LoadAsset(file, out IAssetLoader assetLoader);
+                asset.Name = assetLoader.AssetPrefix() + "_" + assetName;
+                asset.IsCore = true;
+                asset.InitOpenGL();
+
+                AddAsset(asset.Name, asset);
+
+                AssetsLoaded++;
+            }
+        }
+
         /// <summary>
         /// Loads all resource in the resources directory of the game.
         /// </summary>
-        public static void LoadAllAssets()
+        public static void LoadAllAssets(bool skipCore, bool finalize)
         {
-            //StbImageSharp.StbImage.stbi_set_flip_vertically_on_load(1);
+            if (!skipCore)
+            {
+                LoadAllCoreAssets();
+            }
 
             string[] assetFiles = GetAllAssets();
 
@@ -92,8 +156,38 @@ namespace AGame.Engine.Assets
                 string assetName = Path.GetFileNameWithoutExtension(file);
                 Asset asset = LoadAsset(file, out IAssetLoader assetLoader);
                 asset.Name = assetLoader.AssetPrefix() + "_" + assetName;
+                asset.IsCore = false;
 
                 AddAsset(asset.Name, asset);
+
+                AssetsLoaded++;
+            }
+
+            OnAllAssetsLoaded?.Invoke(null, EventArgs.Empty);
+            AllAssetsLoaded = true;
+
+            if (finalize)
+            {
+                FinalizeAssets();
+            }
+        }
+
+        public static void LoadAllAssetsAsync()
+        {
+            LoadAllCoreAssets();
+
+            string[] assetFiles = GetAllAssets();
+            TotalAssetsToLoad += assetFiles.Length;
+            Thread thread = new Thread(() => LoadAllAssets(true, false));
+
+            thread.Start();
+        }
+
+        public static void FinalizeAssets()
+        {
+            foreach (KeyValuePair<string, Asset> kvp in Assets.Where(x => !x.Value.IsCore))
+            {
+                kvp.Value.InitOpenGL();
             }
         }
     }

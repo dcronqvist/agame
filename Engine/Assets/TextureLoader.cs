@@ -13,7 +13,8 @@ namespace AGame.Engine.Assets
 
         public Asset LoadAsset(string filePath)
         {
-            return new Texture2D(filePath);
+            Texture2D.TryLoadFromFile(filePath, out Texture2D tex);
+            return tex;
         }
     }
 }

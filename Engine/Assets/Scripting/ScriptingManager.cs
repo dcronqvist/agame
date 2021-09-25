@@ -88,27 +88,13 @@ namespace AGame.Engine.Assets.Scripting
         {
             string[] coreScripts = Directory.GetFiles(ScriptDirectory, "*.cs", SearchOption.AllDirectories);
 
-            foreach (string script in coreScripts)
+            Script[] scripts = AssetManager.GetAssetsOfType<Script>();
+
+            foreach (Script script in scripts)
             {
-                string fileName = Path.GetFileNameWithoutExtension(script);
-
-                Exception ex;
-                Script sc;
-
-                if (LoadScript(script, out sc, out ex))
-                {
-                    // All went well, just add the script to the dictionary of scripts.
-                    AddScript(fileName, sc); // Add script to Scripts dictionary
-                    PointTypesToScript(sc.GetTypes(), fileName); // Point all types in this script to this script
-                    GameConsole.WriteLine("SCRIPTS", $"Loaded script {fileName} successfully!");
-                }
-                else
-                {
-                    // Something went wrong, tell user.
-                    // TODO: Add some kind of debug log so you can see what goes wrong.
-                    GameConsole.WriteLine("SCRIPTS", $"Error when loading script {fileName}: {ex.Message}");
-                    throw ex;
-                }
+                // All went well, just add the script to the dictionary of scripts.
+                AddScript(script.Name, script); // Add script to Scripts dictionary
+                PointTypesToScript(script.GetTypes(), script.Name); // Point all types in this script to this script
             }
         }
 

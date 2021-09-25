@@ -11,8 +11,6 @@ namespace MyMod
     {
         public CommandResult Execute(string[] args)
         {
-            Console.WriteLine("Did nothing");
-            Console.WriteLine(args);
             return CommandResult.CreateOk("I have done nothing");
         }
 
@@ -44,7 +42,6 @@ namespace MyMod
     {
         public CommandResult Execute(string[] args)
         {
-            Console.WriteLine("I am a new command.");
             return CommandResult.CreateOk($"Default command.");
         }
         public string GetHandle()
@@ -153,6 +150,19 @@ namespace MyMod
         public string GetHandle()
         {
             return "checkfps";
+        }
+    }
+
+    class ClearConsoleCommand : ICommand
+    {
+        public CommandResult Execute(string[] args)
+        {
+            GameConsole.ConsoleLines.Clear();
+            return null;
+        }
+        public string GetHandle()
+        {
+            return "clear";
         }
     }
 }

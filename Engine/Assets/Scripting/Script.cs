@@ -3,10 +3,9 @@ using System.Reflection;
 
 namespace AGame.Engine.Assets.Scripting
 {
-    class Script
+    class Script : Asset
     {
         public Assembly Assembly { get; set; }
-        public string Name { get; set; }
 
         public Script(Assembly ass, string name)
         {
@@ -46,6 +45,12 @@ namespace AGame.Engine.Assets.Scripting
         public object CreateInstance(string type)
         {
             return Assembly.CreateInstance(type);
+        }
+
+        public override bool InitOpenGL()
+        {
+            // Scripts have nothing to do with OpenGL, so no need to do anything.
+            return true;
         }
     }
 }
