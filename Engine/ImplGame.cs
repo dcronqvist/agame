@@ -48,12 +48,12 @@ namespace AGame.Engine
 
             AssetManager.OnFinalizeStart += (sender, e) =>
             {
-                GameConsole.WriteLine("ASSETS", $"Finalizing assets...");
+                GameConsole.WriteLine("ASSETS", $"<0xFFFF00>Finalizing assets...</>");
             };
 
             AssetManager.OnFinalizeEnd += (sender, e) =>
             {
-                GameConsole.WriteLine("ASSETS", $"Finalizing complete!");
+                GameConsole.WriteLine("ASSETS", $"<0x00FF00>Finalizing complete!</>");
 
                 ScriptingManager.LoadScripts();
                 GameConsole.LoadCommands();

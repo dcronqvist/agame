@@ -1,3 +1,5 @@
+using System;
+
 namespace AGame.Engine.Graphics
 {
     public struct ColorF
@@ -42,6 +44,12 @@ namespace AGame.Engine.Graphics
         public static ColorF operator *(ColorF left, float right)
         {
             return new ColorF(left.R, left.G, left.B, left.A * right);
+        }
+
+        public static ColorF FromString(string s)
+        {
+            int i = Convert.ToInt32(s, 16);
+            return new ColorF(i);
         }
 
         public static ColorF White { get { return new ColorF(1f, 1f, 1f, 1f); } }

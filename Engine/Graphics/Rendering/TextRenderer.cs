@@ -2,6 +2,7 @@ using static AGame.Engine.OpenGL.GL;
 using System.Numerics;
 using AGame.Engine.Graphics.Cameras;
 using AGame.Engine.Assets;
+using System.Collections.Generic;
 
 namespace AGame.Engine.Graphics.Rendering
 {
@@ -52,47 +53,68 @@ namespace AGame.Engine.Graphics.Rendering
             shader.SetMatrix4x4("model", mscale * transPos);
 
             this.shader.SetInt("text", 0);
-            this.shader.SetVec4("textColor", color.R, color.G, color.B, color.A);
             glActiveTexture(GL_TEXTURE0);
             glBindVertexArray(fontVAO);
 
             float x = position.X;
             float y = position.Y;
 
-            foreach (char c in text)
+            FormattedText ft = new FormattedText(text);
+            FormattedText.FTToken[] tokens = ft.PerformFormatting();
+            Stack<ColorF> colorStack = new Stack<ColorF>();
+            colorStack.Push(color);
+
+            foreach (FormattedText.FTToken token in tokens)
             {
-                FontCharacter ch = f.Characters[c];
-
-                float xPos = x + ch.Bearing.X * scale;
-                float yPos = y + (f.MaxY - ch.Bearing.Y) * scale;
-
-                float w = ch.Size.X * scale;
-                float h = ch.Size.Y * scale;
-
-                float[] vertices = new float[]
+                if (token.type == FormattedText.FTTokenType.Text)
                 {
-                xPos + w, yPos, 1, 0,
-                xPos, yPos, 0, 0,
-                xPos, yPos + h, 0, 1,
+                    ColorF col = colorStack.Peek();
+                    this.shader.SetVec4("textColor", col.R, col.G, col.B, col.A);
+                    foreach (char c in token.value)
+                    {
+                        FontCharacter ch = f.Characters[c];
+
+                        float xPos = x + ch.Bearing.X * scale;
+                        float yPos = y + (f.MaxY - ch.Bearing.Y) * scale;
+
+                        float w = ch.Size.X * scale;
+                        float h = ch.Size.Y * scale;
+
+                        float[] vertices = new float[]
+                        {
+                        xPos + w, yPos, 1, 0,
+                        xPos, yPos, 0, 0,
+                        xPos, yPos + h, 0, 1,
 
 
-                xPos + w, yPos + h, 1, 1,
-                xPos + w, yPos, 1, 0,
-                xPos, yPos + h, 0, 1,
-                };
+                        xPos + w, yPos + h, 1, 1,
+                        xPos + w, yPos, 1, 0,
+                        xPos, yPos + h, 0, 1,
+                        };
 
-                glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+                        glBindTexture(GL_TEXTURE_2D, ch.TextureID);
 
-                glBindBuffer(GL_ARRAY_BUFFER, fontVBO);
+                        glBindBuffer(GL_ARRAY_BUFFER, fontVBO);
 
-                fixed (float* vert = &vertices[0])
+                        fixed (float* vert = &vertices[0])
+                        {
+                            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * vertices.Length, vert);
+                        }
+
+                        glBindBuffer(GL_ARRAY_BUFFER, 0);
+                        glDrawArrays(GL_TRIANGLES, 0, 6);
+                        x += ch.Advance * scale;
+                    }
+                }
+                else if (token.type == FormattedText.FTTokenType.OpeningTag)
                 {
-                    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * vertices.Length, vert);
+                    colorStack.Push(ColorF.FromString(token.value));
+                }
+                else if (token.type == FormattedText.FTTokenType.ClosingTag)
+                {
+                    colorStack.Pop();
                 }
 
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
-                glDrawArrays(GL_TRIANGLES, 0, 6);
-                x += ch.Advance * scale;
             }
 
             glBindVertexArray(0);
