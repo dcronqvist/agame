@@ -18,6 +18,7 @@ namespace AGame.Engine
     class ImplGame : Game
     {
         bool inConsole;
+        string currentLoadingAsset = "";
 
         public override void Initialize()
         {
@@ -67,6 +68,11 @@ namespace AGame.Engine
                 GameConsole.WriteLine("ASSETS", "All core assets loaded!");
                 DisplayManager.SetWindowIcon(AssetManager.GetAsset<Texture2D>("tex_pine_tree"));
                 Renderer.Init();
+            };
+
+            AssetManager.OnAssetStartLoad += (sender, assetName) =>
+            {
+                currentLoadingAsset = assetName;
             };
 
             AssetManager.LoadAllAssetsAsync();
@@ -122,7 +128,8 @@ namespace AGame.Engine
                 Vector2 loadBarPos = (middleOfScreen - coreFont.MeasureString(loadBar, 1.0f) / 2.0f).Round();
                 Renderer.Text.RenderText(coreFont, loadBar, loadBarPos, 1.0f, ColorF.White, Renderer.Camera);
 
-                Renderer.Text.RenderText(coreFont, $"Loaded {AssetManager.AssetsLoaded} / {AssetManager.TotalAssetsToLoad}", new Vector2(100, 100), 1.0f, ColorF.White, Renderer.Camera);
+                Vector2 assetNamePos = (middleOfScreen + new Vector2(0, 50) - coreFont.MeasureString(currentLoadingAsset, 1.0f) / 2.0f).Round();
+                Renderer.Text.RenderText(coreFont, currentLoadingAsset, assetNamePos, 1.0f, ColorF.White, Renderer.Camera);
             }
             else
             {
