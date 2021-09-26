@@ -13,7 +13,7 @@ using AGame.Engine.DebugTools;
 using AGame.Engine.Screening;
 using System.Threading;
 
-namespace AGame.Engine
+namespace AGame.MyGame
 {
     class ImplGame : Game
     {

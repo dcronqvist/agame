@@ -9,7 +9,7 @@ namespace AGame.Engine.Screening
             this.Name = name;
         }
 
-        public abstract void Initialize();
+        public abstract Screen Initialize();
         public abstract void Update();
         public abstract void Render();
 

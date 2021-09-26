@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using AGame.MyGame;
 
 namespace AGame.Engine.Screening
 {
@@ -30,12 +31,8 @@ namespace AGame.Engine.Screening
 
         public static void Init()
         {
-            // Add screens and set starter screen
-            Screen testScreen = new TestScreen();
-            testScreen.Initialize();
-            AddScreen("testscreen", testScreen);
-
-            //GoToScreen("testscreen");
+            // Add screens
+            AddScreen("testscreen", new TestScreen().Initialize());
         }
 
         public static void GoToScreen(string name)
