@@ -108,6 +108,20 @@ namespace AGame.Engine
             {
                 Renderer.Clear(ColorF.Black);
                 Font coreFont = AssetManager.GetAsset<Font>("font_rainyhearts");
+
+                Vector2 middleOfScreen = DisplayManager.GetWindowSizeInPixels() / 2.0f;
+
+                string topText = "Loading assets...";
+                Vector2 topTextPos = (middleOfScreen + new Vector2(0, -50) - coreFont.MeasureString(topText, 1.0f) / 2.0f).Round();
+                Renderer.Text.RenderText(coreFont, topText, topTextPos, 1.0f, ColorF.White, Renderer.Camera);
+
+                int loadbarLength = 80;
+                int hashtagAmount = (int)(AssetManager.LoadedPercentage * loadbarLength);
+                string hashtags = "#".Repeat(hashtagAmount);
+                string loadBar = hashtags + "_".Repeat(loadbarLength - hashtagAmount);
+                Vector2 loadBarPos = (middleOfScreen - coreFont.MeasureString(loadBar, 1.0f) / 2.0f).Round();
+                Renderer.Text.RenderText(coreFont, loadBar, loadBarPos, 1.0f, ColorF.White, Renderer.Camera);
+
                 Renderer.Text.RenderText(coreFont, $"Loaded {AssetManager.AssetsLoaded} / {AssetManager.TotalAssetsToLoad}", new Vector2(100, 100), 1.0f, ColorF.White, Renderer.Camera);
             }
             else

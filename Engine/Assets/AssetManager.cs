@@ -26,6 +26,7 @@ namespace AGame.Engine.Assets
 
         public static event EventHandler OnAllAssetsLoaded;
         public static event EventHandler OnAllCoreAssetsLoaded;
+        public static event EventHandler<string> OnAssetStartLoad;
         public static event EventHandler<Asset> OnAssetLoaded;
         public static event EventHandler OnFinalizeStart;
         public static event EventHandler OnFinalizeEnd;
@@ -41,7 +42,7 @@ namespace AGame.Engine.Assets
                 {
                     return 0f;
                 }
-                return AssetsLoaded / TotalAssetsToLoad;
+                return (float)AssetsLoaded / (float)TotalAssetsToLoad;
             }
         }
 
@@ -155,6 +156,7 @@ namespace AGame.Engine.Assets
             {
                 // Load each resource file
                 string assetName = Path.GetFileNameWithoutExtension(file);
+                OnAssetStartLoad?.Invoke(null, assetName);
                 Asset asset = LoadAsset(file, out IAssetLoader assetLoader);
                 asset.Name = assetLoader.AssetPrefix() + "_" + assetName;
                 asset.IsCore = false;

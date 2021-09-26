@@ -42,7 +42,72 @@ namespace AGame.Engine.Graphics.Rendering
             glBindVertexArray(0);
         }
 
-        public unsafe void RenderText(Font f, string text, Vector2 position, float scale, ColorF color, Camera2D cam)
+        public unsafe void RenderText(Font f, string s, Vector2 position, float scale, ColorF color, Camera2D cam, bool doFormatting = false)
+        {
+            if (doFormatting)
+            {
+                RenderText(f, new FormattedText(s), position, scale, color, cam);
+                return;
+            }
+
+            this.shader.Use();
+            this.shader.SetMatrix4x4("projection", cam.GetProjectionMatrix());
+
+            Matrix4x4 transPos = Matrix4x4.CreateTranslation(new Vector3(position, 0.0f));
+            Matrix4x4 mscale = Matrix4x4.CreateScale(scale);
+
+            shader.SetMatrix4x4("model", mscale * transPos);
+
+            this.shader.SetInt("text", 0);
+            this.shader.SetVec4("textColor", color.R, color.G, color.B, color.A);
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindVertexArray(fontVAO);
+
+            float x = position.X;
+            float y = position.Y;
+
+            foreach (char c in s)
+            {
+                FontCharacter ch = f.Characters[c];
+
+                float xPos = x + ch.Bearing.X * scale;
+                float yPos = y + (f.MaxY - ch.Bearing.Y) * scale;
+
+                float w = ch.Size.X * scale;
+                float h = ch.Size.Y * scale;
+
+                float[] vertices = new float[]
+                {
+                xPos + w, yPos, 1, 0,
+                xPos, yPos, 0, 0,
+                xPos, yPos + h, 0, 1,
+
+
+                xPos + w, yPos + h, 1, 1,
+                xPos + w, yPos, 1, 0,
+                xPos, yPos + h, 0, 1,
+                };
+
+                glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+
+                glBindBuffer(GL_ARRAY_BUFFER, fontVBO);
+
+                fixed (float* vert = &vertices[0])
+                {
+                    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * vertices.Length, vert);
+                }
+
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+                x += ch.Advance * scale;
+            }
+
+            glBindVertexArray(0);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+
+        public unsafe void RenderText(Font f, FormattedText ft, Vector2 position, float scale, ColorF color, Camera2D cam)
         {
             this.shader.Use();
             this.shader.SetMatrix4x4("projection", cam.GetProjectionMatrix());
@@ -59,7 +124,6 @@ namespace AGame.Engine.Graphics.Rendering
             float x = position.X;
             float y = position.Y;
 
-            FormattedText ft = new FormattedText(text);
             FormattedText.FTToken[] tokens = ft.PerformFormatting();
             Stack<ColorF> colorStack = new Stack<ColorF>();
             colorStack.Push(color);

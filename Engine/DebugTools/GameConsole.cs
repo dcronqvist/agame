@@ -136,7 +136,7 @@ namespace AGame.Engine.DebugTools
             for (int i = 0; i < ConsoleLines.Count; i++)
             {
                 Vector2 offset = new Vector2(0, -(i + 1) * rowHeight - dist);
-                Renderer.Text.RenderText(font, GameConsole.ConsoleLines[ConsoleLines.Count - i - 1].ToString(), basePosition + offset, 1f, ColorF.White, Renderer.Camera);
+                Renderer.Text.RenderText(font, GameConsole.ConsoleLines[ConsoleLines.Count - i - 1].ToString(), basePosition + offset, 1f, ColorF.White, Renderer.Camera, true);
             }
             Renderer.Text.RenderText(font, $"> {currentLine.ToString()}{caret}", basePosition, 1f, ColorF.White, Renderer.Camera);
 
