@@ -1,6 +1,5 @@
 ﻿using System;
 using AGame.Engine;
-using AGame.MyGame;
 
 namespace AGame
 {
