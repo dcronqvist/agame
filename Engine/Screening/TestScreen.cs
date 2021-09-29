@@ -91,8 +91,8 @@ namespace AGame.Engine.Screening
 
         public override void Render()
         {
-            Renderer.SetRenderTarget(null, null);
-            Renderer.Clear(ColorF.Orange);
+            Renderer.SetRenderTarget(null, camera2D);
+            Renderer.Clear(ColorF.Black);
             RenderTexture crt = crater.Render(this.camera2D);
 
             Renderer.RenderRenderTexture(crt);

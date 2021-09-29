@@ -11,6 +11,7 @@ namespace AGame.Engine.Graphics.Rendering
         private Shader shader;
         private uint quadVAO;
         private uint VBO;
+        private uint modelInstanceVBO;
         public RectangleF currentSourceRectangle;
 
         public TextureRenderer(Shader shader)
@@ -33,27 +34,45 @@ namespace AGame.Engine.Graphics.Rendering
 
         public unsafe void Render(Texture2D texture, Vector2 position, Vector2 scale, float rotation, ColorF color, Vector2 origin, RectangleF sourceRectangle)
         {
+            RenderInstanced(texture, new Vector2[] { position }, scale, rotation, color, origin, sourceRectangle);
+        }
+
+        public unsafe void RenderInstanced(Texture2D texture, Vector2[] positions, Vector2 scale, float rotation, ColorF color, Vector2 origin, RectangleF sourceRectangle)
+        {
+            float[] matrixValues = new float[positions.Length * 16];
+
+            for (int i = 0; i < positions.Length; i++)
+            {
+                Matrix4x4 transPos = Matrix4x4.CreateTranslation(new Vector3(positions[i], 0.0f));
+                Matrix4x4 transMid = Matrix4x4.CreateTranslation(new Vector3(origin.X * scale.X, origin.Y * scale.Y, 0.0f));
+                Matrix4x4 rot = Matrix4x4.CreateRotationZ(rotation);
+                Matrix4x4 transOrigin = Matrix4x4.CreateTranslation(new Vector3(-origin.X * scale.X, -origin.Y * scale.Y, 0.0f));
+                Matrix4x4 mscale = Matrix4x4.CreateScale(new Vector3(new Vector2(sourceRectangle.Width, sourceRectangle.Height) * scale, 1.0f));
+
+                float[] m = Utilities.GetMatrix4x4Values(mscale * transOrigin * rot * transMid * transPos);
+                for (int j = 0; j < 16; j++)
+                {
+                    matrixValues[i * 16 + j] = m[j];
+                }
+            }
+
+            RenderInstanced(texture, matrixValues, color, sourceRectangle);
+        }
+
+        public unsafe void RenderInstanced(Texture2D texture, float[] instancedModelMatrices, ColorF color, RectangleF sourceRectangle)
+        {
             shader.Use();
             shader.SetMatrix4x4("projection", Renderer.Camera.GetProjectionMatrix());
 
-            Matrix4x4 transPos = Matrix4x4.CreateTranslation(new Vector3(position, 0.0f));
-            Matrix4x4 transMid = Matrix4x4.CreateTranslation(new Vector3(origin.X * scale.X, origin.Y * scale.Y, 0.0f));
-            Matrix4x4 rot = Matrix4x4.CreateRotationZ(rotation);
-            Matrix4x4 transOrigin = Matrix4x4.CreateTranslation(new Vector3(-origin.X * scale.X, -origin.Y * scale.Y, 0.0f));
-
-            Matrix4x4 mscale = Matrix4x4.CreateScale(new Vector3(new Vector2(sourceRectangle.Width, sourceRectangle.Height) * scale, 1.0f));
-
-            shader.SetMatrix4x4("model", mscale * transOrigin * rot * transMid * transPos);
             shader.SetVec4("textureColor", color.R, color.G, color.B, color.A);
             shader.SetInt("image", 0);
 
             glActiveTexture(GL_TEXTURE0);
             GLSM.BindTexture(GL_TEXTURE_2D, texture.ID);
 
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
             if (sourceRectangle != currentSourceRectangle)
             {
+                glBindBuffer(GL_ARRAY_BUFFER, VBO);
                 // Assign new texture coordinates based on the src rectangle.
                 float[][] newTex = new float[][]
                 {
@@ -83,11 +102,18 @@ namespace AGame.Engine.Graphics.Rendering
                 currentSourceRectangle = sourceRectangle;
             }
 
+            glBindBuffer(GL_ARRAY_BUFFER, modelInstanceVBO);
+            fixed (float* m = &instancedModelMatrices[0])
+            {
+                glBufferData(GL_ARRAY_BUFFER, sizeof(float) * instancedModelMatrices.Length, m, GL_DYNAMIC_DRAW);
+            }
+
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             glBindVertexArray(quadVAO);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+            glDrawArraysInstanced(GL_TRIANGLES, 0, 6, instancedModelMatrices.Length / 16);
             glBindVertexArray(0);
         }
+
 
 
         private unsafe void InitRenderData()
@@ -118,6 +144,29 @@ namespace AGame.Engine.Graphics.Rendering
 
             glEnableVertexAttribArray(0);
             glVertexAttribPointer(0, 4, GL_FLOAT, false, 4 * sizeof(float), (void*)0);
+
+            modelInstanceVBO = glGenBuffer();
+            glBindBuffer(GL_ARRAY_BUFFER, modelInstanceVBO);
+
+            float[] m = Utilities.GetMatrix4x4Values(Matrix4x4.Identity);
+
+            fixed (float* mat = &m[0])
+            {
+                glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 16, mat, GL_STATIC_DRAW);
+            }
+
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 4, GL_FLOAT, false, 16 * sizeof(float), (void*)0);
+            glVertexAttribDivisor(1, 1);
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(2, 4, GL_FLOAT, false, 16 * sizeof(float), (void*)(1 * 4 * sizeof(float)));
+            glVertexAttribDivisor(2, 1);
+            glEnableVertexAttribArray(3);
+            glVertexAttribPointer(3, 4, GL_FLOAT, false, 16 * sizeof(float), (void*)(2 * 4 * sizeof(float)));
+            glVertexAttribDivisor(3, 1);
+            glEnableVertexAttribArray(4);
+            glVertexAttribPointer(4, 4, GL_FLOAT, false, 16 * sizeof(float), (void*)(3 * 4 * sizeof(float)));
+            glVertexAttribDivisor(4, 1);
 
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             glBindVertexArray(0);

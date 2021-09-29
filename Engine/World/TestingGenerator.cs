@@ -24,8 +24,8 @@ namespace AGame.Engine.World
                     tiles[x, y] = 2;
                 }
             }
-            grids.Add(new TileGrid(tiles));
-            tiles = new int[size, size];
+            //grids.Add(new TileGrid(tiles));
+            //tiles = new int[size, size];
 
             for (int y = 0; y < size; y++)
             {
