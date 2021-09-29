@@ -10,10 +10,10 @@ namespace AGame.Engine.World
         public TileGrid[] Grids { get; set; }
         private RenderTexture groundRT;
 
-        public Crater(ICraterGenerator generator)
+        public Crater(int seed, ICraterGenerator generator)
         {
             // Initially only one 
-            this.Grids = generator.GenerateGrids();
+            this.Grids = generator.GenerateGrids(seed);
 
             groundRT = new RenderTexture(DisplayManager.GetWindowSizeInPixels());
         }

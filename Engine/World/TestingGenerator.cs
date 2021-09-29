@@ -1,29 +1,35 @@
 using System;
 using System.Collections.Generic;
 using AGame.World;
+using SimplexNoise;
 
 namespace AGame.Engine.World
 {
     class TestingGenerator : ICraterGenerator
     {
-        public TileGrid[] GenerateGrids()
+        public TileGrid[] GenerateGrids(int seed)
         {
+            Noise.Seed = seed;
+
             List<TileGrid> grids = new List<TileGrid>();
 
-            int size = 30;
+            int size = 300;
             int radius = size / 2;
 
-            Tile[,] tiles = new Tile[size, size];
+            int[,] tiles = new int[size, size];
 
-            for (int y = 0; y < 30; y++)
+            for (int y = 0; y < size; y++)
             {
-                for (int x = 0; x < 30; x++)
+                for (int x = 0; x < size; x++)
                 {
-                    int _x = x - radius;
-                    int _y = y - radius;
+                    float scale = 1f / 30f;
+                    float multiplier = 5f;
+                    float threshhold = 0.9f;
+                    float first = (Noise.CalcPixel2D(x, y, scale) + 1.0f) * multiplier;
 
-                    if (Math.Sqrt(_x * _x + _y * _y) <= radius)
-                        tiles[x, y] = new Tile("tex_marsdirt", false);
+                    float circularFallof = Utilities.GetLinearCircularFalloff(size, x, y);
+                    if (first * circularFallof >= threshhold)
+                        tiles[x, y] = 1;
                 }
             }
 

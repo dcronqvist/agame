@@ -11,13 +11,13 @@ namespace AGame.World
 {
     class TileGrid
     {
-        public Tile[,] Grid { get; set; }
+        public int[,] GridOfIDs { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
 
-        public TileGrid(Tile[,] grid)
+        public TileGrid(int[,] grid)
         {
-            this.Grid = grid;
+            this.GridOfIDs = grid;
             this.Width = grid.GetLength(0);
             this.Height = grid.GetLength(1);
         }
@@ -39,9 +39,10 @@ namespace AGame.World
                 for (int x = Math.Max(minX, 0); x < Math.Min(this.Width, maxX + 1); x++)
                 {
                     // Render each tile
-                    if (Grid[x, y] != null)
+                    if (GridOfIDs[x, y] != 0)
                     {
-                        Texture2D tileTex = Grid[x, y].Texture;
+                        Tile t = TileManager.GetTileFromID(GridOfIDs[x, y]);
+                        Texture2D tileTex = t.Texture;
                         Vector2 tilePos = new Vector2(tileSize * x, tileSize * y);
                         Renderer.Texture.Render(tileTex, tilePos, new Vector2(tileSize / (float)tileTex.Width), 0f, ColorF.White);
                     }

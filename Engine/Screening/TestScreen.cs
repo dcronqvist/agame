@@ -18,15 +18,19 @@ namespace AGame.Engine.Screening
     {
         Camera2D camera2D;
         Crater crater;
+        Random random;
 
         public TestScreen() : base("testscreen")
         {
             camera2D = new Camera2D(Vector2.Zero, 1f);
+            random = new Random();
         }
 
         public override Screen Initialize()
         {
-            crater = new Crater(new TestingGenerator());
+            TileManager.Init();
+
+            crater = new Crater(random.Next(0, 10000), new TestingGenerator());
 
             Input.OnScroll += (sender, scroll) =>
             {
@@ -55,26 +59,32 @@ namespace AGame.Engine.Screening
 
         public override void Update()
         {
+            float camSpeed = 5f;
             float xSpeed = 0f, ySpeed = 0f;
 
             if (Input.IsKeyDown(Keys.A))
             {
-                xSpeed -= 2f;
+                xSpeed -= camSpeed;
             }
             if (Input.IsKeyDown(Keys.D))
             {
-                xSpeed += 2f;
+                xSpeed += camSpeed;
             }
             if (Input.IsKeyDown(Keys.W))
             {
-                ySpeed -= 2f;
+                ySpeed -= camSpeed;
             }
             if (Input.IsKeyDown(Keys.S))
             {
-                ySpeed += 2f;
+                ySpeed += camSpeed;
             }
 
-            camera2D.FocusPosition += new Vector2(xSpeed, ySpeed);
+            if (Input.IsKeyPressed(Keys.R))
+            {
+                crater = new Crater(random.Next(0, Int32.MaxValue), new TestingGenerator());
+            }
+
+            camera2D.FocusPosition += new Vector2(xSpeed, ySpeed) / camera2D.Zoom;
         }
 
         public override void Render()

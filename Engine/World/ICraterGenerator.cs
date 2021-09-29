@@ -4,6 +4,6 @@ namespace AGame.Engine.World
 {
     interface ICraterGenerator
     {
-        TileGrid[] GenerateGrids();
+        TileGrid[] GenerateGrids(int seed);
     }
 }

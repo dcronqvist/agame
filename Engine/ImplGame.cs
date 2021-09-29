@@ -33,7 +33,6 @@ namespace AGame.Engine
             DisplayManager.OnFramebufferResize += (window, size) =>
             {
                 glViewport(0, 0, (int)size.X, (int)size.Y);
-                GameConsole.WriteLine("Window Change", $"new size: {size}");
                 Renderer.DefaultCamera.FocusPosition = size / 2.0f;
             };
 
