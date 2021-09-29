@@ -15,35 +15,16 @@ namespace AGame.World
         public int Width { get; set; }
         public int Height { get; set; }
 
-        public TileGrid(int width, int height, Tile[,] grid = null)
+        public TileGrid(Tile[,] grid)
         {
-            this.Width = width;
-            this.Height = height;
-
-            if (grid == null)
-            {
-                this.Grid = new Tile[width, height];
-
-                for (int y = 0; y < this.Height; y++)
-                {
-                    for (int x = 0; x < this.Width; x++)
-                    {
-                        // Render each tile
-                        Grid[x, y] = new Tile("tex_marsdirt", false);
-                    }
-                }
-            }
-            else
-            {
-                this.Grid = grid;
-                this.Width = grid.GetLength(0);
-                this.Height = grid.GetLength(1);
-            }
+            this.Grid = grid;
+            this.Width = grid.GetLength(0);
+            this.Height = grid.GetLength(1);
         }
 
         public void Render()
         {
-            int tileSize = 32;
+            int tileSize = 48;
             RectangleF visibleArea = Renderer.Camera.VisibleArea;
 
             int minX = (int)(visibleArea.X / tileSize);

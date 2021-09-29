@@ -17,8 +17,9 @@ namespace AGame.Engine
         public static Dictionary<MouseButton, bool> currentMouseState;
         public static Dictionary<MouseButton, bool> previousMouseState;
 
-        public static EventHandler<char> OnChar;
-        public static EventHandler OnBackspace;
+        public static event EventHandler<char> OnChar;
+        public static event EventHandler OnBackspace;
+        public static event EventHandler<float> OnScroll;
 
         public static void Init()
         {
@@ -42,6 +43,11 @@ namespace AGame.Engine
                         OnBackspace?.Invoke(null, EventArgs.Empty);
                     }
                 }
+            });
+
+            Glfw.SetScrollCallback(DisplayManager.WindowHandle, (window, x, y) =>
+            {
+                OnScroll?.Invoke(null, (float)y);
             });
         }
 
