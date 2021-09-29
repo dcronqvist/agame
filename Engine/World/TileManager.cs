@@ -16,6 +16,7 @@ namespace AGame.Engine.World
         public static void Init()
         {
             AddTile("dirt", 1, new Tile("tex_marsdirt", false));
+            AddTile("grass", 2, new Tile("tex_grass_base", true));
         }
 
         public static void AddTile(string tileName, int tileID, Tile tile)

@@ -5,6 +5,7 @@ using AGame.Engine.Assets;
 using System.Numerics;
 using System.Threading;
 using System;
+using AGame.Engine.OpenGL;
 
 namespace AGame.Engine.Assets
 {
@@ -29,7 +30,7 @@ namespace AGame.Engine.Assets
         {
             // Create texture object
             uint id = glGenTexture();
-            glBindTexture(GL_TEXTURE_2D, id);
+            GLSM.BindTexture(GL_TEXTURE_2D, id);
 
             // Set texture data
             fixed (byte* pix = &pixelData[0])
@@ -48,14 +49,14 @@ namespace AGame.Engine.Assets
             //glGenerateMipmap(GL_TEXTURE_2D);
 
             // Done! unbind
-            glBindTexture(GL_TEXTURE_2D, 0);
+            GLSM.BindTexture(GL_TEXTURE_2D, 0);
             return id;
         }
 
         public void BindTexture(int activeTexture)
         {
             glActiveTexture(activeTexture);
-            glBindTexture(GL_TEXTURE_2D, ID);
+            GLSM.BindTexture(GL_TEXTURE_2D, ID);
         }
 
         public byte[] GetPixelData()

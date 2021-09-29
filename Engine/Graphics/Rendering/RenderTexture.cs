@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Numerics;
+using AGame.Engine.OpenGL;
 using static AGame.Engine.OpenGL.GL;
 
 namespace AGame.Engine.Graphics.Rendering
@@ -36,9 +37,9 @@ namespace AGame.Engine.Graphics.Rendering
             this.Width = width;
             this.Height = height;
 
-            glBindTexture(GL_TEXTURE_2D, this.renderedTexture);
+            GLSM.BindTexture(GL_TEXTURE_2D, this.renderedTexture);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-            glBindTexture(GL_TEXTURE_2D, 0);
+            GLSM.BindTexture(GL_TEXTURE_2D, 0);
         }
 
         public unsafe void InitRenderData(int width, int height)
@@ -47,7 +48,7 @@ namespace AGame.Engine.Graphics.Rendering
             glBindFramebuffer(GL_FRAMEBUFFER, this.framebuffer);
 
             this.renderedTexture = glGenTexture();
-            glBindTexture(GL_TEXTURE_2D, this.renderedTexture);
+            GLSM.BindTexture(GL_TEXTURE_2D, this.renderedTexture);
 
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 

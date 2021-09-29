@@ -85,6 +85,8 @@ namespace AGame.Engine.Screening
             }
 
             camera2D.FocusPosition += new Vector2(xSpeed, ySpeed) / camera2D.Zoom;
+
+            DisplayManager.SetWindowTitle($"Mouse pos: {Input.GetMousePosition(camera2D).ToString()}");
         }
 
         public override void Render()

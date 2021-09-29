@@ -22,6 +22,18 @@ namespace AGame.World
             this.Height = grid.GetLength(1);
         }
 
+        public int GetTileXFromPosition(Vector2 pos)
+        {
+            int tileSize = 48;
+            return (int)pos.X / tileSize;
+        }
+
+        public int GetTileYFromPosition(Vector2 pos)
+        {
+            int tileSize = 48;
+            return (int)pos.Y / tileSize;
+        }
+
         public void Render()
         {
             int tileSize = 48;

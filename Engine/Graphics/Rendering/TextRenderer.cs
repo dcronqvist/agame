@@ -3,6 +3,7 @@ using System.Numerics;
 using AGame.Engine.Graphics.Cameras;
 using AGame.Engine.Assets;
 using System.Collections.Generic;
+using AGame.Engine.OpenGL;
 
 namespace AGame.Engine.Graphics.Rendering
 {
@@ -89,7 +90,7 @@ namespace AGame.Engine.Graphics.Rendering
                 xPos, yPos + h, 0, 1,
                 };
 
-                glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+                GLSM.BindTexture(GL_TEXTURE_2D, ch.TextureID);
 
                 glBindBuffer(GL_ARRAY_BUFFER, fontVBO);
 
@@ -104,7 +105,7 @@ namespace AGame.Engine.Graphics.Rendering
             }
 
             glBindVertexArray(0);
-            glBindTexture(GL_TEXTURE_2D, 0);
+            GLSM.BindTexture(GL_TEXTURE_2D, 0);
         }
 
         public unsafe void RenderText(Font f, FormattedText ft, Vector2 position, float scale, ColorF color, Camera2D cam)
@@ -156,7 +157,7 @@ namespace AGame.Engine.Graphics.Rendering
                         xPos, yPos + h, 0, 1,
                         };
 
-                        glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+                        GLSM.BindTexture(GL_TEXTURE_2D, ch.TextureID);
 
                         glBindBuffer(GL_ARRAY_BUFFER, fontVBO);
 
@@ -182,7 +183,7 @@ namespace AGame.Engine.Graphics.Rendering
             }
 
             glBindVertexArray(0);
-            glBindTexture(GL_TEXTURE_2D, 0);
+            GLSM.BindTexture(GL_TEXTURE_2D, 0);
         }
     }
 }

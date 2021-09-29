@@ -2,6 +2,7 @@ using System.Drawing;
 using System.Numerics;
 using AGame.Engine.Assets;
 using AGame.Engine.Graphics.Cameras;
+using AGame.Engine.OpenGL;
 using static AGame.Engine.OpenGL.GL;
 
 namespace AGame.Engine.Graphics.Rendering
@@ -96,10 +97,10 @@ namespace AGame.Engine.Graphics.Rendering
             glActiveTexture(GL_TEXTURE0);
 
             // Bind the texture
-            glBindTexture(GL_TEXTURE_2D, r1.renderedTexture);
+            GLSM.BindTexture(GL_TEXTURE_2D, r1.renderedTexture);
 
             glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, r2.renderedTexture);
+            GLSM.BindTexture(GL_TEXTURE_2D, r2.renderedTexture);
 
             // renderTexture VAO, that has simple quad
             glBindVertexArray(r1.quadVao);
@@ -129,7 +130,7 @@ namespace AGame.Engine.Graphics.Rendering
             glActiveTexture(GL_TEXTURE0);
 
             // Bind the texture
-            glBindTexture(GL_TEXTURE_2D, renderTexture.renderedTexture);
+            GLSM.BindTexture(GL_TEXTURE_2D, renderTexture.renderedTexture);
 
             // renderTexture VAO, that has simple quad
             glBindVertexArray(renderTexture.quadVao);

@@ -17,15 +17,24 @@ namespace AGame.Engine.World
             int radius = size / 2;
 
             int[,] tiles = new int[size, size];
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    tiles[x, y] = 2;
+                }
+            }
+            grids.Add(new TileGrid(tiles));
+            tiles = new int[size, size];
 
             for (int y = 0; y < size; y++)
             {
                 for (int x = 0; x < size; x++)
                 {
                     float scale = 1f / 30f;
-                    float multiplier = 5f;
-                    float threshhold = 0.9f;
-                    float first = (Noise.CalcPixel2D(x, y, scale) + 1.0f) * multiplier;
+                    float multiplier = 2f;
+                    float threshhold = 1f;
+                    float first = (Noise.CalcPixel2D(x, y, scale)) * multiplier;
 
                     float circularFallof = Utilities.GetLinearCircularFalloff(size, x, y);
                     if (first * circularFallof >= threshhold)

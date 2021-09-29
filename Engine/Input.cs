@@ -126,11 +126,11 @@ namespace AGame.Engine
         public static Vector2 GetMousePosition(Camera2D offsetCamera)
         {
             Vector2 windowSize = DisplayManager.GetWindowSizeInPixels();
-            Vector2 topLeft = new Vector2(offsetCamera.FocusPosition.X - ((windowSize.X / 2f) * offsetCamera.Zoom), offsetCamera.FocusPosition.Y - ((windowSize.Y / 2f) * offsetCamera.Zoom));
+            Vector2 topLeft = offsetCamera.TopLeft;
 
             Glfw.GetCursorPosition(DisplayManager.WindowHandle, out double x, out double y);
 
-            return topLeft + (new Vector2((float)x, (float)y)) * offsetCamera.Zoom;
+            return topLeft + (new Vector2((float)x, (float)y)) / offsetCamera.Zoom;
         }
     }
 }

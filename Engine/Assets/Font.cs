@@ -8,6 +8,7 @@ using System;
 using System.Diagnostics;
 using AGame.Engine.Assets;
 using System.Threading;
+using AGame.Engine.OpenGL;
 
 namespace AGame.Engine.Assets
 {
@@ -101,7 +102,7 @@ namespace AGame.Engine.Assets
                 // Create new texture
                 uint textureId = glGenTexture();
                 // Bind it
-                glBindTexture(GL_TEXTURE_2D, textureId);
+                GLSM.BindTexture(GL_TEXTURE_2D, textureId);
                 // Fill texture with data from font
                 glTexImage2D(GL_TEXTURE_2D,
                             0,

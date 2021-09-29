@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Numerics;
 using AGame.Engine.Assets;
+using AGame.Engine.OpenGL;
 using static AGame.Engine.OpenGL.GL;
 
 namespace AGame.Engine.Graphics.Rendering
@@ -47,7 +48,7 @@ namespace AGame.Engine.Graphics.Rendering
             shader.SetInt("image", 0);
 
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, texture.ID);
+            GLSM.BindTexture(GL_TEXTURE_2D, texture.ID);
 
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
