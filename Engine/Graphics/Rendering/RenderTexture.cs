@@ -15,17 +15,20 @@ namespace AGame.Engine.Graphics.Rendering
 
         public RenderTexture(Vector2 size) : this((int)size.X, (int)size.Y) { }
 
-        public RenderTexture(int width, int height)
+        public RenderTexture(int width, int height, bool sizeFollowWindow = true)
         {
             this.Width = width;
             this.Height = height;
 
             this.InitRenderData(width, height);
 
-            DisplayManager.OnFramebufferResize += (window, size) =>
+            if (sizeFollowWindow)
             {
-                this.Resize((int)size.X, (int)size.Y);
-            };
+                DisplayManager.OnFramebufferResize += (window, size) =>
+                {
+                    this.Resize((int)size.X, (int)size.Y);
+                };
+            }
         }
 
         public unsafe void Resize(int width, int height)

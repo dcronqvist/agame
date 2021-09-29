@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.Numerics;
 
 namespace AGame.Engine.Graphics.Cameras
@@ -6,6 +7,33 @@ namespace AGame.Engine.Graphics.Cameras
     public class Camera2D
     {
         public Vector2 FocusPosition { get; set; }
+        public RectangleF VisibleArea
+        {
+            get
+            {
+                Vector2 windowSize = DisplayManager.GetWindowSizeInPixels();
+
+                float left = FocusPosition.X - windowSize.X / 2f / Zoom;
+                float top = FocusPosition.Y - windowSize.Y / 2f / Zoom;
+                float height = windowSize.Y / Zoom;
+                float width = windowSize.X / Zoom;
+
+                return new RectangleF(left, top, width, height);
+            }
+        }
+        public Vector2 TopLeft
+        {
+            get
+            {
+                Vector2 windowSize = DisplayManager.GetWindowSizeInPixels();
+
+                float left = FocusPosition.X - windowSize.X / 2f / Zoom;
+                float top = FocusPosition.Y - windowSize.Y / 2f / Zoom;
+
+                return new Vector2(left, top);
+            }
+        }
+
         public float Zoom { get; set; }
 
         public Camera2D(Vector2 focusPosition, float zoom)

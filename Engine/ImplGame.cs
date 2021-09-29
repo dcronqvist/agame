@@ -66,7 +66,7 @@ namespace AGame.Engine
             AssetManager.OnAllCoreAssetsLoaded += (sender, e) =>
             {
                 GameConsole.WriteLine("ASSETS", "All core assets loaded!");
-                DisplayManager.SetWindowIcon(AssetManager.GetAsset<Texture2D>("tex_pine_tree"));
+                DisplayManager.SetWindowIcon(AssetManager.GetAsset<Texture2D>("tex_marsdirt"));
                 Renderer.Init();
             };
 

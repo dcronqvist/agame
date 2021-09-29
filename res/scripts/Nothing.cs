@@ -83,32 +83,6 @@ namespace MyMod
         }
     }
 
-    class ToggleWireframeCommand : ICommand
-    {
-        public CommandResult Execute(string[] args)
-        {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            return CommandResult.CreateOk($"Set to wireframe.");
-        }
-        public string GetHandle()
-        {
-            return "wireframe";
-        }
-    }
-
-    class NormalMode : ICommand
-    {
-        public CommandResult Execute(string[] args)
-        {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            return CommandResult.CreateOk($"Removed wireframe.");
-        }
-        public string GetHandle()
-        {
-            return "normal";
-        }
-    }
-
     class WindowSizeCommand : ICommand
     {
         public CommandResult Execute(string[] args)
