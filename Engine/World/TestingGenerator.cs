@@ -21,29 +21,31 @@ namespace AGame.Engine.World
             {
                 for (int x = 0; x < size; x++)
                 {
-                    tiles[x, y] = 2;
+                    tiles[x, y] = 3;
                 }
             }
-            //grids.Add(new TileGrid(tiles));
-            //tiles = new int[size, size];
+            //int[,] tiles = new int[size, size];
 
             for (int y = 0; y < size; y++)
             {
                 for (int x = 0; x < size; x++)
                 {
-                    float scale = 1f / 30f;
+                    float scale = 1f / 20f;
                     float multiplier = 2f;
                     float threshhold = 1f;
                     float first = (Noise.CalcPixel2D(x, y, scale)) * multiplier;
 
                     float circularFallof = Utilities.GetLinearCircularFalloff(size, x, y);
                     if (first * circularFallof >= threshhold)
+                    {
                         tiles[x, y] = 1;
+                    }
                 }
             }
 
             TileGrid tg = new TileGrid(tiles);
 
+            //grids.Add(new TileGrid(tiles0));
             grids.Add(tg);
 
             return grids.ToArray();

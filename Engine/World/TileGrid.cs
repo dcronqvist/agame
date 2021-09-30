@@ -86,7 +86,6 @@ namespace AGame.World
 
         public void Render()
         {
-            int tileSize = 48;
             RectangleF visibleArea = Renderer.Camera.VisibleArea;
 
             // int minX = (int)(visibleArea.X / tileSize);
