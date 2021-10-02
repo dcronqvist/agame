@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using AGame.World;
 using SimplexNoise;
 
@@ -7,14 +8,11 @@ namespace AGame.Engine.World
 {
     class TestingGenerator : ICraterGenerator
     {
-        public TileGrid[] GenerateGrids(int seed)
+        const int size = 500;
+
+        public TileGrid GenerateBackgroundLayer(int seed)
         {
             Noise.Seed = seed;
-
-            List<TileGrid> grids = new List<TileGrid>();
-
-            int size = 300;
-            int radius = size / 2;
 
             int[,] tiles = new int[size, size];
             for (int y = 0; y < size; y++)
@@ -24,7 +22,6 @@ namespace AGame.Engine.World
                     tiles[x, y] = 3;
                 }
             }
-            //int[,] tiles = new int[size, size];
 
             for (int y = 0; y < size; y++)
             {
@@ -43,12 +40,12 @@ namespace AGame.Engine.World
                 }
             }
 
-            TileGrid tg = new TileGrid(tiles);
+            return new TileGrid(tiles);
+        }
 
-            //grids.Add(new TileGrid(tiles0));
-            grids.Add(tg);
-
-            return grids.ToArray();
+        public TileGrid GenerateResourceLayer(int seed)
+        {
+            return new TileGrid(new int[size, size]);
         }
     }
 }

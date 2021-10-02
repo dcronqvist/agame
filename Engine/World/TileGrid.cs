@@ -13,9 +13,12 @@ namespace AGame.World
 {
     class TileGrid
     {
+        public const int TILE_SIZE = 32;
+
         public int[,] GridOfIDs { get; set; }
         private Dictionary<int, List<Vector2>> TileIDAndPositions { get; set; }
         private Dictionary<int, float[]> TileIDAndModelMatrices { get; set; }
+        private Dictionary<int, StaticInstancedTextureRenderer> TileIDToRenderer { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
 
@@ -26,7 +29,7 @@ namespace AGame.World
             this.Height = grid.GetLength(1);
 
             TileIDAndPositions = new Dictionary<int, List<Vector2>>();
-            int tileSize = 48;
+            TileIDToRenderer = new Dictionary<int, StaticInstancedTextureRenderer>();
             // render all tiles
             for (int y = 0; y < Height; y++)
             {
@@ -35,7 +38,7 @@ namespace AGame.World
                     // Render each tile
                     if (GridOfIDs[x, y] != 0)
                     {
-                        Vector2 tilePos = new Vector2(tileSize * x, tileSize * y);
+                        Vector2 tilePos = new Vector2(TILE_SIZE * x, TILE_SIZE * y);
                         if (!TileIDAndPositions.ContainsKey(GridOfIDs[x, y]))
                         {
                             TileIDAndPositions.Add(GridOfIDs[x, y], new List<Vector2>());
@@ -52,36 +55,30 @@ namespace AGame.World
                 Tile t = TileManager.GetTileFromID(kvp.Key);
 
                 List<Vector2> positions = kvp.Value;
-                float[] matrixValues = new float[16 * positions.Count];
+                List<Matrix4x4> matrices = new List<Matrix4x4>();
                 for (int i = 0; i < positions.Count; i++)
                 {
                     Matrix4x4 transPos = Matrix4x4.CreateTranslation(new Vector3(positions[i], 0.0f));
                     Matrix4x4 rot = Matrix4x4.CreateRotationZ(0f);
                     RectangleF sourceRect = new RectangleF(0, 0, 16, 16);
-                    Vector2 scale = Vector2.One * (tileSize / t.Texture.Width);
+                    Vector2 scale = Vector2.One * (TILE_SIZE / t.Texture.Width);
                     Matrix4x4 mscale = Matrix4x4.CreateScale(new Vector3(new Vector2(sourceRect.Width, sourceRect.Height) * scale, 1.0f));
 
-                    float[] m = Utilities.GetMatrix4x4Values(mscale * rot * transPos);
-                    for (int j = 0; j < 16; j++)
-                    {
-                        matrixValues[i * 16 + j] = m[j];
-                    }
+                    matrices.Add(mscale * rot * transPos);
                 }
 
-                TileIDAndModelMatrices.Add(kvp.Key, matrixValues);
+                TileIDToRenderer.Add(kvp.Key, new StaticInstancedTextureRenderer(AssetManager.GetAsset<Shader>("shader_texture"), TileManager.GetTileFromID(kvp.Key).Texture, new RectangleF(0, 0, 16, 16), matrices.ToArray()));
             }
         }
 
         public int GetTileXFromPosition(Vector2 pos)
         {
-            int tileSize = 48;
-            return (int)pos.X / tileSize;
+            return (int)pos.X / TILE_SIZE;
         }
 
         public int GetTileYFromPosition(Vector2 pos)
         {
-            int tileSize = 48;
-            return (int)pos.Y / tileSize;
+            return (int)pos.Y / TILE_SIZE;
         }
 
         public void Render()
@@ -115,10 +112,11 @@ namespace AGame.World
             //     }
             // }
 
-            foreach (KeyValuePair<int, float[]> kvp in TileIDAndModelMatrices)
+            foreach (KeyValuePair<int, StaticInstancedTextureRenderer> kvp in TileIDToRenderer)
             {
                 Tile t = TileManager.GetTileFromID(kvp.Key);
-                Renderer.Texture.RenderInstanced(t.Texture, kvp.Value, ColorF.White, new RectangleF(0, 0, 16, 16));
+                kvp.Value.Render(t.Texture, ColorF.White);
+                //Renderer.Texture.RenderInstanced(t.Texture, kvp.Value, ColorF.White, new RectangleF(0, 0, 16, 16));
             }
         }
     }

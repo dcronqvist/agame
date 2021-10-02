@@ -8,6 +8,23 @@ namespace AGame.Engine
 {
     static class Utilities
     {
+        static Random RNG;
+
+        static Utilities()
+        {
+
+        }
+
+        public static void InitRNG()
+        {
+            RNG = new Random();
+        }
+
+        public static void InitRNG(int seed)
+        {
+            RNG = new Random(seed);
+        }
+
         public static string GetExecutableDirectory()
         {
             return Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
@@ -64,6 +81,36 @@ namespace AGame.Engine
                 m.M31, m.M32, m.M33, m.M34,
                 m.M41, m.M42, m.M43, m.M44
             };
+        }
+
+        public static int GetRandomInt(int min, int max)
+        {
+            return RNG.Next(min, max);
+        }
+
+        public static float GetRandomFloat()
+        {
+            return GetRandomFloat(0.0f, 1.0f);
+        }
+
+        public static float GetRandomFloat(float min, float max)
+        {
+            return ((float)RNG.NextDouble()) * (max - min) + min;
+        }
+
+        public static Vector2 GetRandomVector2(float minX, float maxX, float minY, float maxY)
+        {
+            return new Vector2(GetRandomFloat(minX, maxX), GetRandomFloat(minY, maxY));
+        }
+
+        public static Vector2 GetRandomVector2WithinDistance(Vector2 origin, float minDist, float maxDist)
+        {
+            float dist = Utilities.GetRandomFloat(minDist, maxDist);
+            float rot = Utilities.GetRandomFloat(0f, 2f * MathF.PI);
+
+            Vector2 offset = new Vector2(MathF.Cos(rot), MathF.Sin(rot)) * dist;
+
+            return origin + offset;
         }
     }
 }
