@@ -23,6 +23,7 @@ namespace AGame.Engine.Assets
                 if (errorMsgs.Length > 0)
                 {
                     // This failed to load the script.
+                    return null;
                 }
 
                 //Assembly assembly = Assembly.LoadFile(filePath);

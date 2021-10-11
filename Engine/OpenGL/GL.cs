@@ -7297,6 +7297,9 @@ namespace AGame.Engine.OpenGL
         /// <param name="bufferMode">Identifies the mode used to capture the varying variables when transform feedback is active.<para>ust be GL_INTERLEAVED_ATTRIBS or GL_SEPARATE_ATTRIBS.</para></param>
         public static void glTransformFeedbackVaryings(uint program, int count, /*const*/ byte** varyings, int bufferMode) => _glTransformFeedbackVaryings(program, count, varyings, bufferMode);
 
+        public static void glDebugMessageCallback(DebugMessageCallback callback, void* userparam) => _glDebugMessageCallback(callback, userparam);
+
+        public delegate void DebugMessageCallback(int source, int type, int id, int severity, int length, string message, void* userParam);
         public const int GL_DEPTH_BUFFER_BIT = 0x00000100;
         public const int GL_STENCIL_BUFFER_BIT = 0x00000400;
         public const int GL_COLOR_BUFFER_BIT = 0x00004000;
@@ -7921,6 +7924,8 @@ namespace AGame.Engine.OpenGL
         public const int GL_COLOR_ATTACHMENT30 = 0x8CFE;
         public const int GL_COLOR_ATTACHMENT31 = 0x8CFF;
         public const int GL_DEPTH_ATTACHMENT = 0x8D00;
+        public const int GL_DEBUG_TYPE_ERROR = 0x824c;
+        public const int GL_DEBUG_OUTPUT = 0x92e0;
         public const int GL_STENCIL_ATTACHMENT = 0x8D20;
         public const int GL_FRAMEBUFFER = 0x8D40;
         public const int GL_RENDERBUFFER = 0x8D41;
@@ -9238,6 +9243,9 @@ namespace AGame.Engine.OpenGL
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate void PFNGLSECONDARYCOLORP3UIVPROC(int type, /*const*/ uint* color);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate void PFNGLDEBUGMESSAGECALLBACK(DebugMessageCallback callback, void* userParam);
+
         private static PFNGLCULLFACEPROC _glCullFace;
         private static PFNGLFRONTFACEPROC _glFrontFace;
         private static PFNGLHINTPROC _glHint;
@@ -9612,6 +9620,7 @@ namespace AGame.Engine.OpenGL
         private static PFNGLCOLORP4UIVPROC _glColorP4uiv;
         private static PFNGLSECONDARYCOLORP3UIPROC _glSecondaryColorP3ui;
         private static PFNGLSECONDARYCOLORP3UIVPROC _glSecondaryColorP3uiv;
+        private static PFNGLDEBUGMESSAGECALLBACK _glDebugMessageCallback;
 
         /// <summary>
         ///     Imports all OpenGL functions using the specified loader.
@@ -9996,6 +10005,7 @@ namespace AGame.Engine.OpenGL
             _glColorP4uiv = Marshal.GetDelegateForFunctionPointer<PFNGLCOLORP4UIVPROC>(loader.Invoke("glColorP4uiv"));
             _glSecondaryColorP3ui = Marshal.GetDelegateForFunctionPointer<PFNGLSECONDARYCOLORP3UIPROC>(loader.Invoke("glSecondaryColorP3ui"));
             _glSecondaryColorP3uiv = Marshal.GetDelegateForFunctionPointer<PFNGLSECONDARYCOLORP3UIVPROC>(loader.Invoke("glSecondaryColorP3uiv"));
+            _glDebugMessageCallback = Marshal.GetDelegateForFunctionPointer<PFNGLDEBUGMESSAGECALLBACK>(loader.Invoke("glDebugMessageCallback"));
         }
     }
 }

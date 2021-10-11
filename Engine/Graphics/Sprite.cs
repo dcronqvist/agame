@@ -5,7 +5,7 @@ using AGame.Engine.Graphics.Rendering;
 
 namespace AGame.Engine.Graphics
 {
-    class Sprite
+    public class Sprite
     {
         public Texture2D Texture { get; set; }
         public Vector2 RenderScale { get; set; }

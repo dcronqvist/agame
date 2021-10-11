@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.IO;
 using System.Numerics;
 using System.Reflection;
@@ -111,6 +112,28 @@ namespace AGame.Engine
             Vector2 offset = new Vector2(MathF.Cos(rot), MathF.Sin(rot)) * dist;
 
             return origin + offset;
+        }
+
+        public static RectangleF Offset(this RectangleF r, Vector2 vec)
+        {
+            return new RectangleF(r.X + vec.X, r.Y + vec.Y, r.Width, r.Height);
+        }
+
+        public static Vector2 Floor(this Vector2 vector2)
+        {
+            return new Vector2((int)vector2.X, (int)vector2.Y);
+        }
+
+        public static float AbsLength(this Vector2 vector2)
+        {
+            return MathF.Abs(vector2.Length());
+        }
+
+        public static byte[,] EmptyByteGrid(int width, int height)
+        {
+            byte[,] grid = new byte[width, height];
+
+            return grid;
         }
     }
 }

@@ -8,7 +8,7 @@ namespace AGame.Engine.World
 {
     class TestingGenerator : ICraterGenerator
     {
-        const int size = 500;
+        const int size = 50;
 
         public TileGrid GenerateBackgroundLayer(int seed)
         {

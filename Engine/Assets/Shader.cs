@@ -54,6 +54,7 @@ namespace AGame.Engine.Assets
             {
                 // Compile failed
                 string error = glGetShaderInfoLog(fs, 1024);
+                System.Console.WriteLine("ERROR COMPILING FRAGMENT SHADER: " + error);
                 GameConsole.WriteLine("Error", "ERROR COMPILING FRAGMENT SHADER: " + error);
                 return;
             }
@@ -63,6 +64,16 @@ namespace AGame.Engine.Assets
             glAttachShader(ProgramID, vs);
             glAttachShader(ProgramID, fs);
             glLinkProgram(ProgramID);
+
+            status = glGetProgramiv(ProgramID, GL_LINK_STATUS, 1);
+            if (status[0] == 0)
+            {
+                // link failed failed
+                string error = glGetProgramInfoLog(ProgramID, 1024);
+                System.Console.WriteLine("ERROR LINKING SHADER PROGRAM: " + error);
+                GameConsole.WriteLine("Error", "ERROR LINKING SHADER PROGRAM: " + error);
+                return;
+            }
 
             // Delete unnecessary shader objects after linking
             glDetachShader(ProgramID, vs);

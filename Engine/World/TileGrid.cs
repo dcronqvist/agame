@@ -11,7 +11,7 @@ using AGame.Engine.World;
 
 namespace AGame.World
 {
-    class TileGrid
+    public class TileGrid
     {
         public const int TILE_SIZE = 32;
 

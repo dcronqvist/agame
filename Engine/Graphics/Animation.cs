@@ -5,7 +5,7 @@ using AGame.Engine.Assets;
 
 namespace AGame.Engine.Graphics
 {
-    class Animation : Sprite
+    public class Animation : Sprite
     {
         private RectangleF[] frames;
         private float currentFrameTime;

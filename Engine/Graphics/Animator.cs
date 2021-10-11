@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace AGame.Engine.Graphics
 {
-    class Animator
+    public class Animator
     {
         private Dictionary<string, Animation> animations;
         private string currentAnimation;

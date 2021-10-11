@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using AGame.Engine;
 using AGame.Engine.DebugTools;
 using AGame.Engine.Graphics;
+using AGame.Engine.World;
 using static AGame.Engine.OpenGL.GL;
 
 namespace MyMod
@@ -137,6 +138,36 @@ namespace MyMod
         public string GetHandle()
         {
             return "clear";
+        }
+    }
+
+    class SetDebugCommand : ICommand
+    {
+        public CommandResult Execute(string[] args)
+        {
+            if (!Debug.PropertyExists(args[0]))
+            {
+                return CommandResult.CreateError($"Debug property '{args[0]}' does not exist.");
+            }
+
+            Type t = Debug.GetDebugPropertyType(args[0]);
+
+            try
+            {
+                object val = Convert.ChangeType(args[1], t);
+                Debug.SetDebugProperty(args[0], val);
+
+                return CommandResult.CreateOk($"Set '{args[0]}' to {args[1]}");
+            }
+            catch (Exception ex)
+            {
+                return CommandResult.CreateError($"{ex.Message}");
+            }
+
+        }
+        public string GetHandle()
+        {
+            return "debug";
         }
     }
 }

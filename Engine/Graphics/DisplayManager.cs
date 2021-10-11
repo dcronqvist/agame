@@ -5,6 +5,7 @@ using System.Drawing;
 using AGame.Engine.OpenGL;
 using System.Numerics;
 using AGame.Engine.Assets;
+using static AGame.Engine.OpenGL.GL;
 
 namespace AGame.Engine.Graphics
 {

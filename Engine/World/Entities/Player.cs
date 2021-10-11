@@ -5,26 +5,40 @@ using System.Numerics;
 using AGame.Engine.Assets;
 using AGame.Engine.GLFW;
 using AGame.Engine.Graphics;
+using AGame.Engine.Graphics.Rendering;
 
 namespace AGame.Engine.World.Entities
 {
-    class Player : AnimatorEntity
+    public class Player : AnimatorEntity
     {
         public Player(Vector2 startPos) : base(startPos,
                                             new Animator(new Dictionary<string, Animation>() {
-                                                { "idle", new Animation(AssetManager.GetAsset<Texture2D>("tex_player"), Vector2.One * 2f, Vector2.Zero, ColorF.White, new RectangleF(0, 0, 32, 16), 0f, 1, 2) },
-                                                { "run", new Animation(AssetManager.GetAsset<Texture2D>("tex_player"), Vector2.One * 2f, Vector2.Zero, ColorF.White, new RectangleF(32, 0, 48, 16), 0f, 11, 3) }
-                                            }, "idle"))
+                                                { "idle", new Animation(AssetManager.GetAsset<Texture2D>("tex_krobus"), Vector2.One * 2f, Vector2.Zero, ColorF.White, new RectangleF(0, 0, 16, 24), 0f, 1, 1) },
+                                                { "run_right", new Animation(AssetManager.GetAsset<Texture2D>("tex_krobus"), Vector2.One * 2f, Vector2.Zero, ColorF.White, new RectangleF(0, 24, 64, 24), 0f, 11, 4) },
+                                                { "run_left", new Animation(AssetManager.GetAsset<Texture2D>("tex_krobus"), Vector2.One * 2f, Vector2.Zero, ColorF.White, new RectangleF(0, 72, 64, 24), 0f, 11, 4) },
+                                                { "run_down", new Animation(AssetManager.GetAsset<Texture2D>("tex_krobus"), Vector2.One * 2f, Vector2.Zero, ColorF.White, new RectangleF(0, 0, 64, 24), 0f, 11, 4) },
+                                                { "run_up", new Animation(AssetManager.GetAsset<Texture2D>("tex_krobus"), Vector2.One * 2f, Vector2.Zero, ColorF.White, new RectangleF(0, 48, 64, 24), 0f, 11, 4) }
+                                            }, "idle"), true, 0.12f)
         {
 
         }
 
-        public override void Render()
+        public override void Render(Crater crater)
         {
-            base.Render();
+            if (crater.CheckCollisionWithGrid(this.CollisionBox, crater.BackgroundLayer))
+            {
+                RectangleF[] recs = crater.GetCollisionsWithGrid(this.CollisionBox, crater.BackgroundLayer);
+
+                foreach (RectangleF r in recs)
+                {
+                    Renderer.Primitive.RenderRectangle(r, ColorF.Red * 0.3f);
+                }
+            }
+
+            base.Render(crater);
         }
 
-        public override void Update()
+        public override void Update(Crater crater)
         {
             Vector2 vel = Vector2.Zero;
 
@@ -47,15 +61,64 @@ namespace AGame.Engine.World.Entities
             if (vel.LengthSquared() > 0f)
             {
                 vel = Vector2.Normalize(vel);
-                this.animator.SetAnimation("run");
+
+                int y = Math.Sign(vel.Y);
+                int x = Math.Sign(vel.X);
+
+                if (y == 1)
+                {
+                    // Going down
+                    if (x == 1)
+                    {
+                        this.animator.SetAnimation("run_right"); // Going down right
+                    }
+                    else if (x == -1)
+                    {
+                        this.animator.SetAnimation("run_left"); // Going down left
+                    }
+                    else
+                    {
+                        this.animator.SetAnimation("run_down");
+                    }
+                }
+                else if (y == -1)
+                {
+                    // Going up
+                    if (x == 1)
+                    {
+                        this.animator.SetAnimation("run_right"); // Going up right
+                    }
+                    else if (x == -1)
+                    {
+                        this.animator.SetAnimation("run_left"); // Going up left
+                    }
+                    else
+                    {
+                        this.animator.SetAnimation("run_up");
+                    }
+                }
+                else if (y == 0)
+                {
+                    // Going up
+                    if (x == 1)
+                    {
+                        this.animator.SetAnimation("run_right"); // Going up right
+                    }
+                    else if (x == -1)
+                    {
+                        this.animator.SetAnimation("run_left"); // Going up left
+                    }
+                }
             }
             else
             {
                 this.animator.SetAnimation("idle");
             }
-            this.Position += vel;
 
-            base.Update();
+            vel = vel * 180f * GameTime.DeltaTime;
+            this.TargetVelocity = vel;
+
+            base.Update(crater);
         }
     }
 }

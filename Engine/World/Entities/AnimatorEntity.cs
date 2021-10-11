@@ -3,24 +3,24 @@ using AGame.Engine.Graphics;
 
 namespace AGame.Engine.World.Entities
 {
-    class AnimatorEntity : Entity
+    public class AnimatorEntity : Entity
     {
         protected Animator animator;
 
-        public AnimatorEntity(Vector2 startPos, Animator animator) : base(startPos, animator.GetCurrentAnimation())
+        public AnimatorEntity(Vector2 startPos, Animator animator, bool collidesSolids, float movementTweenFactor) : base(startPos, animator.GetCurrentAnimation(), collidesSolids, movementTweenFactor)
         {
             this.animator = animator;
         }
 
-        public override void Update()
+        public override void Update(Crater crater)
         {
             this.Sprite = this.animator.GetCurrentAnimation();
-            base.Update();
+            base.Update(crater);
         }
 
-        public override void Render()
+        public override void Render(Crater crater)
         {
-            base.Render();
+            base.Render(crater);
         }
     }
 }

@@ -4,7 +4,7 @@ using AGame.World;
 
 namespace AGame.Engine.World
 {
-    interface ICraterGenerator
+    public interface ICraterGenerator
     {
         TileGrid GenerateBackgroundLayer(int seed);
         TileGrid GenerateResourceLayer(int seed);

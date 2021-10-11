@@ -10,6 +10,7 @@ using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Cameras;
 using System.Text;
 using static AGame.Engine.OpenGL.GL;
+using AGame.Engine.GLFW;
 
 namespace AGame.Engine.DebugTools
 {
@@ -34,7 +35,7 @@ namespace AGame.Engine.DebugTools
             enabled = false;
         }
 
-        public static void Initialize()
+        public unsafe static void Initialize()
         {
             currentLine = new StringBuilder();
             Input.OnChar += (sender, c) =>
@@ -52,6 +53,18 @@ namespace AGame.Engine.DebugTools
                         currentLine.Remove(currentLine.Length - 1, 1);
                 }
             };
+
+            glEnable(GL_DEBUG_OUTPUT);
+            glDebugMessageCallback((s, t, i, sev, l, msg, up) =>
+            {
+                // if (t == GL_DEBUG_TYPE_ERROR)
+                // {
+                Console.WriteLine(s);
+                Console.WriteLine(msg);
+                GameConsole.WriteLine("GL", msg);
+                // }
+            }, (void*)0);
+
             canvas = new RenderTexture(DisplayManager.GetWindowSizeInPixels());
         }
 

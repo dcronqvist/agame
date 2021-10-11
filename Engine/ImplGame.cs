@@ -74,7 +74,8 @@ namespace AGame.Engine
                 currentLoadingAsset = assetName;
             };
 
-            AssetManager.LoadAllAssetsAsync();
+            //AssetManager.LoadAllAssetsAsync();
+            AssetManager.LoadAllAssets(false, false);
 
             glEnable(GL_BLEND);
             glDisable(GL_DEPTH_TEST);

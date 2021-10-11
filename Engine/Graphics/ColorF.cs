@@ -62,5 +62,9 @@ namespace AGame.Engine.Graphics
         public static ColorF Orange { get { return new ColorF(0xFA8601); } }
         public static ColorF RoyalBlue { get { return new ColorF(0x4876ff); } }
         public static ColorF DarkGoldenRod { get { return new ColorF(0xffb90f); } }
+
+        public static ColorF Red { get { return new ColorF(0xff0000); } }
+        public static ColorF Green { get { return new ColorF(0x00ff00); } }
+        public static ColorF Blue { get { return new ColorF(0x0000ff); } }
     }
 }

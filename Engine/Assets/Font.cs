@@ -95,7 +95,7 @@ namespace AGame.Engine.Assets
                 if (error != FT_Error.FT_Err_Ok)
                 {
                     // TODO: Fix this shit man, should use integrated console when that is done.
-                    Debug.WriteLine("FREETYPE ERROR: FAILED TO LOAD GLYPH FOR INDEX: " + i);
+                    //Debug.WriteLine("FREETYPE ERROR: FAILED TO LOAD GLYPH FOR INDEX: " + i);
                     continue;
                 }
 
