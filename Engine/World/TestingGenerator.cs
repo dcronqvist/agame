@@ -10,7 +10,7 @@ namespace AGame.Engine.World
     {
         const int size = 50;
 
-        public TileGrid GenerateBackgroundLayer(int seed)
+        public StaticTileGrid GenerateBackgroundLayer(int seed)
         {
             Noise.Seed = seed;
 
@@ -40,12 +40,12 @@ namespace AGame.Engine.World
                 }
             }
 
-            return new TileGrid(tiles);
+            return new StaticTileGrid(tiles);
         }
 
-        public TileGrid GenerateResourceLayer(int seed)
+        public DynamicTileGrid GenerateResourceLayer(int seed)
         {
-            return new TileGrid(new int[size, size]);
+            return new DynamicTileGrid(new int[size, size]);
         }
     }
 }

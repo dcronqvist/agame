@@ -10,14 +10,14 @@ namespace AGame.Engine.World
         {
             get
             {
-                return (int)Math.Ceiling((double)this.Texture.Width / TileGrid.TILE_SIZE);
+                return (int)Math.Ceiling((double)this.Texture.Width / StaticTileGrid.TILE_SIZE);
             }
         }
         public int Height
         {
             get
             {
-                return (int)Math.Ceiling((double)this.Texture.Height / TileGrid.TILE_SIZE);
+                return (int)Math.Ceiling((double)this.Texture.Height / StaticTileGrid.TILE_SIZE);
             }
         }
 

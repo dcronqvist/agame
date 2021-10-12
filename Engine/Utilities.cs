@@ -84,6 +84,14 @@ namespace AGame.Engine
             };
         }
 
+        public static Matrix4x4 CreateMatrix4x4FromValues(float[] arr)
+        {
+            return new Matrix4x4(arr[0], arr[1], arr[2], arr[3],
+                                arr[4], arr[5], arr[6], arr[7],
+                                arr[8], arr[9], arr[10], arr[11],
+                                arr[12], arr[13], arr[14], arr[15]);
+        }
+
         public static int GetRandomInt(int min, int max)
         {
             return RNG.Next(min, max);
@@ -134,6 +142,11 @@ namespace AGame.Engine
             byte[,] grid = new byte[width, height];
 
             return grid;
+        }
+
+        public static Matrix4x4 CreateModelMatrixFromPosition(Vector2 position, Vector2 scale)
+        {
+            return Matrix4x4.CreateScale(new Vector3(scale, 1f)) * Matrix4x4.CreateTranslation(new Vector3(position, 1f));
         }
     }
 }

@@ -1,5 +1,7 @@
+using System;
 using System.Drawing;
 using System.Numerics;
+using AGame.Engine.Assets;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Cameras;
 using AGame.Engine.Graphics.Rendering;
@@ -13,12 +15,16 @@ namespace AGame.Engine.World
         public static Camera2D PlayerCamera { get; set; }
         public static Player Player { get; set; }
 
+        static DynamicInstancedTextureRenderer ditr;
+
         public static void Init()
         {
             Utilities.InitRNG();
             CurrentCrater = new Crater(Utilities.GetRandomInt(0, 100), new TestingGenerator());
             PlayerCamera = new Camera2D(Vector2.Zero, 1f);
             Player = new Player(CurrentCrater.AbsoluteMiddle());
+            Matrix4x4 m = Utilities.CreateModelMatrixFromPosition(CurrentCrater.AbsoluteMiddle(), Vector2.One * 32f);
+            Matrix4x4 m1 = Utilities.CreateModelMatrixFromPosition(CurrentCrater.AbsoluteMiddle() + new Vector2(100, 100), Vector2.One * 32f);
         }
 
         public static void Update()
@@ -26,7 +32,6 @@ namespace AGame.Engine.World
             CurrentCrater.Update();
             Player.Update(CurrentCrater);
             DisplayManager.SetWindowTitle($"Player: {Player.Position.ToString()}");
-
             PlayerCamera.FocusPosition = Player.MiddleOfSpritePosition;
         }
 

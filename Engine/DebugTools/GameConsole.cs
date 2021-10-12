@@ -54,7 +54,7 @@ namespace AGame.Engine.DebugTools
                 }
             };
 
-            glEnable(GL_DEBUG_OUTPUT);
+            // glEnable(GL_DEBUG_OUTPUT);
             glDebugMessageCallback((s, t, i, sev, l, msg, up) =>
             {
                 // if (t == GL_DEBUG_TYPE_ERROR)
