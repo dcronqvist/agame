@@ -6,6 +6,33 @@ using AGame.Engine.Graphics.Rendering;
 
 namespace AGame.Engine.World.Entities
 {
+    public class EntityRenderable : IRenderable
+    {
+        public Vector2 Position { get; set; }
+        public Vector2 BasePosition { get; set; }
+        private Sprite sprite;
+
+        public EntityRenderable(Vector2 pos, Vector2 basePos, Sprite sprite)
+        {
+            this.Position = pos;
+            this.BasePosition = basePos;
+            this.sprite = sprite;
+        }
+
+        public void Render()
+        {
+            this.sprite.Render(this.Position);
+            if (Debug.DrawEntityCollisionBoxes)
+            {
+                Renderer.Primitive.RenderRectangle(this.sprite.GetCollisionBox(this.Position), ColorF.Blue * 0.3f);
+            }
+            if (Debug.DrawEntityBasePositions)
+            {
+                Renderer.Primitive.RenderCircle(this.BasePosition, 2f, ColorF.Green, false);
+            }
+        }
+    }
+
     public class Entity
     {
         public Vector2 Position { get; set; }
@@ -24,7 +51,7 @@ namespace AGame.Engine.World.Entities
         {
             get
             {
-                return Sprite.GetRectangle(this.Position);
+                return Sprite.GetCollisionBox(this.Position);
             }
         }
         public bool CollidesWithSolidTiles { get; set; }
@@ -44,10 +71,10 @@ namespace AGame.Engine.World.Entities
             if (this.CollidesWithSolidTiles)
             {
                 // X collisions
-                if (crater.CheckCollisionWithCrater(this.CollisionBox.Offset(new Vector2(this.Velocity.X, 0f)), true, false, true))
+                if (crater.CheckCollisionWithCrater(this.CollisionBox.Offset(new Vector2(this.Velocity.X, 0f)), true, true))
                 {
                     //this.Position = this.Position.Round();
-                    while (!crater.CheckCollisionWithCrater(this.CollisionBox.Offset(new Vector2(Math.Sign(this.Velocity.X), 0)), true, false, true))
+                    while (!crater.CheckCollisionWithCrater(this.CollisionBox.Offset(new Vector2(Math.Sign(this.Velocity.X), 0)), true, true))
                     {
                         this.Position += new Vector2(Math.Sign(this.Velocity.X), 0);
                     }
@@ -57,10 +84,10 @@ namespace AGame.Engine.World.Entities
                 }
 
                 // Y collisions
-                if (crater.CheckCollisionWithCrater(this.CollisionBox.Offset(new Vector2(0f, this.Velocity.Y)), true, false, true))
+                if (crater.CheckCollisionWithCrater(this.CollisionBox.Offset(new Vector2(0f, this.Velocity.Y)), true, true))
                 {
                     //this.Position = this.Position.Round();
-                    while (!crater.CheckCollisionWithCrater(this.CollisionBox.Offset(new Vector2(0f, Math.Sign(this.Velocity.Y))), true, false, true))
+                    while (!crater.CheckCollisionWithCrater(this.CollisionBox.Offset(new Vector2(0f, Math.Sign(this.Velocity.Y))), true, true))
                     {
                         this.Position += new Vector2(0f, Math.Sign(this.Velocity.Y));
                     }
@@ -80,13 +107,18 @@ namespace AGame.Engine.World.Entities
             this.Position += this.Velocity;
         }
 
-        public virtual void Render(Crater crater)
+        public EntityRenderable GetRenderable()
         {
-            this.Sprite.Render(this.Position);
-            if (Debug.DrawEntityCollisionBoxes)
-            {
-                Renderer.Primitive.RenderRectangle(CollisionBox, ColorF.Blue * 0.3f);
-            }
+            return new EntityRenderable(this.Position, this.Position + new Vector2(this.Sprite.GetWidth() / 2f, this.Sprite.GetHeight()), this.Sprite);
         }
+
+        // public virtual void Render(Crater crater)
+        // {
+        //     this.Sprite.Render(this.Position);
+        //     if (Debug.DrawEntityCollisionBoxes)
+        //     {
+        //         Renderer.Primitive.RenderRectangle(CollisionBox, ColorF.Blue * 0.3f);
+        //     }
+        // }
     }
 }

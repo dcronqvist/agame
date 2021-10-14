@@ -62,7 +62,7 @@ namespace AGame.World
             }
         }
 
-        public override void Render()
+        public void Render()
         {
             RectangleF visibleArea = Renderer.Camera.VisibleArea;
 

@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using AGame.Engine.Assets;
 using AGame.World;
 
@@ -35,9 +36,11 @@ namespace AGame.Engine.World
                 return _texture;
             }
         }
+        public Vector2 TopLeftInTexture { get; set; }
 
-        public Tile(string texName, bool solid)
+        public Tile(string texName, bool solid, Vector2 topLeftInTexture)
         {
+            this.TopLeftInTexture = topLeftInTexture;
             this.TextureName = texName;
             this.Solid = solid;
         }

@@ -121,7 +121,7 @@ namespace AGame.Engine.World
             }
         }
 
-        public override void Render()
+        public void Render()
         {
             foreach (KeyValuePair<int, DynamicInstancedTextureRenderer> kvp in TileIDToRenderer)
             {

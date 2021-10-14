@@ -13,8 +13,9 @@ namespace AGame.Engine.Graphics
         public ColorF ColorTint { get; set; }
         public RectangleF SourceRectangle { get; set; }
         public float Rotation { get; set; }
+        public RectangleF CollisionBox { get; set; }
 
-        public Sprite(Texture2D texture, Vector2 renderScale, Vector2 origin, ColorF colorTint, RectangleF sourceRectangle, float rotation)
+        public Sprite(Texture2D texture, Vector2 renderScale, Vector2 origin, ColorF colorTint, RectangleF sourceRectangle, float rotation, RectangleF collisionBox)
         {
             Texture = texture;
             RenderScale = renderScale;
@@ -22,6 +23,17 @@ namespace AGame.Engine.Graphics
             ColorTint = colorTint;
             SourceRectangle = sourceRectangle;
             Rotation = rotation;
+            CollisionBox = collisionBox;
+        }
+
+        public virtual int GetWidth()
+        {
+            return (int)(this.Texture.Width * this.RenderScale.X);
+        }
+
+        public virtual int GetHeight()
+        {
+            return (int)(this.Texture.Height * this.RenderScale.Y);
         }
 
         public virtual void Update()
@@ -29,9 +41,9 @@ namespace AGame.Engine.Graphics
 
         }
 
-        public RectangleF GetRectangle(Vector2 position)
+        public RectangleF GetCollisionBox(Vector2 position)
         {
-            return new RectangleF(position.X, position.Y, SourceRectangle.Width * RenderScale.X, SourceRectangle.Height * RenderScale.Y);
+            return new RectangleF(position.X + this.CollisionBox.X * RenderScale.X, position.Y + this.CollisionBox.Y * RenderScale.Y, this.CollisionBox.Width * RenderScale.X, this.CollisionBox.Height * RenderScale.Y);
         }
 
         public virtual void Render(Vector2 position)

@@ -18,9 +18,9 @@ namespace AGame.Engine.World.Entities
             base.Update(crater);
         }
 
-        public override void Render(Crater crater)
-        {
-            base.Render(crater);
-        }
+        // public override void Render(Crater crater)
+        // {
+        //     base.Render(crater);
+        // }
     }
 }

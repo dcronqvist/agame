@@ -13,33 +13,33 @@ namespace AGame.Engine.World
 {
     public class Crater
     {
-        public string Name { get; set; }
-        public StaticTileGrid BackgroundLayer { get; set; }
-        public DynamicTileGrid ResourceLayer { get; set; }
-        public DynamicTileGrid BuildingLayer { get; set; }
-        public DynamicTileGrid ForegroundLayer { get; set; }
-        public float SlopeAngle { get; set; }
+        public StaticTileGrid GroundLayer { get; set; }
+        public TileGrid grid;
 
-        private RenderTexture _renderTexture;
-
-        public Crater(int seed, ICraterGenerator generator)
+        public Crater()
         {
-            this.BackgroundLayer = generator.GenerateBackgroundLayer(seed);
-            this.ResourceLayer = generator.GenerateResourceLayer(seed);
-            this.BuildingLayer = new DynamicTileGrid(new int[50, 50]);
-            Utilities.InitRNG(seed);
-            this.SlopeAngle = Utilities.GetRandomFloat(0f, 2f * MathF.PI);
 
-            _renderTexture = new RenderTexture(DisplayManager.GetWindowSizeInPixels());
+            int[,] g = new int[100, 100];
+
+            for (int y = 0; y < 100; y++)
+            {
+                for (int x = 0; x < 100; x++)
+                {
+                    g[x, y] = 1;
+                }
+            }
+
+            GroundLayer = new StaticTileGrid(g);
+            this.grid = new TileGrid(new int[100, 100]);
         }
 
-        public bool CheckCollisionWithCrater(RectangleF rectInCrater, bool backgroundCheck = true, bool resourceCheck = false, bool buildingCheck = false)
+        public bool CheckCollisionWithCrater(RectangleF rectInCrater, bool backgroundCheck = true, bool buildingCheck = false)
         {
-            bool background = backgroundCheck && CheckCollisionWithGrid(rectInCrater, BackgroundLayer);
-            bool resource = resourceCheck && CheckCollisionWithGrid(rectInCrater, ResourceLayer);
+            bool background = backgroundCheck && CheckCollisionWithGrid(rectInCrater, this.GroundLayer);
+            bool building = buildingCheck && CheckCollisionWithGrid(rectInCrater, this.grid);
             //bool building = buildingCheck && CheckCollisionWithGrid(rectInCrater, BuildingLayer);
 
-            return background || resource;// || building;
+            return background || building;// || building;
         }
 
         public bool CheckCollisionWithGrid(RectangleF rectInCrater, TileGrid grid)
@@ -51,10 +51,10 @@ namespace AGame.Engine.World
         {
             int margin = 2;
 
-            int minX = (int)(rectInCrater.X / StaticTileGrid.TILE_SIZE) - margin + 1;
-            int maxX = (int)((rectInCrater.X + rectInCrater.Width) / StaticTileGrid.TILE_SIZE) + margin;
-            int minY = (int)(rectInCrater.Y / StaticTileGrid.TILE_SIZE) - margin + 1;
-            int maxY = (int)((rectInCrater.Y + rectInCrater.Height) / StaticTileGrid.TILE_SIZE) + margin;
+            int minX = (int)(rectInCrater.X / TileGrid.TILE_SIZE) - margin + 1;
+            int maxX = (int)((rectInCrater.X + rectInCrater.Width) / TileGrid.TILE_SIZE) + margin;
+            int minY = (int)(rectInCrater.Y / TileGrid.TILE_SIZE) - margin + 1;
+            int maxY = (int)((rectInCrater.Y + rectInCrater.Height) / TileGrid.TILE_SIZE) + margin;
 
             List<RectangleF> recs = new List<RectangleF>();
 
@@ -62,13 +62,16 @@ namespace AGame.Engine.World
             {
                 for (int x = minX; x < maxX; x++)
                 {
-                    Tile t = TileManager.GetTileFromID(grid.GridOfIDs[x, y]);
-                    if (t.Solid)
+                    if (grid.GridOfIDs[x, y] != 0)
                     {
-                        RectangleF r = new RectangleF(x * StaticTileGrid.TILE_SIZE, y * StaticTileGrid.TILE_SIZE, StaticTileGrid.TILE_SIZE, StaticTileGrid.TILE_SIZE);
-                        if (rectInCrater.IntersectsWith(r))
+                        Tile t = TileManager.GetTileFromID(grid.GridOfIDs[x, y]);
+                        if (t.Solid)
                         {
-                            recs.Add(r);
+                            RectangleF r = new RectangleF(x * TileGrid.TILE_SIZE, y * TileGrid.TILE_SIZE, TileGrid.TILE_SIZE, TileGrid.TILE_SIZE);
+                            if (rectInCrater.IntersectsWith(r))
+                            {
+                                recs.Add(r);
+                            }
                         }
                     }
                 }
@@ -77,47 +80,16 @@ namespace AGame.Engine.World
             return recs.ToArray();
         }
 
-        public void Update()
+        public void Render()
         {
-            if (Input.IsMouseButtonPressed(GLFW.MouseButton.Left))
-            {
-                int x = ResourceLayer.GetTileXFromPosition(Input.GetMousePosition(Renderer.Camera));
-                int y = ResourceLayer.GetTileYFromPosition(Input.GetMousePosition(Renderer.Camera));
-
-                this.BuildingLayer.SetTile(x, y, 2);
-            }
-            if (Input.IsMouseButtonPressed(GLFW.MouseButton.Right))
-            {
-                int x = ResourceLayer.GetTileXFromPosition(Input.GetMousePosition(Renderer.Camera));
-                int y = ResourceLayer.GetTileYFromPosition(Input.GetMousePosition(Renderer.Camera));
-
-                this.BuildingLayer.RemoveTile(x, y);
-            }
+            this.GroundLayer.Render();
         }
 
-        public Vector2 AbsoluteMiddle()
+        public IRenderable[] GetRenderables()
         {
-            float a = (BackgroundLayer.Height * StaticTileGrid.TILE_SIZE) / 2f;
-            return new Vector2(a, a);
-        }
-
-        public RenderTexture Render(Camera2D camera)
-        {
-            Renderer.SetRenderTarget(this._renderTexture, camera);
-            Renderer.Clear(ColorF.Orange);
-
-            BackgroundLayer.Render();
-            //ResourceLayer.Render();
-            BuildingLayer.Render();
-            //ForegroundLayer.Render();
-
-            int x = ResourceLayer.GetTileXFromPosition(Input.GetMousePosition(camera));
-            int y = ResourceLayer.GetTileYFromPosition(Input.GetMousePosition(camera));
-
-            Renderer.Primitive.RenderRectangle(new RectangleF(x * StaticTileGrid.TILE_SIZE, y * StaticTileGrid.TILE_SIZE, StaticTileGrid.TILE_SIZE, StaticTileGrid.TILE_SIZE), ColorF.BlueGray * 0.5f);
-
-            Renderer.SetRenderTarget(null, null);
-            return this._renderTexture;
+            RectangleF visibleArea = Renderer.Camera.VisibleArea;
+            IRenderable[] tileRenderables = this.grid.GetTileRenderablesInRect(visibleArea);
+            return tileRenderables;
         }
     }
 }

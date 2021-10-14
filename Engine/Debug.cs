@@ -7,6 +7,7 @@ namespace AGame.Engine
     public static class Debug
     {
         public static bool DrawEntityCollisionBoxes = false;
+        public static bool DrawEntityBasePositions = false;
 
         public static bool PropertyExists(string name)
         {

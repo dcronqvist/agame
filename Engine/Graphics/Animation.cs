@@ -13,13 +13,23 @@ namespace AGame.Engine.Graphics
         private int currentFrame;
         private int framesPerSecond;
 
-        public Animation(Texture2D texture, Vector2 renderScale, Vector2 origin, ColorF colorTint, RectangleF animationFrames, float rotation, int framesPerSecond, int amountOfFrames) : base(texture, renderScale, origin, colorTint, new RectangleF(0, 0, 0, 0), rotation)
+        public Animation(Texture2D texture, Vector2 renderScale, Vector2 origin, ColorF colorTint, RectangleF animationFrames, float rotation, int framesPerSecond, int amountOfFrames, RectangleF collisionBox) : base(texture, renderScale, origin, colorTint, new RectangleF(0, 0, 0, 0), rotation, collisionBox)
         {
             this.framesPerSecond = framesPerSecond;
             this.amountOfFrames = amountOfFrames;
             this.frames = CreateFrames(texture, animationFrames, amountOfFrames);
             this.currentFrame = 0;
             this.SourceRectangle = this.frames[this.currentFrame];
+        }
+
+        public override int GetWidth()
+        {
+            return (int)(this.frames[currentFrame].Width * this.RenderScale.X);
+        }
+
+        public override int GetHeight()
+        {
+            return (int)(this.frames[currentFrame].Height * this.RenderScale.Y);
         }
 
         private float GetFrameTime()

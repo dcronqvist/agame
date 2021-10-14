@@ -13,30 +13,30 @@ namespace AGame.Engine.World.Entities
     {
         public Player(Vector2 startPos) : base(startPos,
                                             new Animator(new Dictionary<string, Animation>() {
-                                                { "idle", new Animation(AssetManager.GetAsset<Texture2D>("tex_krobus"), Vector2.One * 2f, Vector2.Zero, ColorF.White, new RectangleF(0, 0, 16, 24), 0f, 1, 1) },
-                                                { "run_right", new Animation(AssetManager.GetAsset<Texture2D>("tex_krobus"), Vector2.One * 2f, Vector2.Zero, ColorF.White, new RectangleF(0, 24, 64, 24), 0f, 11, 4) },
-                                                { "run_left", new Animation(AssetManager.GetAsset<Texture2D>("tex_krobus"), Vector2.One * 2f, Vector2.Zero, ColorF.White, new RectangleF(0, 72, 64, 24), 0f, 11, 4) },
-                                                { "run_down", new Animation(AssetManager.GetAsset<Texture2D>("tex_krobus"), Vector2.One * 2f, Vector2.Zero, ColorF.White, new RectangleF(0, 0, 64, 24), 0f, 11, 4) },
-                                                { "run_up", new Animation(AssetManager.GetAsset<Texture2D>("tex_krobus"), Vector2.One * 2f, Vector2.Zero, ColorF.White, new RectangleF(0, 48, 64, 24), 0f, 11, 4) }
+                                                { "idle", new Animation(AssetManager.GetAsset<Texture2D>("tex_krobus"), Vector2.One * 2f, Vector2.Zero, ColorF.White, new RectangleF(0, 0, 16, 24), 0f, 1, 1, new RectangleF(2, 16, 12, 8)) },
+                                                { "run_right", new Animation(AssetManager.GetAsset<Texture2D>("tex_krobus"), Vector2.One * 2f, Vector2.Zero, ColorF.White, new RectangleF(0, 24, 64, 24), 0f, 11, 4, new RectangleF(2, 16, 12, 8)) },
+                                                { "run_left", new Animation(AssetManager.GetAsset<Texture2D>("tex_krobus"), Vector2.One * 2f, Vector2.Zero, ColorF.White, new RectangleF(0, 72, 64, 24), 0f, 11, 4, new RectangleF(2, 16, 12, 8)) },
+                                                { "run_down", new Animation(AssetManager.GetAsset<Texture2D>("tex_krobus"), Vector2.One * 2f, Vector2.Zero, ColorF.White, new RectangleF(0, 0, 64, 24), 0f, 11, 4, new RectangleF(2, 16, 12, 8)) },
+                                                { "run_up", new Animation(AssetManager.GetAsset<Texture2D>("tex_krobus"), Vector2.One * 2f, Vector2.Zero, ColorF.White, new RectangleF(0, 48, 64, 24), 0f, 11, 4, new RectangleF(2, 16, 12, 8)) }
                                             }, "idle"), true, 0.12f)
         {
 
         }
 
-        public override void Render(Crater crater)
-        {
-            if (crater.CheckCollisionWithGrid(this.CollisionBox, crater.BackgroundLayer))
-            {
-                RectangleF[] recs = crater.GetCollisionsWithGrid(this.CollisionBox, crater.BackgroundLayer);
+        // public override void Render(Crater crater)
+        // {
+        //     // if (crater.CheckCollisionWithGrid(this.CollisionBox, crater.BackgroundLayer))
+        //     // {
+        //     //     RectangleF[] recs = crater.GetCollisionsWithGrid(this.CollisionBox, crater.BackgroundLayer);
 
-                foreach (RectangleF r in recs)
-                {
-                    Renderer.Primitive.RenderRectangle(r, ColorF.Red * 0.3f);
-                }
-            }
+        //     //     foreach (RectangleF r in recs)
+        //     //     {
+        //     //         Renderer.Primitive.RenderRectangle(r, ColorF.Red * 0.3f);
+        //     //     }
+        //     // }
 
-            base.Render(crater);
-        }
+        //     base.Render(crater);
+        // }
 
         public override void Update(Crater crater)
         {
