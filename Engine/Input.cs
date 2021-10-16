@@ -6,6 +6,7 @@ using AGame.Engine.GLFW;
 using AGame.Engine.Graphics;
 using System.Numerics;
 using AGame.Engine.Graphics.Cameras;
+using AGame.Engine.DebugTools;
 
 namespace AGame.Engine
 {
@@ -20,6 +21,7 @@ namespace AGame.Engine
         public static event EventHandler<char> OnChar;
         public static event EventHandler OnBackspace;
         public static event EventHandler<float> OnScroll;
+        public static event EventHandler<Tuple<char, ModifierKeys>> OnCharMods;
 
         public static void Init()
         {
@@ -42,6 +44,12 @@ namespace AGame.Engine
                     {
                         OnBackspace?.Invoke(null, EventArgs.Empty);
                     }
+                }
+
+                string s = Glfw.GetKeyName(key, scanCode);
+                if (s != "" && mods != 0 && (state.HasFlag(InputState.Press) || state.HasFlag(InputState.Repeat)))
+                {
+                    OnCharMods?.Invoke(null, new Tuple<char, ModifierKeys>(s[0], mods));
                 }
             });
 

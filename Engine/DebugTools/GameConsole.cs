@@ -45,12 +45,28 @@ namespace AGame.Engine.DebugTools
                     currentLine.Append(c);
                 }
             };
+
             Input.OnBackspace += (sender, e) =>
             {
                 if (enabled)
                 {
                     if (currentLine.Length > 0)
                         currentLine.Remove(currentLine.Length - 1, 1);
+                }
+            };
+
+            Input.OnCharMods += (sender, t) =>
+            {
+                if (enabled)
+                {
+                    char c = t.Item1;
+                    ModifierKeys mk = t.Item2;
+
+                    if (c == char.Parse("v") && mk == ModifierKeys.Control)
+                    {
+                        string s = Glfw.GetClipboardString(DisplayManager.WindowHandle);
+                        currentLine.Append(s);
+                    }
                 }
             };
 
