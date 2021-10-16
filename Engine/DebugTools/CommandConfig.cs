@@ -45,7 +45,7 @@ namespace AGame.Engine.DebugTools
                 string pName = this.ParameterOrder[i];
                 Parameter p = this.PNameToParameter[pName];
 
-                pars += $"{pName}:{p.Type.ToString()} ";
+                pars += @$"\<{pName}:{p.Type.ToString()}\> ";
             }
 
             return $"Usage: {this.Handle} {pars}";

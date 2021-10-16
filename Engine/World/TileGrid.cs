@@ -13,18 +13,23 @@ namespace AGame.Engine.World
         public Vector2 Position { get; set; }
         public Vector2 BasePosition { get; set; }
         private Texture2D tileTexture;
+        private int tileWidth;
+        private int tileHeight;
 
-        public TileRenderable(Vector2 pos, int tileID)
+        public TileRenderable(Vector2 pos, int tileID, int tileWidth, int tileHeight)
         {
+            this.tileWidth = tileWidth;
+            this.tileHeight = tileHeight;
             this.Position = pos;
             this.tileTexture = TileManager.GetTileFromID(tileID).Texture;
+
             float scale = (TileGrid.TILE_SIZE / (float)tileTexture.Width);
             this.BasePosition = pos + new Vector2(0.5f, 1f) * TileGrid.TILE_SIZE + (scale * TileManager.GetTileFromID(tileID).TopLeftInTexture);
         }
 
         public void Render()
         {
-            Vector2 scale = Vector2.One * (TileGrid.TILE_SIZE / (float)this.tileTexture.Width);
+            Vector2 scale = Vector2.One * (TileGrid.TILE_SIZE / (float)this.tileTexture.Width) * this.tileWidth;
             Renderer.Texture.Render(this.tileTexture, this.Position, scale, 0f, ColorF.White);
         }
     }
@@ -52,26 +57,101 @@ namespace AGame.Engine.World
         {
             List<TileRenderable> renderables = new List<TileRenderable>();
 
-            for (int y = 0; y < this.Height; y++)
+            int y = 0;
+
+            while (y < this.Height)
             {
-                for (int x = 0; x < this.Width; x++)
+                int x = 0;
+
+                while (x < this.Width)
                 {
-                    if (this.GridOfIDs[x, y] != 0)
+                    if (this.GridOfIDs[x, y] != 0 && this.GridOfIDs[x, y] != -1)
                     {
                         Tile t = TileManager.GetTileFromID(this.GridOfIDs[x, y]);
-                        float scale = (TileGrid.TILE_SIZE / (float)t.Texture.Width);
 
-                        renderables.Add(new TileRenderable(new Vector2(x, y) * TileGrid.TILE_SIZE - (scale * t.TopLeftInTexture), this.GridOfIDs[x, y]));
+                        if (y - 1 > 0)
+                        {
+                            if (this.GridOfIDs[x, y - 1] == this.GridOfIDs[x, y] && x + 1 < this.Width)
+                            {
+                                if (this.GridOfIDs[x + 1, y] == -1)
+                                {
+                                    x += t.Width;
+                                    continue;
+                                }
+                            }
+                        }
+
+                        float scale = ((TileGrid.TILE_SIZE / (float)t.Texture.Width) * t.Width);
+
+                        renderables.Add(new TileRenderable(new Vector2(x, y) * TileGrid.TILE_SIZE - (scale * t.TopLeftInTexture), this.GridOfIDs[x, y], t.Width, t.Height));
+
+                        x += t.Width;
                     }
+                    else
+                    {
+                        x += 1;
+                    }
+
                 }
+
+                y += 1;
             }
+
+            // for (int y = 0; y < this.Height; y++)
+            // {
+            //     for (int x = 0; x < this.Width; x++)
+            //     {
+            //         if (this.GridOfIDs[x, y] != 0)
+            //         {
+            //             Tile t = TileManager.GetTileFromID(this.GridOfIDs[x, y]);
+            //             float scale = (TileGrid.TILE_SIZE / (float)t.Texture.Width);
+
+            //             renderables.Add(new TileRenderable(new Vector2(x, y) * TileGrid.TILE_SIZE - (scale * t.TopLeftInTexture), this.GridOfIDs[x, y]));
+            //         }
+            //     }
+            // }
 
             return renderables.ToArray();
         }
 
+        public bool CanUpdateTile(int x, int y, int tileID)
+        {
+            if (x < 0 || y < 0 || x > this.Width || y > this.Height)
+            {
+                return false;
+            }
+
+            Tile t = TileManager.GetTileFromID(tileID);
+
+            for (int _y = 0; _y < t.Height; _y++)
+            {
+                for (int _x = 0; _x < t.Width; _x++)
+                {
+                    if (this.GridOfIDs[x + _x, y + _y] != 0)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
         public void UpdateTile(int x, int y, int tileID)
         {
-            this.GridOfIDs[x, y] = tileID;
+            Tile t = TileManager.GetTileFromID(tileID);
+
+            for (int _y = 0; _y < t.Height; _y++)
+            {
+                for (int _x = 0; _x < t.Width; _x++)
+                {
+                    if (_y == 0 || _x == 0)
+                        this.GridOfIDs[x + _x, y + _y] = tileID;
+                    else
+                        this.GridOfIDs[x + _x, y + _y] = -1;
+                }
+            }
+
             this.tileRenderables = this.CollectTileRenderables();
         }
 

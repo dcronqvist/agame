@@ -7,20 +7,8 @@ namespace AGame.Engine.World
 {
     class Tile
     {
-        public int Width
-        {
-            get
-            {
-                return (int)Math.Ceiling((double)this.Texture.Width / StaticTileGrid.TILE_SIZE);
-            }
-        }
-        public int Height
-        {
-            get
-            {
-                return (int)Math.Ceiling((double)this.Texture.Height / StaticTileGrid.TILE_SIZE);
-            }
-        }
+        public int Width { get; set; }
+        public int Height { get; set; }
 
         public bool Solid { get; set; }
         public string TextureName { get; set; }
@@ -38,11 +26,13 @@ namespace AGame.Engine.World
         }
         public Vector2 TopLeftInTexture { get; set; }
 
-        public Tile(string texName, bool solid, Vector2 topLeftInTexture)
+        public Tile(string texName, bool solid, Vector2 topLeftInTexture, int width, int height)
         {
             this.TopLeftInTexture = topLeftInTexture;
             this.TextureName = texName;
             this.Solid = solid;
+            this.Width = width;
+            this.Height = height;
         }
     }
 }

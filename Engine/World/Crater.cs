@@ -64,7 +64,13 @@ namespace AGame.Engine.World
                 {
                     if (grid.GridOfIDs[x, y] != 0)
                     {
-                        Tile t = TileManager.GetTileFromID(grid.GridOfIDs[x, y]);
+                        int offset = 0;
+                        while (grid.GridOfIDs[x, y - offset] == -1)
+                        {
+                            offset++;
+                        }
+
+                        Tile t = TileManager.GetTileFromID(grid.GridOfIDs[x, y - offset]);
                         if (t.Solid)
                         {
                             RectangleF r = new RectangleF(x * TileGrid.TILE_SIZE, y * TileGrid.TILE_SIZE, TileGrid.TILE_SIZE, TileGrid.TILE_SIZE);

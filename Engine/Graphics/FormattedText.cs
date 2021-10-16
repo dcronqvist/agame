@@ -37,8 +37,19 @@ namespace AGame.Engine.Graphics
             int currentIndex = 0;
             string currentText = "";
 
+            string escapable = @"<>";
+
             while (currentIndex < Text.Length)
             {
+                if (Text[currentIndex] == char.Parse(@"\"))
+                {
+                    if (currentIndex + 1 < Text.Length && escapable.Contains(Text[currentIndex + 1]))
+                    {
+                        currentText += Text[currentIndex + 1];
+                        currentIndex += 2;
+                    }
+                }
+
                 if (Text[currentIndex] == char.Parse("<"))
                 {
                     if (currentText != "")

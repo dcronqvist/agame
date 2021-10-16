@@ -17,8 +17,6 @@ namespace AGame.Engine.World
         public static Camera2D PlayerCamera { get; set; }
         public static Player Player { get; set; }
 
-        static DynamicInstancedTextureRenderer ditr;
-
         public static void Init()
         {
             Utilities.InitRNG();
@@ -37,14 +35,20 @@ namespace AGame.Engine.World
                 int x = CurrentCrater.grid.GetTileXFromPosition(Input.GetMousePosition(PlayerCamera));
                 int y = CurrentCrater.grid.GetTileYFromPosition(Input.GetMousePosition(PlayerCamera));
 
-                CurrentCrater.grid.UpdateTile(x, y, 4);
+                if (CurrentCrater.grid.CanUpdateTile(x, y, 5))
+                {
+                    CurrentCrater.grid.UpdateTile(x, y, 5);
+                }
             }
             if (Input.IsMouseButtonPressed(GLFW.MouseButton.Right))
             {
                 int x = CurrentCrater.grid.GetTileXFromPosition(Input.GetMousePosition(PlayerCamera));
                 int y = CurrentCrater.grid.GetTileYFromPosition(Input.GetMousePosition(PlayerCamera));
 
-                CurrentCrater.grid.UpdateTile(x, y, 0);
+                if (CurrentCrater.grid.CanUpdateTile(x, y, 0))
+                {
+                    CurrentCrater.grid.UpdateTile(x, y, 0);
+                }
             }
 
             Player.Update(CurrentCrater);
@@ -86,7 +90,14 @@ namespace AGame.Engine.World
             int x = CurrentCrater.grid.GetTileXFromPosition(Input.GetMousePosition(PlayerCamera));
             int y = CurrentCrater.grid.GetTileYFromPosition(Input.GetMousePosition(PlayerCamera));
 
-            Renderer.Primitive.RenderRectangle(new RectangleF(x * TileGrid.TILE_SIZE, y * TileGrid.TILE_SIZE, TileGrid.TILE_SIZE, TileGrid.TILE_SIZE), ColorF.BlueGray * 0.2f);
+            ColorF c = ColorF.BlueGray;
+
+            if (!CurrentCrater.grid.CanUpdateTile(x, y, 5))
+            {
+                c = ColorF.Red;
+            }
+
+            Renderer.Primitive.RenderRectangle(new RectangleF(x * TileGrid.TILE_SIZE, y * TileGrid.TILE_SIZE, TileGrid.TILE_SIZE * 2, TileGrid.TILE_SIZE * 2), c * 0.2f);
         }
     }
 }

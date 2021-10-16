@@ -19,6 +19,8 @@ namespace AGame.Engine.DebugTools
         public static Dictionary<string, ICommand> AvailableCommands { get; set; }
         public static List<ConsoleLine> ConsoleLines { get; private set; }
 
+        private static int historyIndex;
+        private static List<string> history;
         private static StringBuilder currentLine;
         private static RenderTexture canvas;
         private static bool enabled;
@@ -38,6 +40,8 @@ namespace AGame.Engine.DebugTools
         public unsafe static void Initialize()
         {
             currentLine = new StringBuilder();
+            history = new List<string>();
+            historyIndex = 0;
             Input.OnChar += (sender, c) =>
             {
                 if (enabled)
@@ -135,15 +139,43 @@ namespace AGame.Engine.DebugTools
                 CommandResult cr = CommandResult.CreateError(error);
                 ConsoleLines.Add(cr);
             }
-
         }
 
         public static void Update()
         {
             if (Input.IsKeyPressed(GLFW.Keys.Enter))
             {
-                RunLine(currentLine.ToString());
-                currentLine.Clear();
+                if (currentLine.ToString() != "")
+                {
+                    RunLine(currentLine.ToString());
+                    history.Add(currentLine.ToString());
+                    historyIndex = history.Count;
+                    currentLine.Clear();
+                }
+            }
+            if (Input.IsKeyPressed(GLFW.Keys.Up))
+            {
+                if (historyIndex > 0)
+                {
+                    historyIndex--;
+
+                    currentLine.Clear();
+                    currentLine.Append(history[historyIndex]);
+                }
+            }
+            if (Input.IsKeyPressed(GLFW.Keys.Down))
+            {
+                if (historyIndex < history.Count - 1)
+                {
+                    historyIndex++;
+
+                    currentLine.Clear();
+                    currentLine.Append(history[historyIndex]);
+                }
+                else
+                {
+                    currentLine.Clear();
+                }
             }
 
             while (ConsoleLines.Count > 20)
