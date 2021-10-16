@@ -10,164 +10,135 @@ namespace MyMod
 {
     class MyCommand : ICommand
     {
-        public CommandResult Execute(string[] args)
+        public CommandResult Execute(Dictionary<string, object> args)
         {
             return CommandResult.CreateOk("I have done nothing");
         }
 
-        public string GetHandle()
+        public CommandConfig GetConfiguration()
         {
-            return "bitch";
-        }
-    }
-
-    class AnotherCommand : ICommand
-    {
-        public CommandResult Execute(string[] args)
-        {
-            string argsString = "";
-            foreach (string arg in args)
-            {
-                argsString += " " + arg;
-            }
-            return CommandResult.CreateWarning($"You are most likely dcronqvist. Run with args: {argsString}");
-        }
-
-        public string GetHandle()
-        {
-            return "whoami";
-        }
-    }
-
-    class NewCommand : ICommand
-    {
-        public CommandResult Execute(string[] args)
-        {
-            return CommandResult.CreateOk($"Default command.");
-        }
-        public string GetHandle()
-        {
-            return "newcommand";
+            return new CommandConfig().SetHandle("nocommand");
         }
     }
 
     class ExitCommand : ICommand
     {
-        public CommandResult Execute(string[] args)
+        public CommandResult Execute(Dictionary<string, object> args)
         {
             DisplayManager.SetWindowShouldClose(true);
             return CommandResult.CreateOk($"Default command.");
         }
-        public string GetHandle()
+
+        public CommandConfig GetConfiguration()
         {
-            return "exit";
+            return new CommandConfig().SetHandle("exit");
         }
     }
 
     class CommandsCommand : ICommand
     {
-        public CommandResult Execute(string[] args)
+        public CommandResult Execute(Dictionary<string, object> args)
         {
             Dictionary<string, ICommand> commands = GameConsole.AvailableCommands;
 
             foreach (KeyValuePair<string, ICommand> kvp in commands)
             {
-                GameConsole.WriteLine(this, kvp.Key);
+                GameConsole.WriteLine(this, $"{kvp.Value.GetConfiguration().GetUsageMessage()}");
             }
 
             return CommandResult.CreateOk($"Listed all commands.");
         }
 
-        public string GetHandle()
+        public CommandConfig GetConfiguration()
         {
-            return "commands";
+            return new CommandConfig().SetHandle("commands");
         }
     }
 
     class WindowSizeCommand : ICommand
     {
-        public CommandResult Execute(string[] args)
+        public CommandResult Execute(Dictionary<string, object> args)
         {
-            int x = int.Parse(args[0]);
-            int y = int.Parse(args[1]);
+            int x = (int)args["width"];
+            int y = (int)args["height"];
 
             DisplayManager.SetWindowSizeInPixels(new System.Numerics.Vector2(x, y));
 
-            return CommandResult.CreateOk($"Set window size to: {new System.Numerics.Vector2(x, y)}");
+            return CommandResult.CreateOk($"Set window size.");
         }
-        public string GetHandle()
-        {
-            return "windowsize";
-        }
-    }
 
-    class RowHeightCommand : ICommand
-    {
-        public CommandResult Execute(string[] args)
+        public CommandConfig GetConfiguration()
         {
-            int height = int.Parse(args[0]);
-            GameConsole.RowHeight = height;
-            return CommandResult.CreateOk($"Set GameConsole's rowheight to {height} pixels.");
-        }
-        public string GetHandle()
-        {
-            return "rowheight";
+            return new CommandConfig().SetHandle("windowsize").AddParameter(
+                new CommandConfig.Parameter(CommandConfig.ParameterType.Integer, "width", 0)
+            ).AddParameter(
+                new CommandConfig.Parameter(CommandConfig.ParameterType.Integer, "height", 1)
+            );
         }
     }
 
     class FPSCommand : ICommand
     {
-        public CommandResult Execute(string[] args)
+        public CommandResult Execute(Dictionary<string, object> args)
         {
             float fps = 1.0f / GameTime.DeltaTime;
             return CommandResult.CreateOk($"FPS is {MathF.Round(fps)}");
         }
-        public string GetHandle()
+
+        public CommandConfig GetConfiguration()
         {
-            return "checkfps";
+            return new CommandConfig().SetHandle("checkfps");
         }
     }
 
     class ClearConsoleCommand : ICommand
     {
-        public CommandResult Execute(string[] args)
+        public CommandResult Execute(Dictionary<string, object> args)
         {
             GameConsole.ConsoleLines.Clear();
             return null;
         }
-        public string GetHandle()
+
+        public CommandConfig GetConfiguration()
         {
-            return "clear";
+            return new CommandConfig().SetHandle("clear");
         }
     }
 
     class SetDebugCommand : ICommand
     {
-        public CommandResult Execute(string[] args)
+        public CommandResult Execute(Dictionary<string, object> args)
         {
-            if (!Debug.PropertyExists(args[0]))
+            string prop = (string)args["property"];
+            string va = (string)args["value"];
+
+            if (!Debug.PropertyExists(prop))
             {
-                return CommandResult.CreateError($"Debug property '{args[0]}' does not exist.");
+                return CommandResult.CreateError($"Debug property '{prop}' does not exist.");
             }
 
-            Type t = Debug.GetDebugPropertyType(args[0]);
+            Type t = Debug.GetDebugPropertyType(prop);
 
             try
             {
-                object val = Convert.ChangeType(args[1], t);
-                Debug.SetDebugProperty(args[0], val);
+                object val = Convert.ChangeType(va, t);
+                Debug.SetDebugProperty(prop, val);
 
-                return CommandResult.CreateOk($"Set '{args[0]}' to {args[1]}");
+                return CommandResult.CreateOk($"Set '{prop}' to {va}");
             }
             catch (Exception ex)
             {
                 return CommandResult.CreateError($"{ex.Message}");
             }
-
         }
-        public string GetHandle()
+
+        public CommandConfig GetConfiguration()
         {
-            return "debug";
+            return new CommandConfig().SetHandle("debug").AddParameter(
+                new CommandConfig.Parameter(CommandConfig.ParameterType.String, "property", 0)
+            ).AddParameter(
+                new CommandConfig.Parameter(CommandConfig.ParameterType.String, "value", 1)
+            );
         }
     }
 }

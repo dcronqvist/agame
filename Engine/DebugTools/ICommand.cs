@@ -1,8 +1,10 @@
+using System.Collections.Generic;
+
 namespace AGame.Engine.DebugTools
 {
     public interface ICommand
     {
-        string GetHandle();
-        CommandResult Execute(string[] args);
+        CommandConfig GetConfiguration();
+        CommandResult Execute(Dictionary<string, object> args);
     }
 }

@@ -28,6 +28,10 @@ namespace AGame.Engine.Screening
             TileManager.Init();
             WorldManager.Init();
 
+            CommandConfig cc = new CommandConfig().SetHandle("testing").
+                                AddParameter(new CommandConfig.Parameter(CommandConfig.ParameterType.String, "firstParam", 0)).
+                                AddParameter(new CommandConfig.Parameter(CommandConfig.ParameterType.Integer, "numberTwo", 1));
+
             return this;
         }
 

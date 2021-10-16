@@ -91,7 +91,7 @@ namespace AGame.Engine.DebugTools
 
         public static void WriteLine(ICommand sender, string message)
         {
-            ConsoleLines.Add(new ConsoleLine(sender.GetHandle(), message));
+            ConsoleLines.Add(new ConsoleLine(sender.GetConfiguration().Handle, message));
         }
 
         public static void WriteLine(string sender, string message)
@@ -106,8 +106,8 @@ namespace AGame.Engine.DebugTools
             foreach (Type commandType in commandTypes)
             {
                 ICommand ic = ScriptingManager.CreateInstance<ICommand>(commandType.FullName);
-
-                AvailableCommands.Add(ic.GetHandle(), ic);
+                CommandConfig cc = ic.GetConfiguration();
+                AvailableCommands.Add(cc.Handle, ic);
             }
         }
 
@@ -123,10 +123,19 @@ namespace AGame.Engine.DebugTools
             }
 
             ICommand ic = AvailableCommands[commandHandle];
-            CommandResult cr = ic.Execute(splitLine.Skip(1).ToArray());
-
-            if (cr != null)
+            CommandConfig cc = ic.GetConfiguration();
+            if (cc.TryParseLine(line, out Dictionary<string, object> d, out string error))
+            {
+                CommandResult cr = ic.Execute(d);
+                if (cr != null)
+                    ConsoleLines.Add(cr);
+            }
+            else
+            {
+                CommandResult cr = CommandResult.CreateError(error);
                 ConsoleLines.Add(cr);
+            }
+
         }
 
         public static void Update()
