@@ -10,7 +10,7 @@ namespace AGame
         static void Main(string[] args)
         {
             Game game = new ImplGame();
-            game.Run(1664, 936, TITLE);
+            game.Run(1664, 936, TITLE, args);
         }
     }
 }

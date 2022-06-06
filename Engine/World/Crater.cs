@@ -6,7 +6,6 @@ using AGame.Engine.Assets;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Cameras;
 using AGame.Engine.Graphics.Rendering;
-using AGame.Engine.World.Entities;
 using AGame.World;
 
 namespace AGame.Engine.World
@@ -16,21 +15,26 @@ namespace AGame.Engine.World
         public StaticTileGrid GroundLayer { get; set; }
         public TileGrid grid;
 
-        public Crater()
+        public Crater(int width, int height)
         {
+            int[,] g = new int[width, height];
 
-            int[,] g = new int[100, 100];
-
-            for (int y = 0; y < 100; y++)
+            for (int y = 0; y < height; y++)
             {
-                for (int x = 0; x < 100; x++)
+                for (int x = 0; x < width; x++)
                 {
-                    g[x, y] = 1;
+                    g[x, y] = Utilities.GetRandomInt(1, 4);
                 }
             }
 
             GroundLayer = new StaticTileGrid(g);
-            this.grid = new TileGrid(new int[100, 100]);
+            this.grid = new TileGrid(new int[width, height]);
+        }
+
+        public Crater(int[,] tileGrid)
+        {
+            this.GroundLayer = new StaticTileGrid(tileGrid);
+            this.grid = new TileGrid(new int[tileGrid.GetLength(0), tileGrid.GetLength(1)]);
         }
 
         public bool CheckCollisionWithCrater(RectangleF rectInCrater, bool backgroundCheck = true, bool buildingCheck = false)

@@ -1,7 +1,11 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
+using System.Numerics;
 using AGame.Engine;
 using AGame.Engine.DebugTools;
+using AGame.Engine.ECSys;
+using AGame.Engine.ECSys.Components;
 using AGame.Engine.Graphics;
 using AGame.Engine.World;
 using static AGame.Engine.OpenGL.GL;
@@ -141,4 +145,77 @@ namespace MyMod
             );
         }
     }
+
+    class ECSEntityCount : ICommand
+    {
+        public CommandResult Execute(Dictionary<string, object> args)
+        {
+            return CommandResult.CreateOk($"Entity Count: {ECS.Instance.Value.GetAllEntities().Count}");
+        }
+
+        public CommandConfig GetConfiguration()
+        {
+            return new CommandConfig().SetHandle("ecsentitycount");
+        }
+    }
+
+    // class ECSNewEntityAtMouse : ICommand
+    // {
+    //     public CommandResult Execute(Dictionary<string, object> args)
+    //     {
+    //         string name = (string)args["name"];
+
+    //         Entity e = ECS.CreateEntityFromAsset(name);
+
+    //         Vector2 pos = Input.GetMousePosition(WorldManager.PlayerCamera);
+
+    //         e.GetComponent<TransformComponent>().Position = pos;
+
+    //         return CommandResult.CreateOk($"Created entity '{name}' at x={pos.X}, y={pos.Y}");
+    //     }
+
+    //     public CommandConfig GetConfiguration()
+    //     {
+    //         return new CommandConfig().SetHandle("newentity").AddParameter(
+    //             new CommandConfig.Parameter(CommandConfig.ParameterType.String, "name", 0)
+    //         );
+    //     }
+    // }
+
+    class ECSGetEntityComponents : ICommand
+    {
+        public CommandResult Execute(Dictionary<string, object> args)
+        {
+            if (!ECS.Instance.Value.EntityExists((int)args["entity"]))
+            {
+                return CommandResult.CreateError($"Entity does not exist.");
+            }
+
+            Entity e = ECS.Instance.Value.GetEntityFromID((int)args["entity"]);
+
+            string s = e.Components.Select(x => x.ComponentType + ": " + x.ToString()).Aggregate((x, y) => x + "," + y);
+
+            return CommandResult.CreateOk(s);
+        }
+
+        public CommandConfig GetConfiguration()
+        {
+            return new CommandConfig().SetHandle("ecscomponents").AddParameter(
+                new CommandConfig.Parameter(CommandConfig.ParameterType.Integer, "entity", 0)
+            );
+        }
+    }
+
+    // class MyCoolComponent : Component
+    // {
+    //     public override Component Clone()
+    //     {
+    //         return new MyCoolComponent();
+    //     }
+
+    //     public override string ToString()
+    //     {
+    //         return "MyCoolComponent";
+    //     }
+    // }
 }

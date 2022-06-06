@@ -1,0 +1,26 @@
+{
+	"components": [
+		{
+			"componentType": "Sprite",
+			"texture": "tex_player"
+		},
+		{
+			"componentType": "Transform",
+			"position": {
+				"interpolationFactor": 10.0,
+				"currentValue": {
+					"x": 0,
+					"y": 0
+				},
+				"targetValue": {
+					"x": 0,
+					"y": 0
+				}
+			}
+		},
+		{
+			"componentType": "PlayerInput",
+			"keyBitmask": 0
+		}
+	]
+}

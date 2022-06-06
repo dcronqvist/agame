@@ -16,24 +16,17 @@ namespace AGame.Engine.Assets
 
         public Asset LoadAsset(string filePath)
         {
-            try
+            ScriptCompiler sc = new ScriptCompiler();
+            byte[] iass = sc.Compile(filePath, out string[] errorMsgs);
+            if (errorMsgs.Length > 0)
             {
-                ScriptCompiler sc = new ScriptCompiler();
-                byte[] iass = sc.Compile(filePath, out string[] errorMsgs);
-                if (errorMsgs.Length > 0)
-                {
-                    // This failed to load the script.
-                    return null;
-                }
+                // This failed to load the script.
+                throw new Exception(string.Join("\n", errorMsgs));
+            }
 
-                //Assembly assembly = Assembly.LoadFile(filePath);
-                Assembly assembly = Assembly.Load(iass);
-                return new Script(assembly, Path.GetFileNameWithoutExtension(filePath));
-            }
-            catch
-            {
-                return null;
-            }
+            //Assembly assembly = Assembly.LoadFile(filePath);
+            Assembly assembly = Assembly.Load(iass);
+            return new Script(assembly, Path.GetFileNameWithoutExtension(filePath));
         }
     }
 }

@@ -9,6 +9,12 @@ using Newtonsoft.Json;
 
 namespace AGame.Engine.Assets
 {
+    class AssetFailedLoadEventArgs : EventArgs
+    {
+        public string AssetName { get; set; }
+        public Exception Exception { get; set; }
+    }
+
     static class AssetManager
     {
         /// <summary>
@@ -28,6 +34,7 @@ namespace AGame.Engine.Assets
         public static event EventHandler OnAllCoreAssetsLoaded;
         public static event EventHandler<string> OnAssetStartLoad;
         public static event EventHandler<Asset> OnAssetLoaded;
+        public static event EventHandler<AssetFailedLoadEventArgs> OnAssetFailedLoad;
         public static event EventHandler OnFinalizeStart;
         public static event EventHandler OnFinalizeEnd;
 
@@ -60,7 +67,8 @@ namespace AGame.Engine.Assets
                 { ".ttf", new FontLoader() },
                 { ".shader", new ShaderLoader() },
                 { ".png", new TextureLoader() },
-                { ".cs", new ScriptLoader() }
+                { ".cs", new ScriptLoader() },
+                { ".entity", new EntityLoader() }
             };
 
             AllAssetsLoaded = false;
@@ -101,8 +109,26 @@ namespace AGame.Engine.Assets
             string[] files = Directory.GetFiles(AssetDirectory, "*.*", SearchOption.AllDirectories);
             // Remove all files that are in the scripts directory and remove the resource.types file.
             // files = files.Where(x => !x.Contains(ScriptManager.ScriptDirectory) && x != ResourceTypeFile && ResourceTypes.Keys.Contains(Path.GetExtension(x)) && !x.Contains("screen.ing")).ToArray();
-            files = files.Where(x => FilterOnlyFilesWithAssetExtensions(x) && !coreAssets.Contains(Path.GetFileName(x))).ToArray();
+            files = files.Where(x => FilterOnlyFilesWithAssetExtensions(x) && !coreAssets.Contains(Path.GetFileName(x))).OrderBy(x => Path.GetExtension(x).Contains("entity")).ToArray();
             return files;
+        }
+
+        private static bool TryLoadAsset(string file, out Asset asset, out IAssetLoader usedLoader, out Exception exception)
+        {
+            usedLoader = AssetLoaders[Path.GetExtension(file)];
+
+            try
+            {
+                asset = usedLoader.LoadAsset(file);
+                exception = null;
+                return true;
+            }
+            catch (Exception e)
+            {
+                asset = null;
+                exception = e;
+                return false;
+            }
         }
 
         private static Asset LoadAsset(string file, out IAssetLoader assetLoader)
@@ -127,12 +153,22 @@ namespace AGame.Engine.Assets
             {
                 // Load each resource file
                 string assetName = Path.GetFileNameWithoutExtension(file);
-                Asset asset = LoadAsset(file, out IAssetLoader assetLoader);
-                asset.Name = assetLoader.AssetPrefix() + "_" + assetName;
-                asset.IsCore = true;
-                asset.InitOpenGL();
 
-                AddAsset(asset.Name, asset);
+                if (TryLoadAsset(file, out Asset loadedAsset, out IAssetLoader usedLoader, out Exception exception))
+                {
+                    loadedAsset.Name = usedLoader.AssetPrefix() + "_" + assetName;
+                    loadedAsset.IsCore = true;
+                    loadedAsset.InitOpenGL();
+                    AddAsset(loadedAsset.Name, loadedAsset);
+                }
+                else
+                {
+                    OnAssetFailedLoad?.Invoke(null, new AssetFailedLoadEventArgs()
+                    {
+                        AssetName = usedLoader.AssetPrefix() + "_" + assetName,
+                        Exception = exception
+                    });
+                }
 
                 AssetsLoaded++;
             }
@@ -156,12 +192,22 @@ namespace AGame.Engine.Assets
             {
                 // Load each resource file
                 string assetName = Path.GetFileNameWithoutExtension(file);
-                OnAssetStartLoad?.Invoke(null, assetName);
-                Asset asset = LoadAsset(file, out IAssetLoader assetLoader);
-                asset.Name = assetLoader.AssetPrefix() + "_" + assetName;
-                asset.IsCore = false;
 
-                AddAsset(asset.Name, asset);
+                if (TryLoadAsset(file, out Asset loadedAsset, out IAssetLoader usedLoader, out Exception exception))
+                {
+                    loadedAsset.Name = usedLoader.AssetPrefix() + "_" + assetName;
+                    loadedAsset.IsCore = true;
+                    loadedAsset.InitOpenGL();
+                    AddAsset(loadedAsset.Name, loadedAsset);
+                }
+                else
+                {
+                    OnAssetFailedLoad?.Invoke(null, new AssetFailedLoadEventArgs()
+                    {
+                        AssetName = usedLoader.AssetPrefix() + "_" + assetName,
+                        Exception = exception
+                    });
+                }
 
                 AssetsLoaded++;
             }

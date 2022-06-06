@@ -8,35 +8,11 @@ using AGame.Engine.Graphics.Rendering;
 
 namespace AGame.Engine.World
 {
-    public class TileRenderable : IRenderable
-    {
-        public Vector2 Position { get; set; }
-        public Vector2 BasePosition { get; set; }
-        private Texture2D tileTexture;
-        private int tileWidth;
-        private int tileHeight;
-
-        public TileRenderable(Vector2 pos, int tileID, int tileWidth, int tileHeight)
-        {
-            this.tileWidth = tileWidth;
-            this.tileHeight = tileHeight;
-            this.Position = pos;
-            this.tileTexture = TileManager.GetTileFromID(tileID).Texture;
-
-            float scale = (TileGrid.TILE_SIZE / (float)tileTexture.Width);
-            this.BasePosition = pos + new Vector2(0.5f, 1f) * TileGrid.TILE_SIZE + (scale * TileManager.GetTileFromID(tileID).TopLeftInTexture);
-        }
-
-        public void Render()
-        {
-            Vector2 scale = Vector2.One * (TileGrid.TILE_SIZE / (float)this.tileTexture.Width) * this.tileWidth;
-            Renderer.Texture.Render(this.tileTexture, this.Position, scale, 0f, ColorF.White);
-        }
-    }
-
     public class TileGrid
     {
         public const int TILE_SIZE = 32;
+
+        public Tile[,] GridOfTiles { get; set; }
 
         public int[,] GridOfIDs { get; set; }
         public int Width { get; set; }
@@ -81,9 +57,8 @@ namespace AGame.Engine.World
                             }
                         }
 
-                        float scale = ((TileGrid.TILE_SIZE / (float)t.Texture.Width) * t.Width);
-
-                        renderables.Add(new TileRenderable(new Vector2(x, y) * TileGrid.TILE_SIZE - (scale * t.TopLeftInTexture), this.GridOfIDs[x, y], t.Width, t.Height));
+                        Vector2 scale = new Vector2((TileGrid.TILE_SIZE / (float)t.Texture.Width) * t.Width, (TileGrid.TILE_SIZE / (float)t.Texture.Height) * t.Height);
+                        renderables.Add(new TileRenderable(new Vector2(x, y) * TileGrid.TILE_SIZE - (scale * t.TopLeftInTexture), t.Texture, t.TopLeftInTexture, t.Width, t.Height));
 
                         x += t.Width;
                     }
@@ -135,6 +110,21 @@ namespace AGame.Engine.World
             }
 
             return true;
+        }
+
+        public Tile GetTileFromPosition(int x, int y)
+        {
+            if (this.GridOfIDs[x, y] == 0)
+            {
+                return null;
+            }
+
+            int _y = y;
+            while (this.GridOfIDs[x, _y] == -1)
+            {
+                _y--;
+            }
+            return TileManager.GetTileFromID(this.GridOfIDs[x, _y]);
         }
 
         public void UpdateTile(int x, int y, int tileID)

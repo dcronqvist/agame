@@ -10,7 +10,7 @@ using AGame.Engine.DebugTools;
 
 namespace AGame.Engine
 {
-    static class Input
+    public static class Input
     {
         public static Dictionary<Keys, bool> currentKeyboardState;
         public static Dictionary<Keys, bool> previousKeyboardState;

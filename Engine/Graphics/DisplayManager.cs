@@ -44,7 +44,7 @@ namespace AGame.Engine.Graphics
         private static Window CreateWindow(int width, int height, string title)
         {
             // Create window, make the OpenGL context current on the thread, and import graphics functions
-            Window window = Glfw.CreateWindow(width, height, title, Monitor.None, Window.None);
+            Window window = Glfw.CreateWindow(width, height, title, GLFW.Monitor.None, Window.None);
 
             // Center window
             Rectangle screen = Glfw.PrimaryMonitor.WorkArea;

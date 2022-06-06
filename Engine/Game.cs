@@ -8,19 +8,19 @@ namespace AGame.Engine
 {
     abstract class Game
     {
-        public abstract void Initialize();
-        public abstract void LoadContent();
+        public abstract void Initialize(string[] args);
+        public abstract void LoadContent(string[] args);
         public abstract void Update();
         public abstract void Render();
         public abstract void Unload();
 
-        public void Run(int winWidth, int winHeight, string winTitle)
+        public void Run(int winWidth, int winHeight, string winTitle, string[] args)
         {
-            Initialize();
+            Initialize(args);
 
             DisplayManager.InitWindow(winWidth, winHeight, winTitle);
 
-            LoadContent();
+            LoadContent(args);
 
             GameTime.DeltaTime = 0;
             GameTime.TotalElapsedSeconds = 0;

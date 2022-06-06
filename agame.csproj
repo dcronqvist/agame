@@ -2,11 +2,16 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>AGame</RootNamespace>
     <DefaultItemExcludes>$(DefaultItemExcludes);$(ProjectDir)\res\**\*.*</DefaultItemExcludes>
     <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <RestoreSources>$(RestoreSources);../_local-dotnet-packages;https://api.nuget.org/v3/index.json</RestoreSources>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(OS)' == 'WINDOWS_NT'">
@@ -19,6 +24,7 @@
 
   <ItemGroup>
     <PackageReference Include="FreeTypeSharp" Version="1.1.3" />
+    <PackageReference Include="GameUDPProtocol" Version="1.0.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.11.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="SimplexNoise" Version="2.0.0" />
@@ -37,5 +43,11 @@
     <Message Text="Copying dlls to output directory..." Importance="High" />
 
     <Copy SourceFiles="@(LibDlls)" DestinationFolder="$(OutDir)" />
+  </Target>
+
+  <Target Name="RemoveGameResources" AfterTargets="Clean">
+    <Message Text="Removing game resources directory from output..." Importance="High" />
+
+    <RemoveDir Directories="$(OutDir)\res" />
   </Target>
 </Project>

@@ -12,6 +12,8 @@ using AGame.Engine.Assets.Scripting;
 using AGame.Engine.DebugTools;
 using AGame.Engine.Screening;
 using System.Threading;
+using AGame.Engine.ECSys;
+using AGame.Engine.World;
 
 namespace AGame.Engine
 {
@@ -20,15 +22,23 @@ namespace AGame.Engine
         bool inConsole;
         string currentLoadingAsset = "";
 
-        public override void Initialize()
+        string gotoScreen = "testscreen";
+
+        public override void Initialize(string[] args)
         {
+            if (args.Length > 0)
+            {
+                gotoScreen = "remotescreen";
+            }
+
+            ECS.Instance.Value.Initialize();
             inConsole = false;
         }
 
-        public unsafe override void LoadContent()
+        public unsafe override void LoadContent(string[] args)
         {
             GameConsole.Initialize();
-            DisplayManager.SetTargetFPS(144);
+            //DisplayManager.SetTargetFPS(144);
 
             DisplayManager.OnFramebufferResize += (window, size) =>
             {
@@ -46,6 +56,11 @@ namespace AGame.Engine
                 GameConsole.WriteLine("ASSETS", $"Successfully loaded asset '{asset.Name}'");
             };
 
+            AssetManager.OnAssetFailedLoad += (sender, e) =>
+            {
+                GameConsole.WriteLine("ASSETS", $"<0xFF0000>Failed to load asset '{e.AssetName}', error: '{e.Exception.Message}'</>");
+            };
+
             AssetManager.OnFinalizeStart += (sender, e) =>
             {
                 GameConsole.WriteLine("ASSETS", $"<0xFFFF00>Finalizing assets...</>");
@@ -58,8 +73,11 @@ namespace AGame.Engine
                 ScriptingManager.LoadScripts();
                 GameConsole.LoadCommands();
 
-                ScreenManager.Init();
-                ScreenManager.GoToScreen("testscreen");
+                TileManager.Init();
+                WorldManager.Init();
+
+                ScreenManager.Init(args);
+                ScreenManager.GoToScreen(gotoScreen);
             };
 
             AssetManager.OnAllCoreAssetsLoaded += (sender, e) =>
@@ -91,12 +109,8 @@ namespace AGame.Engine
                 AssetManager.FinalizeAssets();
             }
 
-            if (!inConsole)
-            {
-                // Game updating
-                ScreenManager.Update();
-            }
-
+            // Game updating
+            ScreenManager.Update();
 
             if (Input.IsKeyPressed(Keys.Home))
             {
@@ -148,7 +162,7 @@ namespace AGame.Engine
 
         public override void Unload()
         {
-
+            ScreenManager.CurrentScreen.OnLeave();
         }
     }
 }

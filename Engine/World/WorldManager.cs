@@ -4,10 +4,11 @@ using System.Drawing;
 using System.Linq;
 using System.Numerics;
 using AGame.Engine.Assets;
+using AGame.Engine.ECSys;
+using AGame.Engine.ECSys.Components;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Cameras;
 using AGame.Engine.Graphics.Rendering;
-using AGame.Engine.World.Entities;
 
 namespace AGame.Engine.World
 {
@@ -15,45 +16,18 @@ namespace AGame.Engine.World
     {
         public static Crater CurrentCrater { get; set; }
         public static Camera2D PlayerCamera { get; set; }
-        public static Player Player { get; set; }
 
         public static void Init()
         {
             Utilities.InitRNG();
             //CurrentCrater = new Crater(Utilities.GetRandomInt(0, 100), new TestingGenerator());
-            CurrentCrater = new Crater();
+            CurrentCrater = new Crater(100, 100);
             PlayerCamera = new Camera2D(Vector2.Zero, 2f);
-            Player = new Player(new Vector2(100, 100));
         }
 
         public static void Update()
         {
             //CurrentCrater.Update();
-
-            if (Input.IsMouseButtonPressed(GLFW.MouseButton.Left))
-            {
-                int x = CurrentCrater.grid.GetTileXFromPosition(Input.GetMousePosition(PlayerCamera));
-                int y = CurrentCrater.grid.GetTileYFromPosition(Input.GetMousePosition(PlayerCamera));
-
-                if (CurrentCrater.grid.CanUpdateTile(x, y, 5))
-                {
-                    CurrentCrater.grid.UpdateTile(x, y, 5);
-                }
-            }
-            if (Input.IsMouseButtonPressed(GLFW.MouseButton.Right))
-            {
-                int x = CurrentCrater.grid.GetTileXFromPosition(Input.GetMousePosition(PlayerCamera));
-                int y = CurrentCrater.grid.GetTileYFromPosition(Input.GetMousePosition(PlayerCamera));
-
-                if (CurrentCrater.grid.CanUpdateTile(x, y, 0))
-                {
-                    CurrentCrater.grid.UpdateTile(x, y, 0);
-                }
-            }
-
-            Player.Update(CurrentCrater);
-            DisplayManager.SetWindowTitle($"Player: {Player.Position.ToString()}");
-            PlayerCamera.FocusPosition = Player.MiddleOfSpritePosition;
         }
 
         public static void Render()
@@ -64,7 +38,6 @@ namespace AGame.Engine.World
             CurrentCrater.Render();
 
             List<IRenderable> craterRenderables = CurrentCrater.GetRenderables().ToList();
-            craterRenderables.Add(Player.GetRenderable());
 
             craterRenderables.Sort((a, b) =>
             {
@@ -86,18 +59,6 @@ namespace AGame.Engine.World
             {
                 ir.Render();
             }
-
-            int x = CurrentCrater.grid.GetTileXFromPosition(Input.GetMousePosition(PlayerCamera));
-            int y = CurrentCrater.grid.GetTileYFromPosition(Input.GetMousePosition(PlayerCamera));
-
-            ColorF c = ColorF.BlueGray;
-
-            if (!CurrentCrater.grid.CanUpdateTile(x, y, 5))
-            {
-                c = ColorF.Red;
-            }
-
-            Renderer.Primitive.RenderRectangle(new RectangleF(x * TileGrid.TILE_SIZE, y * TileGrid.TILE_SIZE, TileGrid.TILE_SIZE * 2, TileGrid.TILE_SIZE * 2), c * 0.2f);
         }
     }
 }

@@ -1,14 +1,16 @@
 using System;
 using System.Numerics;
 using AGame.Engine.Assets;
+using AGame.Engine.Graphics;
 using AGame.World;
 
 namespace AGame.Engine.World
 {
-    class Tile
+    public class Tile
     {
         public int Width { get; set; }
         public int Height { get; set; }
+        public string Name { get; set; }
 
         public bool Solid { get; set; }
         public string TextureName { get; set; }
@@ -33,6 +35,22 @@ namespace AGame.Engine.World
             this.Solid = solid;
             this.Width = width;
             this.Height = height;
+        }
+
+        public void SetTileName(string tileName)
+        {
+            this.Name = tileName;
+        }
+
+        public virtual void Update()
+        {
+
+        }
+
+        public virtual IRenderable GetRenderable(Vector2 worldPos)
+        {
+            float scale = ((TileGrid.TILE_SIZE / (float)this.Texture.Width) * this.Width);
+            return new TileRenderable(worldPos - (scale * this.TopLeftInTexture), this.Texture, this.TopLeftInTexture, this.Width, this.Height);
         }
     }
 }

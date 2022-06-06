@@ -148,5 +148,32 @@ namespace AGame.Engine
         {
             return Matrix4x4.CreateScale(new Vector3(scale, 1f)) * Matrix4x4.CreateTranslation(new Vector3(position, 1f));
         }
+
+        public static IEnumerable<Type> FindDerivedTypesInAssembly(Assembly assembly, Type baseType)
+        {
+            return assembly.GetTypes().Where(t => baseType.IsAssignableFrom(t));
+        }
+
+        public static IEnumerable<Type> FindDerivedTypes(Type baseType)
+        {
+            return AppDomain.CurrentDomain.GetAssemblies().SelectMany(ass =>
+            {
+                return FindDerivedTypesInAssembly(ass, baseType);
+            });
+        }
+
+        public static bool IsSubclassOfRawGeneric(Type generic, Type toCheck)
+        {
+            while (toCheck != null && toCheck != typeof(object))
+            {
+                var cur = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
+                if (generic == cur)
+                {
+                    return true;
+                }
+                toCheck = toCheck.BaseType;
+            }
+            return false;
+        }
     }
 }

@@ -17,6 +17,7 @@ namespace AGame.Engine.Screening
                 return Screens[CurrentScreenName];
             }
         }
+        public static string[] Args { get; set; }
 
         static ScreenManager()
         {
@@ -29,17 +30,20 @@ namespace AGame.Engine.Screening
             Screens.Add(name, screen);
         }
 
-        public static void Init()
+        public static void Init(string[] args)
         {
+            Args = args;
+
             // Add screens
             AddScreen("testscreen", new TestScreen().Initialize());
+            AddScreen("remotescreen", new RemoteScreen().Initialize());
         }
 
         public static void GoToScreen(string name)
         {
             CurrentScreen?.OnLeave();
             CurrentScreenName = name;
-            CurrentScreen.OnEnter();
+            CurrentScreen.OnEnter(Args);
         }
 
         public static void Update()

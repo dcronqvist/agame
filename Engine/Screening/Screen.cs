@@ -13,7 +13,7 @@ namespace AGame.Engine.Screening
         public abstract void Update();
         public abstract void Render();
 
-        public abstract void OnEnter();
+        public abstract void OnEnter(string[] args);
         public abstract void OnLeave();
     }
 }
