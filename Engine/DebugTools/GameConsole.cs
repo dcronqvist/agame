@@ -75,15 +75,15 @@ namespace AGame.Engine.DebugTools
             };
 
             // glEnable(GL_DEBUG_OUTPUT);
-            glDebugMessageCallback((s, t, i, sev, l, msg, up) =>
-            {
-                // if (t == GL_DEBUG_TYPE_ERROR)
-                // {
-                Console.WriteLine(s);
-                Console.WriteLine(msg);
-                GameConsole.WriteLine("GL", msg);
-                // }
-            }, (void*)0);
+            // glDebugMessageCallback((s, t, i, sev, l, msg, up) =>
+            // {
+            //     // if (t == GL_DEBUG_TYPE_ERROR)
+            //     // {
+            //     Console.WriteLine(s);
+            //     Console.WriteLine(msg);
+            //     GameConsole.WriteLine("GL", msg);
+            //     // }
+            // }, (void*)0);
 
             canvas = new RenderTexture(DisplayManager.GetWindowSizeInPixels());
         }

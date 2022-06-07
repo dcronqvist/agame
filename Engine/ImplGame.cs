@@ -112,7 +112,7 @@ namespace AGame.Engine
             // Game updating
             ScreenManager.Update();
 
-            if (Input.IsKeyPressed(Keys.Home))
+            if (Input.IsKeyPressed(Keys.RightShift))
             {
                 inConsole = !inConsole;
                 GameConsole.SetEnabled(inConsole);
