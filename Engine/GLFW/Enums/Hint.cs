@@ -58,6 +58,8 @@ namespace AGame.Engine.GLFW
         /// </summary>
         Floating = 0x00020007,
 
+        HiDPIResize = 0x00020009,
+
         /// <summary>
         ///     Specifies whether the windowed mode window will be maximized when created. This hint is ignored for full screen
         ///     windows.

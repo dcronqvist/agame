@@ -16,6 +16,8 @@ namespace AGame.Engine
 
         public void Run(int winWidth, int winHeight, string winTitle, string[] args)
         {
+            bool macMove = false;
+
             Initialize(args);
 
             DisplayManager.InitWindow(winWidth, winHeight, winTitle);
@@ -37,6 +39,13 @@ namespace AGame.Engine
                 Update();
 
                 Render();
+
+                if (!macMove)
+                {
+                    Glfw.SetWindowSize(DisplayManager.WindowHandle, winWidth + 1, winHeight + 1);
+                    Glfw.SetWindowSize(DisplayManager.WindowHandle, winWidth, winHeight);
+                    macMove = true;
+                }
 
                 Input.End();
 

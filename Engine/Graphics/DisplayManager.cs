@@ -31,7 +31,9 @@ namespace AGame.Engine.Graphics
             Glfw.WindowHint(Hint.ContextVersionMinor, 3);
             Glfw.WindowHint(Hint.OpenglForwardCompatible, true);
 
-            Glfw.WindowHint(Hint.ScaleToMonitor, true);
+            Glfw.WindowHint(Hint.CocoaRetinaFrameBuffer, false);
+            Glfw.WindowHint(Hint.ScaleToMonitor, false);
+            Glfw.WindowHint(Hint.HiDPIResize, true);
 
             Glfw.WindowHint(Hint.OpenglProfile, Profile.Core);
             Glfw.WindowHint(Hint.Doublebuffer, true);
