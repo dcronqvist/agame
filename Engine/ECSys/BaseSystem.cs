@@ -20,6 +20,17 @@ public abstract class BaseSystem
 
     public abstract void Initialize();
 
+    public void InterpolatePropertiesOfEntitiesComponents(List<Entity> entities)
+    {
+        foreach (Entity entity in entities)
+        {
+            foreach (Component component in entity.Components)
+            {
+                component.InterpolateProperties();
+            }
+        }
+    }
+
     public virtual void Update(List<Entity> entities)
     {
 

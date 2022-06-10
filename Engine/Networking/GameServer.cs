@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using AGame.Engine.DebugTools;
 using AGame.Engine.ECSys;
@@ -11,9 +12,12 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 {
     private ThreadSafe<ECS> _ecs;
     private Crater _crater;
+    private Dictionary<Connection, int> _playersIds;
 
     public GameServer(int port) : base(port, 500, 100000000)
     {
+        this._playersIds = new Dictionary<Connection, int>();
+
         this.ConnectionRequested += (sender, e) =>
         {
             e.Accept(new ConnectResponse());
@@ -65,7 +69,9 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             {
                 newPlayer = _ecs.Value.CreateEntityFromAsset("entity_player");
             });
-            newPlayer.GetComponent<TransformComponent>().Position.TargetValue = Utilities.GetRandomVector2(0, 1000, 0, 1000);
+            this._playersIds.Add(connection, newPlayer.ID);
+            GameConsole.WriteLine("SERVER", $"New player with ID {newPlayer.ID} connected from {connection.RemoteEndPoint}");
+            newPlayer.GetComponent<TransformComponent>().Position = Utilities.GetRandomVector2(0, 16 * 10, 0, 16 * 10);
 
             _ecs.LockedAction((ecs) =>
             {
@@ -109,6 +115,19 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 }
             });
         });
+
+        this.ClientDisconnected += (sender, e) =>
+        {
+            this._ecs.LockedAction((ecs) =>
+            {
+                if (this._playersIds.ContainsKey(e.Connection))
+                {
+                    int entityId = this._playersIds[e.Connection];
+                    ecs.DestroyEntity(entityId);
+                    this._playersIds.Remove(e.Connection);
+                }
+            });
+        };
     }
 
     public new async Task StartAsync()
@@ -117,23 +136,42 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         _ecs = new ThreadSafe<ECS>(new ECS());
         _ecs.Value.Initialize();
 
+        this._ecs.Value.ComponentChanged += (entity, component, behaviour) =>
+        {
+            if (behaviour == NBType.Update)
+            {
+                this._connections.LockedAction((conns) =>
+                {
+                    foreach (var conn in conns)
+                    {
+                        this.EnqueuePacket(new UpdateEntityComponentPacket(entity.ID, component), conn, true, true);
+                    }
+                });
+            }
+        };
+
         GameConsole.WriteLine("SERVER", "Generating world map...");
         _crater = new Crater(100, 100);
         GameConsole.WriteLine("SERVER", "World map generated.");
 
         await base.StartAsync();
 
-        _ = Task.Run(() =>
+        // Snapshotting task
+        Stopwatch sw = new Stopwatch();
+        _ = Task.Run(async () =>
         {
+            sw.Start();
             while (true)
             {
+                long startTime = sw.ElapsedMilliseconds;
+
                 this._connections.LockedAction((conns) =>
                 {
                     _ecs.LockedAction((ecs) =>
                     {
                         foreach (Entity e in ecs.GetAllEntities())
                         {
-                            foreach (Component c in e.Components)
+                            foreach (Component c in e.Components.Where(x => x.ShouldSnapshot()))
                             {
                                 foreach (Connection conn in conns)
                                 {
@@ -144,11 +182,35 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                         }
                     });
                 });
+                long endTime = sw.ElapsedMilliseconds;
 
-                Thread.Sleep(50);
+                // Wait until next snapshort. Aim for 20 snapshots per second.
+                if (endTime - startTime < 50)
+                {
+                    await Task.Delay(50 - ((int)(endTime - startTime)));
+                }
             }
         });
+
+        // await Task.Delay(10000);
+
+        // _ = Task.Run(async () =>
+        // {
+        //     while (true)
+        //     {
+        //         Vector2 randomVector = Utilities.GetRandomVector2(0, 100, 0, 100);
+        //         int x = (int)randomVector.X;
+        //         int y = (int)randomVector.Y;
+
+        //         this._crater.GroundLayer.SetTile(x, y, Utilities.GetRandomInt(0, 4));
+
+        //         await Task.Delay(1000);
+        //     }
+        // });
     }
+
+    float counter = 0f;
+    float interval = 1;
 
     public void Update()
     {
@@ -156,5 +218,60 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         {
             ecs.Update();
         });
+
+        foreach (int id in this._playersIds.Values)
+        {
+            Entity e = this._ecs.Value.GetEntityFromID(id);
+
+            var pic = e.GetComponent<PlayerInputComponent>();
+            var trans = e.GetComponent<TransformComponent>();
+
+            int x = (int)trans.Position.X / TileGrid.TILE_SIZE;
+            int y = (int)trans.Position.Y / TileGrid.TILE_SIZE;
+
+            if (pic.IsKeyDown(PlayerInputComponent.KEY_SPACE))
+            {
+                this._crater.GroundLayer.SetTile(x, y, 3);
+                this._connections.LockedAction((conns) =>
+                {
+                    foreach (Connection conn in conns)
+                    {
+                        this.EnqueuePacket(new GroundLayerUpdatePacket(x, y, 3), conn, true, false);
+                    }
+                });
+            }
+        }
+
+        // if (counter > interval && this._playersIds.Count > 0)
+        // {
+        //     Vector2 randomVector = Utilities.GetRandomVector2(0, 10, 0, 10);
+
+        //     int x = (int)randomVector.X;
+        //     int y = (int)randomVector.Y;
+        //     int tileId = Utilities.GetRandomInt(1, 4);
+
+        //     while (this._crater.GroundLayer.GetTileIDAtPosition(x, y) == tileId)
+        //     {
+        //         randomVector = Utilities.GetRandomVector2(0, 10, 0, 10);
+
+        //         x = (int)randomVector.X;
+        //         y = (int)randomVector.Y;
+
+        //         tileId = Utilities.GetRandomInt(1, 4);
+        //     }
+
+        //     this._crater.GroundLayer.SetTile(x, y, tileId);
+        //     counter = 0f;
+
+        //     this._connections.LockedAction((conns) =>
+        //     {
+        //         foreach (Connection conn in conns)
+        //         {
+        //             this.EnqueuePacket(new GroundLayerUpdatePacket(x, y, tileId), conn, true, false);
+        //         }
+        //     });
+        // }
+
+        // counter += GameTime.DeltaTime;
     }
 }

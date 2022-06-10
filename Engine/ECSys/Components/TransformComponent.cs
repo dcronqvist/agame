@@ -3,9 +3,11 @@ using AGame.Engine.Networking;
 
 namespace AGame.Engine.ECSys.Components;
 
+[NetworkingBehaviour(NBType.Snapshot)]
 public class TransformComponent : Component
 {
-    public InterpolatedVector2 Position { get; set; }
+    private Vector2 _targetPosition;
+    public Vector2 Position { get; set; }
 
     public TransformComponent()
     {
@@ -16,34 +18,43 @@ public class TransformComponent : Component
     {
         return new TransformComponent()
         {
-            Position = new InterpolatedVector2(this.Position.TargetValue, this.Position.InterpolationFactor)
+            Position = Position,
+            _targetPosition = _targetPosition
         };
     }
 
     public override int Populate(byte[] data, int offset)
     {
         int initialOffset = offset;
-        this.Position = new InterpolatedVector2(Vector2.Zero, 0f);
-        offset = this.Position.Populate(data, offset);
+        Position = new Vector2(BitConverter.ToSingle(data, offset), BitConverter.ToSingle(data, offset + 4));
+        offset += 8;
         return offset - initialOffset;
     }
 
     public override byte[] ToBytes()
     {
         List<byte> bytes = new List<byte>();
-        bytes.AddRange(this.Position.ToBytes());
+        bytes.AddRange(BitConverter.GetBytes(Position.X));
+        bytes.AddRange(BitConverter.GetBytes(Position.Y));
         return bytes.ToArray();
     }
 
     public override string ToString()
     {
-        return $"Position=[x={this.Position.CurrentValue.X}, y={this.Position.CurrentValue.Y}, if={this.Position.InterpolationFactor}]";
+        return $"Position=[x={Position.X}, y={Position.Y}]";
     }
 
     public override void UpdateComponent(Component newComponent)
     {
         TransformComponent tc = newComponent as TransformComponent;
 
-        this.Position.TargetValue = tc.Position.TargetValue;
+        this._targetPosition = tc.Position;
+    }
+
+    public override void InterpolateProperties()
+    {
+        if ((_targetPosition - Position).AbsLength() < 0.05f) return;
+
+        this.Position += (_targetPosition - Position) * 15f * GameTime.DeltaTime;
     }
 }

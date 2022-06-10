@@ -1,11 +1,15 @@
+using AGame.Engine.Networking;
+
 namespace AGame.Engine.ECSys.Components;
 
+[NetworkingBehaviour(NBType.OnlyClientToServer)]
 public class PlayerInputComponent : Component
 {
     public const int KEY_W = 1 << 0;
     public const int KEY_A = 1 << 1;
     public const int KEY_S = 1 << 2;
     public const int KEY_D = 1 << 3;
+    public const int KEY_SPACE = 1 << 4;
 
     public int KeyBitmask { get; set; }
 
@@ -58,5 +62,10 @@ public class PlayerInputComponent : Component
     public override void UpdateComponent(Component newComponent)
     {
         this.KeyBitmask = ((PlayerInputComponent)newComponent).KeyBitmask;
+    }
+
+    public override void InterpolateProperties()
+    {
+
     }
 }

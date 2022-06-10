@@ -1,0 +1,11 @@
+{
+    "tileName": "game:dirt",
+    "texture": "tex_marsdirt",
+    "solid": false,
+    "topLeftInTexture": {
+        "x": 0,
+        "y": 0
+    },
+    "widthInTiles": 1,
+    "heightInTiles": 1
+}

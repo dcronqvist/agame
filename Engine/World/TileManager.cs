@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Numerics;
+using AGame.Engine.Assets;
+using System.Linq;
 
 namespace AGame.Engine.World
 {
@@ -16,11 +18,13 @@ namespace AGame.Engine.World
 
         public static void Init()
         {
-            AddTile("game:dirt", 1, new Tile("tex_marsdirt", false, Vector2.Zero, 1, 1));
-            AddTile("game:grass", 2, new Tile("tex_grass_base", true, Vector2.Zero, 1, 1));
-            AddTile("game:dirtlight", 3, new Tile("tex_marsdirt-lighter", true, Vector2.Zero, 1, 1));
-            AddTile("game:chest", 4, new Tile("tex_chest", true, new Vector2(0, 9), 2, 2));
-            AddTile("game:chestbig", 5, new Tile("tex_chestbig", true, new Vector2(0, 0), 2, 1));
+            // Get all tiles from the assetmanager
+            TileDescription[] descriptions = AssetManager.GetAssetsOfType<TileDescription>().ToArray();
+
+            foreach (TileDescription td in descriptions)
+            {
+                AddTile(td.TileName, Tiles.Count, td.GetAsTile());
+            }
         }
 
         public static void AddTile(string tileName, int tileID, Tile tile)
@@ -33,6 +37,11 @@ namespace AGame.Engine.World
         public static Tile GetTileFromID(int tileID)
         {
             return Tiles[tileID];
+        }
+
+        public static int GetTileIDFromName(string tileName)
+        {
+            return TileNamesToID[tileName];
         }
     }
 }

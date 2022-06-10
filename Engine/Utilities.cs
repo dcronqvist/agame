@@ -4,6 +4,7 @@ using System.IO;
 using System.Numerics;
 using System.Reflection;
 using System.Text;
+using AGame.Engine.World;
 
 namespace AGame.Engine
 {
@@ -174,6 +175,45 @@ namespace AGame.Engine
                 toCheck = toCheck.BaseType;
             }
             return false;
+        }
+
+        public static T ChooseUniform<T>(params T[] choices)
+        {
+            return choices[GetRandomInt(0, choices.Length)];
+        }
+
+        // Randomly select one of the choices based on its weight. The sum of all weights sums to 1.
+        public static T ChooseWeighted<T>(params Tuple<T, float>[] choices)
+        {
+            float sum = 0;
+            foreach (var choice in choices)
+            {
+                sum += choice.Item2;
+            }
+            float r = GetRandomFloat(0, sum);
+            float cur = 0;
+            foreach (var choice in choices)
+            {
+                cur += choice.Item2;
+                if (r < cur)
+                {
+                    return choice.Item1;
+                }
+            }
+            return choices[choices.Length - 1].Item1;
+        }
+
+        public static int[,] ConvertTileGridNamesToIDs(string[,] tileGridNames)
+        {
+            int[,] tileGridIDs = new int[tileGridNames.GetLength(0), tileGridNames.GetLength(1)];
+            for (int x = 0; x < tileGridNames.GetLength(0); x++)
+            {
+                for (int y = 0; y < tileGridNames.GetLength(1); y++)
+                {
+                    tileGridIDs[x, y] = TileManager.GetTileIDFromName(tileGridNames[x, y]);
+                }
+            }
+            return tileGridIDs;
         }
     }
 }

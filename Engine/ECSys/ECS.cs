@@ -1,9 +1,13 @@
 using System.Linq;
 using AGame.Engine.Assets;
+using AGame.Engine.DebugTools;
 using AGame.Engine.ECSys.Systems;
+using AGame.Engine.Networking;
 using GameUDPProtocol;
 
 namespace AGame.Engine.ECSys;
+
+public delegate void ComponentChangedEventHandler(Entity entity, Component component, NBType behaviourType);
 
 public class ECS
 {
@@ -17,6 +21,7 @@ public class ECS
 
     // Component stuff
     private Dictionary<string, Type> _componentTypes = new Dictionary<string, Type>();
+    public event ComponentChangedEventHandler ComponentChanged;
 
     // Singleton for client
     private static ThreadSafe<ECS> _instance;
@@ -101,7 +106,7 @@ public class ECS
 
         foreach (Component c in ed.Components)
         {
-            entity.Components.Add(c.Clone());
+            AddComponentToEntity(entity, c);
         }
 
         RecalculateSystemEntities();
@@ -120,6 +125,20 @@ public class ECS
 
     public void AddComponentToEntity(Entity entity, Component c)
     {
+        c.PropertyChanged += (sender, e) =>
+        {
+            NetworkingBehaviourAttribute nba = c.GetType().GetCustomAttributes(typeof(NetworkingBehaviourAttribute), false).FirstOrDefault() as NetworkingBehaviourAttribute;
+
+            if (nba is null)
+            {
+                ComponentChanged?.Invoke(entity, c, NBType.Snapshot);
+            }
+            else
+            {
+                ComponentChanged?.Invoke(entity, c, nba.Type);
+            }
+        };
+
         entity.Components.Add(c);
         RecalculateSystemEntities();
     }
@@ -127,6 +146,13 @@ public class ECS
     public void RemoveComponentFromEntity(Entity entity, Type c)
     {
         entity.Components.Remove(entity.Components.Find(e => e.GetType() == c));
+        RecalculateSystemEntities();
+    }
+
+    public void DestroyEntity(int id)
+    {
+        Entity entity = _entities.Find(e => e.ID == id);
+        _entities.Remove(entity);
         RecalculateSystemEntities();
     }
 

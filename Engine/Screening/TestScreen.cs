@@ -56,8 +56,7 @@ namespace AGame.Engine.Screening
         public override void Update()
         {
             this.server.Update();
-
-            client.Update();
+            this.client.Update();
         }
 
         public override void Render()

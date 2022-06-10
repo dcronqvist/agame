@@ -68,7 +68,8 @@ namespace AGame.Engine.Assets
                 { ".shader", new ShaderLoader() },
                 { ".png", new TextureLoader() },
                 { ".cs", new ScriptLoader() },
-                { ".entity", new EntityLoader() }
+                { ".entity", new EntityLoader() },
+                { ".tile", new TileLoader() }
             };
 
             AllAssetsLoaded = false;

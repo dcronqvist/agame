@@ -4,9 +4,11 @@ using System.Text;
 using System.Text.Json.Serialization;
 using AGame.Engine.Assets;
 using AGame.Engine.Graphics;
+using AGame.Engine.Networking;
 
 namespace AGame.Engine.ECSys.Components;
 
+[NetworkingBehaviour(NBType.Update)]
 public class SpriteComponent : Component
 {
     public string Texture { get; set; }
@@ -19,7 +21,7 @@ public class SpriteComponent : Component
     {
         get
         {
-            if (_sprite == null)
+            if (_sprite == null || _sprite.Texture.Name != this.Texture)
             {
                 _sprite = new Sprite(AssetManager.GetAsset<Texture2D>(this.Texture), Vector2.One, Vector2.Zero, ColorF.White, new RectangleF(0, 0, 16, 16), 0f, new RectangleF(0, 0, 16, 16));
             }
@@ -65,6 +67,11 @@ public class SpriteComponent : Component
     }
 
     public override void UpdateComponent(Component newComponent)
+    {
+        this.Texture = ((SpriteComponent)newComponent).Texture;
+    }
+
+    public override void InterpolateProperties()
     {
 
     }

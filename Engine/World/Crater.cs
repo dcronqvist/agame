@@ -12,28 +12,28 @@ namespace AGame.Engine.World
 {
     public class Crater
     {
-        public StaticTileGrid GroundLayer { get; set; }
+        public DynamicTileGrid GroundLayer { get; set; }
         public TileGrid grid;
 
         public Crater(int width, int height)
         {
-            int[,] g = new int[width, height];
+            string[,] g = new string[width, height];
 
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
                 {
-                    g[x, y] = Utilities.GetRandomInt(1, 4);
+                    g[x, y] = Utilities.ChooseUniform("game:dirt");
                 }
             }
 
-            GroundLayer = new StaticTileGrid(g);
+            GroundLayer = new DynamicTileGrid(Utilities.ConvertTileGridNamesToIDs(g));
             this.grid = new TileGrid(new int[width, height]);
         }
 
         public Crater(int[,] tileGrid)
         {
-            this.GroundLayer = new StaticTileGrid(tileGrid);
+            this.GroundLayer = new DynamicTileGrid(tileGrid);
             this.grid = new TileGrid(new int[tileGrid.GetLength(0), tileGrid.GetLength(1)]);
         }
 

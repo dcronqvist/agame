@@ -22,7 +22,7 @@ namespace AGame.Engine.World
                 for (int x = 0; x < Width; x++)
                 {
                     // Render each tile
-                    if (GridOfIDs[x, y] != 0)
+                    if (GridOfIDs[x, y] != -1)
                     {
                         Vector2 tilePos = new Vector2(TILE_SIZE * x, TILE_SIZE * y);
                         if (!TileIDAndPositions.ContainsKey(GridOfIDs[x, y]))
@@ -43,13 +43,13 @@ namespace AGame.Engine.World
                 List<Matrix4x4> matrices = new List<Matrix4x4>();
                 for (int i = 0; i < positions.Count; i++)
                 {
-                    Matrix4x4 transPos = Matrix4x4.CreateTranslation(new Vector3(positions[i], 0.0f));
-                    Matrix4x4 rot = Matrix4x4.CreateRotationZ(0f);
-                    RectangleF sourceRect = new RectangleF(0, 0, 16, 16);
-                    Vector2 scale = Vector2.One * (TILE_SIZE / t.Texture.Width);
-                    Matrix4x4 mscale = Matrix4x4.CreateScale(new Vector3(new Vector2(sourceRect.Width, sourceRect.Height) * scale, 1.0f));
-
-                    matrices.Add(mscale * rot * transPos);
+                    // Matrix4x4 transPos = Matrix4x4.CreateTranslation(new Vector3(positions[i], 0.0f));
+                    // Matrix4x4 rot = Matrix4x4.CreateRotationZ(0f);
+                    // RectangleF sourceRect = new RectangleF(0, 0, 16, 16);
+                    // Vector2 scale = Vector2.One * (TILE_SIZE / t.Texture.Width);
+                    // Matrix4x4 mscale = Matrix4x4.CreateScale(new Vector3(new Vector2(sourceRect.Width, sourceRect.Height) * scale, 1.0f));
+                    Matrix4x4 matrix = Utilities.CreateModelMatrixFromPosition(positions[i], new Vector2(TileGrid.TILE_SIZE));
+                    matrices.Add(matrix);
                 }
 
                 TileIDToRenderer.Add(kvp.Key, new DynamicInstancedTextureRenderer(AssetManager.GetAsset<Shader>("shader_texture"), TileManager.GetTileFromID(kvp.Key).Texture, new RectangleF(0, 0, 16, 16), matrices.ToArray()));
@@ -80,12 +80,14 @@ namespace AGame.Engine.World
 
             if (tileId != -1)
             {
-                Vector2 pos = Vector2.One * TileGrid.TILE_SIZE;
-                Matrix4x4 mat = Utilities.CreateModelMatrixFromPosition(pos, Vector2.One * TileGrid.TILE_SIZE);
+                Vector2 pos = new Vector2(x, y) * TileGrid.TILE_SIZE;
+                Matrix4x4 mat = Utilities.CreateModelMatrixFromPosition(pos, new Vector2(TileGrid.TILE_SIZE));
 
                 this.TileIDToRenderer[tileId].RemoveMatrix(mat);
 
                 this.TileIDAndPositions[tileId].Remove(pos);
+
+                this.GridOfIDs[x, y] = 0;
 
                 return true;
             }
@@ -97,6 +99,13 @@ namespace AGame.Engine.World
 
         public void SetTile(int x, int y, int tileID)
         {
+            if (this.GetTileIDAtPosition(x, y) == tileID)
+            {
+                return;
+            }
+
+            RemoveTile(x, y);
+
             this.GridOfIDs[x, y] = tileID;
             Vector2 worldPosition = new Vector2(x, y) * TileGrid.TILE_SIZE;
 
@@ -116,7 +125,6 @@ namespace AGame.Engine.World
             else
             {
                 DynamicInstancedTextureRenderer ditr = this.TileIDToRenderer[tileID];
-
                 ditr.AddMatrix(modelMatrix);
             }
         }
