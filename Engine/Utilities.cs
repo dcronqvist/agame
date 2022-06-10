@@ -229,6 +229,14 @@ namespace AGame.Engine
             }
             return tileGrid;
         }
+
+        public static Vector2i GetChunkCoordsFromTileCoords(int x, int y)
+        {
+            int cx = (int)MathF.Floor(x / (Chunk.CHUNK_SIZE));
+            int cy = (int)MathF.Floor(y / (Chunk.CHUNK_SIZE));
+
+            return new Vector2i(x, y);
+        }
     }
 
     public struct Vector2i : IPacketable

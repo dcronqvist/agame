@@ -178,21 +178,23 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             }
         });
 
-        // await Task.Delay(10000);
+        this._world.ChunkUpdated += (sender, e) =>
+        {
+            this._connections.LockedAction((conns) =>
+            {
+                foreach (Connection conn in conns)
+                {
+                    ChunkUpdatePacket wcp = new ChunkUpdatePacket()
+                    {
+                        X = e.Chunk.X,
+                        Y = e.Chunk.Y,
+                        Chunk = e.Chunk
+                    };
 
-        // _ = Task.Run(async () =>
-        // {
-        //     while (true)
-        //     {
-        //         Vector2 randomVector = Utilities.GetRandomVector2(0, 100, 0, 100);
-        //         int x = (int)randomVector.X;
-        //         int y = (int)randomVector.Y;
-
-        //         this._crater.GroundLayer.SetTile(x, y, Utilities.GetRandomInt(0, 4));
-
-        //         await Task.Delay(1000);
-        //     }
-        // });
+                    this.EnqueuePacket(wcp, conn, true, false);
+                }
+            });
+        };
     }
 
     float counter = 0f;
@@ -212,8 +214,12 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             var pic = e.GetComponent<PlayerInputComponent>();
             var trans = e.GetComponent<TransformComponent>();
 
-            int x = (int)trans.Position.X / TileGrid.TILE_SIZE;
-            int y = (int)trans.Position.Y / TileGrid.TILE_SIZE;
+            Vector2i tilePos = trans.GetTilePosition();
+
+            if (pic.IsKeyDown(PlayerInputComponent.KEY_SPACE))
+            {
+                this._world.UpdateTile(tilePos.X, tilePos.Y, "game:grass");
+            }
         }
 
         // if (counter > interval && this._playersIds.Count > 0)

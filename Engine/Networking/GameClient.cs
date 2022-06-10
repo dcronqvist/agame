@@ -16,7 +16,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     bool connectDone = false;
     int receivedTiles = 0;
     int[,] tileGrid = new int[100, 100];
-    WorldContainer world;
+    public WorldContainer world;
     Queue<GroundLayerUpdatePacket> _groundLayerUpdateQueue = new Queue<GroundLayerUpdatePacket>();
     Camera2D _camera;
 

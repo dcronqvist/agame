@@ -41,8 +41,24 @@ public class WholeChunkPacket : Packet
 {
     public int X { get; set; }
     public int Y { get; set; }
-
     public Chunk Chunk { get; set; }
+
+    public WholeChunkPacket()
+    {
+
+    }
+}
+
+public class ChunkUpdatePacket : Packet
+{
+    public int X { get; set; }
+    public int Y { get; set; }
+    public Chunk Chunk { get; set; }
+
+    public ChunkUpdatePacket()
+    {
+
+    }
 }
 
 public class ServerWorldGenerator : IWorldGenerator
@@ -56,6 +72,11 @@ public class ServerWorldGenerator : IWorldGenerator
         _gameClient.AddPacketHandler<WholeChunkPacket>((packet) =>
         {
             _requestedChunks[new ChunkAddress(packet.X, packet.Y)] = packet.Chunk;
+        });
+
+        _gameClient.AddPacketHandler<ChunkUpdatePacket>((packet) =>
+        {
+            _gameClient.world.UpdateChunk(packet.X, packet.Y, packet.Chunk);
         });
     }
 

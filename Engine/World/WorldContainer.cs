@@ -9,6 +9,10 @@ public class WorldContainer
     public ThreadSafe<Dictionary<ChunkAddress, Chunk>> Chunks { get; set; }
     public IWorldGenerator WorldGenerator { get; set; }
 
+    // Events
+    public event EventHandler<ChunkUpdatedEventArgs> ChunkUpdated;
+
+    // Private fields
     private bool _asynchronous;
 
     public WorldContainer(IWorldGenerator generator, bool useAsync = false)
@@ -24,6 +28,45 @@ public class WorldContainer
         {
             chunks[new ChunkAddress(x, y)] = chunk;
         });
+    }
+
+    public void UpdateTile(int x, int y, string tileName)
+    {
+        // Assume x and y to be tile coordinates
+        int cx = x > 0 ? x / Chunk.CHUNK_SIZE : -((-x + Chunk.CHUNK_SIZE - 1) / Chunk.CHUNK_SIZE);
+        int cy = y > 0 ? y / Chunk.CHUNK_SIZE : -((-y + Chunk.CHUNK_SIZE - 1) / Chunk.CHUNK_SIZE);
+
+        int cTopLeftX = cx * Chunk.CHUNK_SIZE;
+        int cTopLeftY = cy * Chunk.CHUNK_SIZE;
+
+        int diffX = (x - cTopLeftX);
+        int diffY = (y - cTopLeftY);
+
+        Chunk c = GetChunk(cx, cy);
+
+        int tileID = TileManager.GetTileIDFromName(tileName);
+        Tile tile = TileManager.GetTileFromID(tileID);
+
+        TileType tileType = tile.Type;
+
+        switch (tileType)
+        {
+            case TileType.Ground:
+                c.GroundLayer[diffX, diffY] = tileID;
+                break;
+        }
+
+        ChunkUpdated?.Invoke(this, new ChunkUpdatedEventArgs(c));
+    }
+
+    public void UpdateChunk(int x, int y, Chunk chunk)
+    {
+        Chunks.LockedAction((chunks) =>
+        {
+            chunks[new ChunkAddress(x, y)] = chunk;
+        });
+
+        ChunkUpdated?.Invoke(this, new ChunkUpdatedEventArgs(chunk));
     }
 
     public Chunk GetChunk(int x, int y)
@@ -144,5 +187,15 @@ public class WorldContainer
                 chunk.Render();
             }
         });
+    }
+}
+
+public class ChunkUpdatedEventArgs : EventArgs
+{
+    public Chunk Chunk { get; set; }
+
+    public ChunkUpdatedEventArgs(Chunk chunk)
+    {
+        this.Chunk = chunk;
     }
 }
