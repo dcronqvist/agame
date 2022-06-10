@@ -41,17 +41,24 @@ public class WorldContainer
         });
     }
 
+    public async Task<Chunk> GetChunkAsync(int x, int y)
+    {
+        return await Task.Run(() =>
+        {
+            return this.GetChunk(x, y);
+        });
+    }
+
     public Chunk GenerateChunk(int x, int y)
     {
-        Chunk chunk = null;
-        if (this._asynchronous)
-        {
-            chunk = this.WorldGenerator.GenerateChunkAsync(x, y).Result;
-        }
-        else
-        {
-            chunk = this.WorldGenerator.GenerateChunk(x, y);
-        }
+        Chunk chunk = this.WorldGenerator.GenerateChunk(x, y);
+        AddChunk(x, y, chunk);
+        return chunk;
+    }
+
+    public async Task<Chunk> GenerateChunkAsync(int x, int y)
+    {
+        Chunk chunk = await this.WorldGenerator.GenerateChunkAsync(x, y);
         AddChunk(x, y, chunk);
         return chunk;
     }
@@ -70,6 +77,62 @@ public class WorldContainer
                 GenerateChunk(x, y);
             }
         }
+    }
+
+    public void MaintainChunkArea(int width, int height, int x, int y)
+    {
+        // Get/generate chunks in this area and discard chunks that aren't in this area
+        int fromX = x - width;
+        int toX = x + width;
+        int fromY = y - height;
+        int toY = y + height;
+
+        for (int _x = fromX; _x <= toX; _x++)
+        {
+            for (int _y = fromY; _y <= toY; _y++)
+            {
+                GetChunk(_x, _y);
+            }
+        }
+
+        this.Chunks.LockedAction((chunks) =>
+        {
+            foreach (KeyValuePair<ChunkAddress, Chunk> chunk in chunks)
+            {
+                if (chunk.Key.X < fromX || chunk.Key.X > toX || chunk.Key.Y < fromY || chunk.Key.Y > toY)
+                {
+                    chunks.Remove(chunk.Key);
+                }
+            }
+        });
+    }
+
+    public async Task MaintainChunkAreaAsync(int width, int height, int x, int y)
+    {
+        // Get/generate chunks in this area and discard chunks that aren't in this area
+        int fromX = x - width;
+        int toX = x + width;
+        int fromY = y - height;
+        int toY = y + height;
+
+        for (int _x = fromX; _x <= toX; _x++)
+        {
+            for (int _y = fromY; _y <= toY; _y++)
+            {
+                await GetChunkAsync(_x, _y);
+            }
+        }
+
+        this.Chunks.LockedAction((chunks) =>
+        {
+            foreach (KeyValuePair<ChunkAddress, Chunk> chunk in chunks)
+            {
+                if (chunk.Key.X < fromX || chunk.Key.X > toX || chunk.Key.Y < fromY || chunk.Key.Y > toY)
+                {
+                    chunks.Remove(chunk.Key);
+                }
+            }
+        });
     }
 
     public void Render()

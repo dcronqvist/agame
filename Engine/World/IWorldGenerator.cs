@@ -64,12 +64,10 @@ public class ServerWorldGenerator : IWorldGenerator
         this.RequestChunk(x, y);
         ChunkAddress chunkAddress = new ChunkAddress(x, y);
 
-        Console.WriteLine($"Client now waiting for chunk {x}, {y}");
         while (_requestedChunks[chunkAddress] == null)
         {
-            Task.Delay(10).Wait();
+
         }
-        Console.WriteLine($"Client received chunk {x}, {y}");
 
         Chunk c = _requestedChunks[chunkAddress];
         _requestedChunks.Remove(chunkAddress);
@@ -83,11 +81,11 @@ public class ServerWorldGenerator : IWorldGenerator
         this.RequestChunk(x, y);
         ChunkAddress chunkAddress = new ChunkAddress(x, y);
 
-        await Task.Run(async () =>
+        await Task.Run(() =>
         {
             while (_requestedChunks[chunkAddress] == null)
             {
-                await Task.Delay(10);
+
             }
         });
 

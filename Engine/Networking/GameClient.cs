@@ -90,24 +90,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                 }
             });
 
-            _ = Task.Run(async () =>
-            {
-                while (true)
-                {
-                    TransformComponent tc = this._player.GetComponent<TransformComponent>();
-
-                    this._camera.FocusPosition = tc.Position;
-
-                    float fx = tc.Position.X > 0 ? tc.Position.X : (tc.Position.X - 1);
-                    float fy = tc.Position.Y > 0 ? tc.Position.Y : (tc.Position.Y - 1);
-
-                    int x = (int)MathF.Floor(fx / (Chunk.CHUNK_SIZE * TileGrid.TILE_SIZE));
-                    int y = (int)MathF.Floor(fy / (Chunk.CHUNK_SIZE * TileGrid.TILE_SIZE));
-
-                    this.world.GetChunk(x, y);
-                    await Task.Delay(100);
-                }
-            });
+            this.world.MaintainChunkAreaAsync(2, 1, this._player.GetComponent<TransformComponent>().GetChunkPosition().X, this._player.GetComponent<TransformComponent>().GetChunkPosition().Y);
 
             GameConsole.WriteLine("CONNECT", "<0x00FF00>Connected to server</>");
         });
@@ -117,6 +100,8 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     {
         GameConsole.WriteLine("CLIENT", $"<0xFF0000>Received invalid packet from {remote}, {e?.Message}</>");
     }
+
+    Vector2i previousChunkPos = new Vector2i(0, 0);
 
     public void Update()
     {
@@ -128,6 +113,16 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         if (connectDone)
         {
             TransformComponent tc = this._player.GetComponent<TransformComponent>();
+
+            Vector2i chunkPos = tc.GetChunkPosition();
+
+            if (!chunkPos.Equals(previousChunkPos))
+            {
+                // Entered new chunk. Request this one.
+                this.world.MaintainChunkAreaAsync(2, 1, this._player.GetComponent<TransformComponent>().GetChunkPosition().X, this._player.GetComponent<TransformComponent>().GetChunkPosition().Y);
+
+                this.previousChunkPos = chunkPos;
+            }
 
             this._camera.FocusPosition = tc.Position;
             if (Input.IsKeyDown(GLFW.Keys.W))

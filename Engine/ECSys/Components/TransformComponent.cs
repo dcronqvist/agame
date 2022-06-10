@@ -1,5 +1,6 @@
 using System.Numerics;
 using AGame.Engine.Networking;
+using AGame.Engine.World;
 
 namespace AGame.Engine.ECSys.Components;
 
@@ -14,12 +15,33 @@ public class TransformComponent : Component
 
     }
 
+    public Vector2i GetTilePosition()
+    {
+        float fx = Position.X > 0 ? Position.X : (Position.X - 1);
+        float fy = Position.Y > 0 ? Position.Y : (Position.Y - 1);
+
+        int x = (int)MathF.Floor(fx / (TileGrid.TILE_SIZE));
+        int y = (int)MathF.Floor(fy / (TileGrid.TILE_SIZE));
+        return new Vector2i(x, y);
+    }
+
+    public Vector2i GetChunkPosition()
+    {
+        float fx = Position.X > 0 ? Position.X : (Position.X - 1);
+        float fy = Position.Y > 0 ? Position.Y : (Position.Y - 1);
+
+        int x = (int)MathF.Floor(fx / (Chunk.CHUNK_SIZE * TileGrid.TILE_SIZE));
+        int y = (int)MathF.Floor(fy / (Chunk.CHUNK_SIZE * TileGrid.TILE_SIZE));
+
+        return new Vector2i(x, y);
+    }
+
     public override Component Clone()
     {
         return new TransformComponent()
         {
             Position = Position,
-            _targetPosition = _targetPosition
+            _targetPosition = _targetPosition,
         };
     }
 

@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Text;
 using AGame.Engine.World;
+using GameUDPProtocol;
 
 namespace AGame.Engine
 {
@@ -227,6 +228,47 @@ namespace AGame.Engine
                 }
             }
             return tileGrid;
+        }
+    }
+
+    public struct Vector2i : IPacketable
+    {
+        public int X;
+        public int Y;
+
+        public Vector2i(int x, int y)
+        {
+            X = x;
+            Y = y;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is Vector2i i &&
+                   X == i.X &&
+                   Y == i.Y;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(X, Y);
+        }
+
+        public int Populate(byte[] data, int offset)
+        {
+            X = BitConverter.ToInt32(data, offset);
+            Y = BitConverter.ToInt32(data, offset + 4);
+            return 8;
+        }
+
+        public byte[] ToBytes()
+        {
+            List<byte> bytes = new List<byte>();
+
+            bytes.AddRange(BitConverter.GetBytes(X));
+            bytes.AddRange(BitConverter.GetBytes(Y));
+
+            return bytes.ToArray();
         }
     }
 }

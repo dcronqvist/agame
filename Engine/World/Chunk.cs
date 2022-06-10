@@ -5,13 +5,13 @@ namespace AGame.Engine.World;
 
 public struct ChunkAddress
 {
-    public int x;
-    public int z;
+    public int X;
+    public int Y;
 
-    public ChunkAddress(int x, int z)
+    public ChunkAddress(int x, int y)
     {
-        this.x = x;
-        this.z = z;
+        this.X = x;
+        this.Y = y;
     }
 
     public override int GetHashCode()
@@ -19,8 +19,8 @@ public struct ChunkAddress
         unchecked
         {
             int hash = 17;
-            hash = hash * 23 + x;
-            hash = hash * 23 + z;
+            hash = hash * 23 + X;
+            hash = hash * 23 + Y;
             return hash;
         }
     }
@@ -33,7 +33,7 @@ public struct ChunkAddress
         else
         {
             ChunkAddress other = (ChunkAddress)obj;
-            return (x == other.x) && (z == other.z);
+            return (X == other.X) && (Y == other.Y);
         }
     }
 }

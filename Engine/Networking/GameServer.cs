@@ -91,8 +91,6 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         {
             int x = packet.X;
             int y = packet.Y;
-            Console.WriteLine($"Requesting chunk {x} {y}");
-            GameConsole.WriteLine("SERVER", $"Someone requested chunk {x} {y}");
 
             WholeChunkPacket wcp = new WholeChunkPacket()
             {
