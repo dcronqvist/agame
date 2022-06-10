@@ -90,7 +90,7 @@ namespace AGame.Engine.Assets
             List<T> resources = new List<T>();
             foreach (Asset r in Assets.Values)
             {
-                if (r.GetType() == typeof(T))
+                if (typeof(T).IsAssignableFrom(r.GetType()))
                     resources.Add((T)r);
             }
             return resources.ToArray();

@@ -2,55 +2,73 @@ using System;
 using System.Numerics;
 using AGame.Engine.Assets;
 using AGame.Engine.Graphics;
-using AGame.World;
 
-namespace AGame.Engine.World
+namespace AGame.Engine.World;
+
+public enum TileType
 {
-    public class Tile
+    Ground,
+    Floor,
+    Building,
+    Air
+}
+
+public class Tile
+{
+    public TileType Type { get; set; }
+    public bool Solid { get; set; }
+    public string Texture { get; set; }
+    public string Name { get; set; }
+
+    public Tile(TileType type, bool solid, string texture, string name)
     {
-        public int Width { get; set; }
-        public int Height { get; set; }
-        public string Name { get; set; }
+        this.Type = type;
+        this.Solid = solid;
+        this.Texture = texture;
+        this.Name = name;
+    }
 
-        public bool Solid { get; set; }
-        public string TextureName { get; set; }
-        private Texture2D _texture;
-        public Texture2D Texture
-        {
-            get
-            {
-                if (_texture == null)
-                {
-                    _texture = AssetManager.GetAsset<Texture2D>(this.TextureName);
-                }
-                return _texture;
-            }
-        }
-        public Vector2 TopLeftInTexture { get; set; }
+    public void SetTileName(string tileName)
+    {
+        this.Name = tileName;
+    }
 
-        public Tile(string texName, bool solid, Vector2 topLeftInTexture, int width, int height)
-        {
-            this.TopLeftInTexture = topLeftInTexture;
-            this.TextureName = texName;
-            this.Solid = solid;
-            this.Width = width;
-            this.Height = height;
-        }
+    public int GetID()
+    {
+        return TileManager.GetTileIDFromName(this.Name);
+    }
 
-        public void SetTileName(string tileName)
-        {
-            this.Name = tileName;
-        }
+    public Texture2D GetTexture() => AssetManager.GetAsset<Texture2D>(this.Texture);
+}
 
-        public virtual void Update()
-        {
+public class GroundTile : Tile
+{
+    public GroundTile(string texture, string name) : base(TileType.Ground, false, texture, name)
+    {
 
-        }
+    }
+}
 
-        public virtual IRenderable GetRenderable(Vector2 worldPos)
-        {
-            float scale = ((TileGrid.TILE_SIZE / (float)this.Texture.Width) * this.Width);
-            return new TileRenderable(worldPos - (scale * this.TopLeftInTexture), this.Texture, this.TopLeftInTexture, this.Width, this.Height);
-        }
+public class FloorTile : Tile
+{
+    public FloorTile(string texture, string name) : base(TileType.Floor, false, texture, name)
+    {
+
+    }
+}
+
+public class BuildingTile : Tile
+{
+    public BuildingTile(string texture, string name, bool solid) : base(TileType.Building, solid, texture, name)
+    {
+
+    }
+}
+
+public class AirTile : Tile
+{
+    public AirTile(string texture, string name) : base(TileType.Air, false, texture, name)
+    {
+
     }
 }

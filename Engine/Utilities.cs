@@ -215,5 +215,18 @@ namespace AGame.Engine
             }
             return tileGridIDs;
         }
+
+        public static int[,] CreateTileGridWith(string tileName, int width, int height)
+        {
+            int[,] tileGrid = new int[width, height];
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    tileGrid[x, y] = TileManager.GetTileIDFromName(tileName);
+                }
+            }
+            return tileGrid;
+        }
     }
 }

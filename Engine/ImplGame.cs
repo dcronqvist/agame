@@ -74,7 +74,7 @@ namespace AGame.Engine
                 GameConsole.LoadCommands();
 
                 TileManager.Init();
-                WorldManager.Init();
+                Utilities.InitRNG();
 
                 ScreenManager.Init(args);
                 ScreenManager.GoToScreen(gotoScreen);

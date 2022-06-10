@@ -11,7 +11,7 @@ namespace AGame.Engine.Networking;
 public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 {
     private ThreadSafe<ECS> _ecs;
-    private Crater _crater;
+    private WorldContainer _world;
     private Dictionary<Connection, int> _playersIds;
 
     public GameServer(int port) : base(port, 500, 100000000)
@@ -32,35 +32,6 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         {
             GameConsole.WriteLine("SERVER", $"<0xFF0000>Client timed out: {e.Connection.RemoteEndPoint}</>");
         };
-
-        this.AddPacketHandler<ConnectReadyForMap>(async (packet, connection) =>
-        {
-            GameConsole.WriteLine("SERVER", "Received connect ready for map from client at " + connection.RemoteEndPoint);
-
-            int[] tileIds = this._crater.GroundLayer.GridOfIDs.Cast<int>().ToArray();
-
-            int amountOfPackets = (int)Math.Ceiling((double)tileIds.Length / 50);
-
-            for (int i = 0; i < amountOfPackets; i++)
-            {
-                int[] packetData = new int[50];
-
-                for (int j = 0; j < 50; j++)
-                {
-                    if (i * 50 + j < tileIds.Length)
-                    {
-                        packetData[j] = tileIds[i * 50 + j];
-                    }
-                }
-
-                this.EnqueuePacket(new MapDataPacket(packetData), connection, true, true);
-                await Task.Delay(10);
-            }
-
-            await Task.Delay(1000);
-
-            this.EnqueuePacket(new MapDataFinishedPacket(), connection, true, true);
-        });
 
         this.AddPacketHandler<ConnectReadyForECS>(async (packet, connection) =>
         {
@@ -116,6 +87,23 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             });
         });
 
+        this.AddPacketHandler<RequestChunkPacket>((packet, connection) =>
+        {
+            int x = packet.X;
+            int y = packet.Y;
+            Console.WriteLine($"Requesting chunk {x} {y}");
+            GameConsole.WriteLine("SERVER", $"Someone requested chunk {x} {y}");
+
+            WholeChunkPacket wcp = new WholeChunkPacket()
+            {
+                X = x,
+                Y = y,
+                Chunk = this._world.GetChunk(x, y)
+            };
+
+            this.EnqueuePacket(wcp, connection, true, false);
+        });
+
         this.ClientDisconnected += (sender, e) =>
         {
             this._ecs.LockedAction((ecs) =>
@@ -151,7 +139,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         };
 
         GameConsole.WriteLine("SERVER", "Generating world map...");
-        _crater = new Crater(100, 100);
+        this._world = new WorldContainer(new TestWorldGenerator());
         GameConsole.WriteLine("SERVER", "World map generated.");
 
         await base.StartAsync();
@@ -228,18 +216,6 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
             int x = (int)trans.Position.X / TileGrid.TILE_SIZE;
             int y = (int)trans.Position.Y / TileGrid.TILE_SIZE;
-
-            if (pic.IsKeyDown(PlayerInputComponent.KEY_SPACE))
-            {
-                this._crater.GroundLayer.SetTile(x, y, 3);
-                this._connections.LockedAction((conns) =>
-                {
-                    foreach (Connection conn in conns)
-                    {
-                        this.EnqueuePacket(new GroundLayerUpdatePacket(x, y, 3), conn, true, false);
-                    }
-                });
-            }
         }
 
         // if (counter > interval && this._playersIds.Count > 0)

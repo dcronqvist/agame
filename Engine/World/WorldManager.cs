@@ -10,55 +10,22 @@ using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Cameras;
 using AGame.Engine.Graphics.Rendering;
 
-namespace AGame.Engine.World
+namespace AGame.Engine.World;
+
+public class WorldManager
 {
-    public static class WorldManager
+    private static WorldManager _instance;
+    public static WorldManager Instance => _instance ?? (_instance = new WorldManager());
+
+    public WorldContainer World { get; set; }
+
+    public WorldManager()
     {
-        public static Crater CurrentCrater { get; set; }
-        public static Camera2D PlayerCamera { get; set; }
 
-        public static void Init()
-        {
-            Utilities.InitRNG();
-            //CurrentCrater = new Crater(Utilities.GetRandomInt(0, 100), new TestingGenerator());
-            CurrentCrater = new Crater(100, 100);
-            PlayerCamera = new Camera2D(Vector2.Zero, 2f);
-        }
+    }
 
-        public static void Update()
-        {
-            //CurrentCrater.Update();
-        }
-
-        public static void Render()
-        {
-            Renderer.SetRenderTarget(null, PlayerCamera);
-            Renderer.Clear(ColorF.Black);
-
-            CurrentCrater.Render();
-
-            List<IRenderable> craterRenderables = CurrentCrater.GetRenderables().ToList();
-
-            craterRenderables.Sort((a, b) =>
-            {
-                if (a.BasePosition.Y > b.BasePosition.Y)
-                {
-                    return 1;
-                }
-                else if (a.BasePosition.Y == b.BasePosition.Y)
-                {
-                    return 0;
-                }
-                else
-                {
-                    return -1;
-                }
-            });
-
-            foreach (IRenderable ir in craterRenderables)
-            {
-                ir.Render();
-            }
-        }
+    public void Init()
+    {
+        this.World = new WorldContainer(new TestWorldGenerator());
     }
 }

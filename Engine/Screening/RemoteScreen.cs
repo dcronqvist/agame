@@ -13,7 +13,6 @@ using AGame.Engine.Graphics.Rendering;
 using AGame.Engine.Networking;
 using AGame.Engine.Screening;
 using AGame.Engine.World;
-using AGame.World;
 
 namespace AGame.Engine.Screening
 {

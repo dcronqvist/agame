@@ -13,7 +13,6 @@ using AGame.Engine.Graphics.Rendering;
 using AGame.Engine.Networking;
 using AGame.Engine.Screening;
 using AGame.Engine.World;
-using AGame.World;
 
 namespace AGame.Engine.Screening
 {
@@ -43,7 +42,7 @@ namespace AGame.Engine.Screening
 
             if (!(response is null || !response.Accepted))
             {
-                client.EnqueuePacket(new ConnectReadyForMap(), false, false);
+                client.EnqueuePacket(new ConnectReadyForECS(), false, false);
             }
         }
 

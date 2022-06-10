@@ -16,7 +16,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     bool connectDone = false;
     int receivedTiles = 0;
     int[,] tileGrid = new int[100, 100];
-    Crater _crater;
+    WorldContainer world;
     Queue<GroundLayerUpdatePacket> _groundLayerUpdateQueue = new Queue<GroundLayerUpdatePacket>();
     Camera2D _camera;
 
@@ -69,36 +69,17 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             });
         });
 
-        this.AddPacketHandler<MapDataPacket>((packet) =>
-        {
-            int[] tiles = packet.TileIDs;
-
-            for (int i = 0; i < tiles.Length; i++)
-            {
-                tileGrid[receivedTiles % 100, receivedTiles / 100] = tiles[i];
-                receivedTiles++;
-            }
-
-            GameConsole.WriteLine("CLIENT", $"<0x00FF00>Received {tiles.Length} tiles from server. Total: {receivedTiles}</>");
-        });
-
-        this.AddPacketHandler<MapDataFinishedPacket>((packet) =>
-        {
-            GameConsole.WriteLine("CLIENT", $"<0x00FF00>Received map data from server, {receivedTiles} tiles received</>");
-
-            Input.OnScroll += (sender, e) =>
-            {
-                _camera.Zoom *= e > 0 ? 1.05f : 1 / 1.05f;
-            };
-
-            this.EnqueuePacket(new ConnectReadyForECS(), true, true);
-        });
-
         this.AddPacketHandler<ConnectFinished>((packet) =>
         {
             connectDone = true;
             this._player = ECS.Instance.Value.GetEntityFromID(packet.PlayerEntityId);
             this._camera = new Camera2D(this._player.GetComponent<TransformComponent>().Position, 2f);
+            this.world = new WorldContainer(new ServerWorldGenerator(this), true);
+
+            Input.OnScroll += (sender, e) =>
+            {
+                this._camera.Zoom *= (e > 0) ? 1.05f : 0.95f;
+            };
 
             _ = Task.Run(async () =>
             {
@@ -108,12 +89,27 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                     await Task.Delay(16);
                 }
             });
-        });
 
-        this.AddPacketHandler<GroundLayerUpdatePacket>((packet) =>
-        {
-            GameConsole.WriteLine("CLIENT", $"<0x00FF00>Ground update: x={packet.X}, y={packet.Y}, tileID={packet.TileId}</>");
-            this._groundLayerUpdateQueue.Enqueue(packet);
+            _ = Task.Run(async () =>
+            {
+                while (true)
+                {
+                    TransformComponent tc = this._player.GetComponent<TransformComponent>();
+
+                    this._camera.FocusPosition = tc.Position;
+
+                    float fx = tc.Position.X > 0 ? tc.Position.X : (tc.Position.X - 1);
+                    float fy = tc.Position.Y > 0 ? tc.Position.Y : (tc.Position.Y - 1);
+
+                    int x = (int)MathF.Floor(fx / (Chunk.CHUNK_SIZE * TileGrid.TILE_SIZE));
+                    int y = (int)MathF.Floor(fy / (Chunk.CHUNK_SIZE * TileGrid.TILE_SIZE));
+
+                    this.world.GetChunk(x, y);
+                    await Task.Delay(100);
+                }
+            });
+
+            GameConsole.WriteLine("CONNECT", "<0x00FF00>Connected to server</>");
         });
     }
 
@@ -129,15 +125,11 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             ecs.InterpolateProperties();
         });
 
-        if (connectDone && this._crater == null)
-        {
-            this._crater = new Crater(tileGrid);
-        }
-
         if (connectDone)
         {
-            this._camera.FocusPosition = this._player.GetComponent<TransformComponent>().Position;
+            TransformComponent tc = this._player.GetComponent<TransformComponent>();
 
+            this._camera.FocusPosition = tc.Position;
             if (Input.IsKeyDown(GLFW.Keys.W))
             {
                 this._player.GetComponent<PlayerInputComponent>().SetKeyDown(PlayerInputComponent.KEY_W);
@@ -182,53 +174,21 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             {
                 this._player.GetComponent<PlayerInputComponent>().SetKeyUp(PlayerInputComponent.KEY_SPACE);
             }
-
-            while (this._groundLayerUpdateQueue.Count > 0)
-            {
-                GroundLayerUpdatePacket packet = this._groundLayerUpdateQueue.Dequeue();
-
-                this._crater.GroundLayer.SetTile(packet.X, packet.Y, packet.TileId);
-            }
         }
     }
 
     public void Render()
     {
-        if (this._crater != null)
+        Renderer.SetRenderTarget(null, this._camera);
+        Renderer.Clear(ColorF.Black);
+
+        if (connectDone)
         {
-            Renderer.SetRenderTarget(null, _camera);
-            Renderer.Clear(ColorF.Black);
-
-            this._crater.Render();
-
-            List<IRenderable> craterRenderables = this._crater.GetRenderables().ToList();
-
-            craterRenderables.Sort((a, b) =>
-            {
-                if (a.BasePosition.Y > b.BasePosition.Y)
-                {
-                    return 1;
-                }
-                else if (a.BasePosition.Y == b.BasePosition.Y)
-                {
-                    return 0;
-                }
-                else
-                {
-                    return -1;
-                }
-            });
-
-            foreach (IRenderable ir in craterRenderables)
-            {
-                ir.Render();
-            }
-
+            this.world?.Render();
             ECS.Instance.LockedAction((ecs) =>
             {
                 ecs.Render();
             });
         }
-
     }
 }

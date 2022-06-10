@@ -21,6 +21,7 @@ namespace AGame.Engine.World
             // Get all tiles from the assetmanager
             TileDescription[] descriptions = AssetManager.GetAssetsOfType<TileDescription>().ToArray();
 
+
             foreach (TileDescription td in descriptions)
             {
                 AddTile(td.TileName, Tiles.Count, td.GetAsTile());
@@ -42,6 +43,11 @@ namespace AGame.Engine.World
         public static int GetTileIDFromName(string tileName)
         {
             return TileNamesToID[tileName];
+        }
+
+        public static string GetTileNameFromID(int id)
+        {
+            return Tiles[id].Name;
         }
     }
 }
