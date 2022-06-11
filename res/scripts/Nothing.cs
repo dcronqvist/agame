@@ -9,155 +9,144 @@ using AGame.Engine.ECSys.Components;
 using AGame.Engine.Graphics;
 using AGame.Engine.World;
 using static AGame.Engine.OpenGL.GL;
+using System.CommandLine;
 
 namespace MyMod
 {
     class MyCommand : ICommand
     {
-        public CommandResult Execute(Dictionary<string, object> args)
+        public Command GetConfiguration()
         {
-            return CommandResult.CreateOk("I have done nothing");
-        }
+            var c = new Command("nocommand");
 
-        public CommandConfig GetConfiguration()
-        {
-            return new CommandConfig().SetHandle("nocommand");
+            c.SetHandler(() =>
+            {
+                GameConsole.WriteLine(this, "This command does nothing, but it works!");
+            });
+
+            return c;
         }
     }
 
     class ExitCommand : ICommand
     {
-        public CommandResult Execute(Dictionary<string, object> args)
+        public Command GetConfiguration()
         {
-            DisplayManager.SetWindowShouldClose(true);
-            return CommandResult.CreateOk($"Default command.");
-        }
+            var c = new Command("exit");
 
-        public CommandConfig GetConfiguration()
-        {
-            return new CommandConfig().SetHandle("exit");
+            c.SetHandler(() =>
+            {
+                GameConsole.WriteLine(this, "Exiting...");
+                DisplayManager.SetWindowShouldClose(true);
+            });
+
+            return c;
         }
     }
 
     class CommandsCommand : ICommand
     {
-        public CommandResult Execute(Dictionary<string, object> args)
+        public Command GetConfiguration()
         {
-            Dictionary<string, ICommand> commands = GameConsole.AvailableCommands;
+            var c = new Command("commands");
 
-            foreach (KeyValuePair<string, ICommand> kvp in commands)
+            c.SetHandler(() =>
             {
-                GameConsole.WriteLine(this, $"{kvp.Value.GetConfiguration().GetUsageMessage()}");
-            }
+                foreach (KeyValuePair<string, ICommand> kvp in GameConsole.AvailableCommands)
+                {
+                    GameConsole.WriteLine(this, $"{kvp.Key}");
+                }
+            });
 
-            return CommandResult.CreateOk($"Listed all commands.");
-        }
-
-        public CommandConfig GetConfiguration()
-        {
-            return new CommandConfig().SetHandle("commands");
+            return c;
         }
     }
 
     class WindowSizeCommand : ICommand
     {
-        public CommandResult Execute(Dictionary<string, object> args)
+        public Command GetConfiguration()
         {
-            int x = (int)args["width"];
-            int y = (int)args["height"];
+            var c = new Command("windowsize");
 
-            DisplayManager.SetWindowSizeInPixels(new System.Numerics.Vector2(x, y));
+            var width = new Argument<int>("width", "the desired width of the window");
+            var height = new Argument<int>("height", "the desired height of the window");
 
-            return CommandResult.CreateOk($"Set window size.");
-        }
+            c.SetHandler((w, h) =>
+            {
+                DisplayManager.SetWindowSizeInPixels(new Vector2(w, h));
+            }, width, height);
 
-        public CommandConfig GetConfiguration()
-        {
-            return new CommandConfig().SetHandle("windowsize").AddParameter(
-                new CommandConfig.Parameter(CommandConfig.ParameterType.Integer, "width", 0)
-            ).AddParameter(
-                new CommandConfig.Parameter(CommandConfig.ParameterType.Integer, "height", 1)
-            );
-        }
-    }
+            c.AddArgument(width);
+            c.AddArgument(height);
 
-    class FPSCommand : ICommand
-    {
-        public CommandResult Execute(Dictionary<string, object> args)
-        {
-            float fps = 1.0f / GameTime.DeltaTime;
-            return CommandResult.CreateOk($"FPS is {MathF.Round(fps)}");
-        }
-
-        public CommandConfig GetConfiguration()
-        {
-            return new CommandConfig().SetHandle("checkfps");
+            return c;
         }
     }
 
     class ClearConsoleCommand : ICommand
     {
-        public CommandResult Execute(Dictionary<string, object> args)
+        public Command GetConfiguration()
         {
-            GameConsole.ConsoleLines.Clear();
-            return null;
-        }
+            var c = new Command("clear");
 
-        public CommandConfig GetConfiguration()
-        {
-            return new CommandConfig().SetHandle("clear");
+            c.SetHandler(() =>
+            {
+                GameConsole.ConsoleLines.Clear();
+            });
+
+            return c;
         }
     }
 
-    class SetDebugCommand : ICommand
-    {
-        public CommandResult Execute(Dictionary<string, object> args)
-        {
-            string prop = (string)args["property"];
-            string va = (string)args["value"];
+    // class SetDebugCommand : ICommand
+    // {
+    //     public CommandResult Execute(Dictionary<string, object> args)
+    //     {
+    //         string prop = (string)args["property"];
+    //         string va = (string)args["value"];
 
-            if (!Debug.PropertyExists(prop))
-            {
-                return CommandResult.CreateError($"Debug property '{prop}' does not exist.");
-            }
+    //         if (!Debug.PropertyExists(prop))
+    //         {
+    //             return CommandResult.CreateError($"Debug property '{prop}' does not exist.");
+    //         }
 
-            Type t = Debug.GetDebugPropertyType(prop);
+    //         Type t = Debug.GetDebugPropertyType(prop);
 
-            try
-            {
-                object val = Convert.ChangeType(va, t);
-                Debug.SetDebugProperty(prop, val);
+    //         try
+    //         {
+    //             object val = Convert.ChangeType(va, t);
+    //             Debug.SetDebugProperty(prop, val);
 
-                return CommandResult.CreateOk($"Set '{prop}' to {va}");
-            }
-            catch (Exception ex)
-            {
-                return CommandResult.CreateError($"{ex.Message}");
-            }
-        }
+    //             return CommandResult.CreateOk($"Set '{prop}' to {va}");
+    //         }
+    //         catch (Exception ex)
+    //         {
+    //             return CommandResult.CreateError($"{ex.Message}");
+    //         }
+    //     }
 
-        public CommandConfig GetConfiguration()
-        {
-            return new CommandConfig().SetHandle("debug").AddParameter(
-                new CommandConfig.Parameter(CommandConfig.ParameterType.String, "property", 0)
-            ).AddParameter(
-                new CommandConfig.Parameter(CommandConfig.ParameterType.String, "value", 1)
-            );
-        }
-    }
+    //     public CommandConfig GetConfiguration()
+    //     {
+    //         return new CommandConfig().SetHandle("debug").AddParameter(
+    //             new CommandConfig.Parameter(CommandConfig.ParameterType.String, "property", 0)
+    //         ).AddParameter(
+    //             new CommandConfig.Parameter(CommandConfig.ParameterType.String, "value", 1)
+    //         );
+    //     }
+    // }
 
-    class ECSEntityCount : ICommand
-    {
-        public CommandResult Execute(Dictionary<string, object> args)
-        {
-            return CommandResult.CreateOk($"Entity Count: {ECS.Instance.Value.GetAllEntities().Count}");
-        }
+    // class ECSEntityCount : ICommand
+    // {
+    //     public CommandResult Execute(Dictionary<string, object> args)
+    //     {
+    //         return CommandResult.CreateOk($"Entity Count: {ECS.Instance.Value.GetAllEntities().Count}");
+    //     }
 
-        public CommandConfig GetConfiguration()
-        {
-            return new CommandConfig().SetHandle("ecsentitycount");
-        }
-    }
+    //     public CommandConfig GetConfiguration()
+    //     {
+    //         return new CommandConfig().SetHandle("ecsentitycount");
+    //     }
+    // }
 
     // class ECSNewEntityAtMouse : ICommand
     // {
@@ -182,29 +171,29 @@ namespace MyMod
     //     }
     // }
 
-    class ECSGetEntityComponents : ICommand
-    {
-        public CommandResult Execute(Dictionary<string, object> args)
-        {
-            if (!ECS.Instance.Value.EntityExists((int)args["entity"]))
-            {
-                return CommandResult.CreateError($"Entity does not exist.");
-            }
+    // class ECSGetEntityComponents : ICommand
+    // {
+    //     public CommandResult Execute(Dictionary<string, object> args)
+    //     {
+    //         if (!ECS.Instance.Value.EntityExists((int)args["entity"]))
+    //         {
+    //             return CommandResult.CreateError($"Entity does not exist.");
+    //         }
 
-            Entity e = ECS.Instance.Value.GetEntityFromID((int)args["entity"]);
+    //         Entity e = ECS.Instance.Value.GetEntityFromID((int)args["entity"]);
 
-            string s = e.Components.Select(x => x.ComponentType + ": " + x.ToString()).Aggregate((x, y) => x + "," + y);
+    //         string s = e.Components.Select(x => x.ComponentType + ": " + x.ToString()).Aggregate((x, y) => x + "," + y);
 
-            return CommandResult.CreateOk(s);
-        }
+    //         return CommandResult.CreateOk(s);
+    //     }
 
-        public CommandConfig GetConfiguration()
-        {
-            return new CommandConfig().SetHandle("ecscomponents").AddParameter(
-                new CommandConfig.Parameter(CommandConfig.ParameterType.Integer, "entity", 0)
-            );
-        }
-    }
+    //     public CommandConfig GetConfiguration()
+    //     {
+    //         return new CommandConfig().SetHandle("ecscomponents").AddParameter(
+    //             new CommandConfig.Parameter(CommandConfig.ParameterType.Integer, "entity", 0)
+    //         );
+    //     }
+    // }
 
     // class MyCoolComponent : Component
     // {

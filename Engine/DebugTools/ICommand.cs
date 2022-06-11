@@ -1,10 +1,10 @@
 using System.Collections.Generic;
+using System.CommandLine;
 
 namespace AGame.Engine.DebugTools
 {
     public interface ICommand
     {
-        CommandConfig GetConfiguration();
-        CommandResult Execute(Dictionary<string, object> args);
+        Command GetConfiguration();
     }
 }

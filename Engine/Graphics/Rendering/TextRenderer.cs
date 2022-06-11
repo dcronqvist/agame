@@ -173,11 +173,18 @@ namespace AGame.Engine.Graphics.Rendering
                 }
                 else if (token.type == FormattedText.FTTokenType.OpeningTag)
                 {
-                    colorStack.Push(ColorF.FromString(token.value));
+                    if (token.GetTagName() == "color")
+                    {
+                        string colorStr = token.GetAttributeValue("hex");
+                        colorStack.Push(ColorF.FromString(colorStr));
+                    }
                 }
                 else if (token.type == FormattedText.FTTokenType.ClosingTag)
                 {
-                    colorStack.Pop();
+                    if (token.GetTagName() == "color")
+                    {
+                        colorStack.Pop();
+                    }
                 }
 
             }

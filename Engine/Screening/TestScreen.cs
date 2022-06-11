@@ -38,12 +38,12 @@ namespace AGame.Engine.Screening
         {
             await server.StartAsync();
 
-            ConnectResponse response = await client.ConnectAsync(new ConnectRequest());
+            // ConnectResponse response = await client.ConnectAsync(new ConnectRequest());
 
-            if (!(response is null || !response.Accepted))
-            {
-                client.EnqueuePacket(new ConnectReadyForECS(), false, false);
-            }
+            // if (!(response is null || !response.Accepted))
+            // {
+            //     client.EnqueuePacket(new ConnectReadyForECS(), false, false);
+            // }
         }
 
         public override async void OnLeave()

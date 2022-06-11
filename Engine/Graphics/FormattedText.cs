@@ -21,6 +21,31 @@ namespace AGame.Engine.Graphics
                 this.type = type;
                 this.value = value;
             }
+
+            public string GetTagName()
+            {
+                return this.value.Split(" ").First();
+            }
+
+            public Dictionary<string, string> GetTagAttributes()
+            {
+                var attributes = new Dictionary<string, string>();
+                var tagName = this.GetTagName();
+                var tagAttributes = this.value.Split(" ").Skip(1).ToArray();
+                foreach (var attribute in tagAttributes)
+                {
+                    var attributeName = attribute.Split("=").First();
+                    var attributeValue = attribute.Split("=").Skip(1).First();
+                    attributes.Add(attributeName, attributeValue);
+                }
+                return attributes;
+            }
+
+            public string GetAttributeValue(string attrib, string defaultValue = "")
+            {
+                var attributes = this.GetTagAttributes();
+                return attributes.GetValueOrDefault(attrib, defaultValue);
+            }
         }
 
         public string Text { get; set; }
@@ -68,6 +93,7 @@ namespace AGame.Engine.Graphics
                     {
                         // This is a closing tag
                         openingTag = false;
+                        currentIndex++;
                     }
                     else
                     {

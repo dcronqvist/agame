@@ -34,6 +34,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="PropertyChanged.Fody" Version="3.4.1" />
     <PackageReference Include="SimplexNoise" Version="2.0.0" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <ResourceFiles Include="$(ProjectDir)\res\**\*.*" />
     <LibDlls Include="$(ProjectDir)\libs\win\**\*.*" />
     <PackageReference Include="StbImageSharp" Version="2.22.6" />

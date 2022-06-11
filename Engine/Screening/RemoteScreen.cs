@@ -32,20 +32,20 @@ namespace AGame.Engine.Screening
 
         public override async void OnEnter(string[] args)
         {
-            client = new GameClient(args[0], 28000);
-            ConnectResponse response = await client.ConnectAsync(new ConnectRequest());
+            // client = new GameClient(args[0], 28000);
+            // ConnectResponse response = await client.ConnectAsync(new ConnectRequest());
 
-            if (!(response is null || !response.Accepted))
-            {
-                client.EnqueuePacket(new ConnectReadyForMap(), false, false);
-            }
-            else
-            {
-                // Wait 5 seconds and try again
-                await Task.Delay(5000);
+            // if (!(response is null || !response.Accepted))
+            // {
+            //     client.EnqueuePacket(new ConnectReadyForMap(), false, false);
+            // }
+            // else
+            // {
+            //     // Wait 5 seconds and try again
+            //     await Task.Delay(5000);
 
-                this.OnEnter(args);
-            }
+            //     this.OnEnter(args);
+            // }
         }
 
         public override async void OnLeave()
@@ -55,12 +55,12 @@ namespace AGame.Engine.Screening
 
         public override void Update()
         {
-            client.Update();
+            client?.Update();
         }
 
         public override void Render()
         {
-            client.Render();
+            client?.Render();
         }
     }
 }

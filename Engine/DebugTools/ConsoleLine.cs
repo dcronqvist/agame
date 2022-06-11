@@ -23,7 +23,7 @@ namespace AGame.Engine.DebugTools
         public override string ToString()
         {
             string hex = betweenBracketsToCol.GetValueOrDefault(this.BetweenBrackets, "0xFFFFFF");
-            return $"[<{hex}>{this.BetweenBrackets}</>]: {this.Message}";
+            return $"[<color hex={hex}>{this.BetweenBrackets}</color>]: {this.Message}";
         }
     }
 }
