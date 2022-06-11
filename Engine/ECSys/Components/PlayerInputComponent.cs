@@ -11,7 +11,9 @@ public class PlayerInputComponent : Component
     public const int KEY_D = 1 << 3;
     public const int KEY_SPACE = 1 << 4;
 
+    public int PreviousKeyBitmask { get; set; }
     public int KeyBitmask { get; set; }
+    public int NewBitmask { get; set; }
 
     public PlayerInputComponent()
     {
@@ -33,11 +35,18 @@ public class PlayerInputComponent : Component
         return (KeyBitmask & key) != 0;
     }
 
+    public bool IsKeyPressed(int key)
+    {
+        return (PreviousKeyBitmask & key) == 0 && (KeyBitmask & key) != 0;
+    }
+
     public override Component Clone()
     {
         return new PlayerInputComponent()
         {
-            KeyBitmask = KeyBitmask
+            KeyBitmask = KeyBitmask,
+            PreviousKeyBitmask = PreviousKeyBitmask,
+            NewBitmask = NewBitmask
         };
     }
 
@@ -61,7 +70,7 @@ public class PlayerInputComponent : Component
 
     public override void UpdateComponent(Component newComponent)
     {
-        this.KeyBitmask = ((PlayerInputComponent)newComponent).KeyBitmask;
+        this.NewBitmask = ((PlayerInputComponent)newComponent).KeyBitmask;
     }
 
     public override void InterpolateProperties()

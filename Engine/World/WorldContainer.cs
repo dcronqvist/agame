@@ -42,6 +42,17 @@ public class WorldContainer
         int diffX = (x - cTopLeftX);
         int diffY = (y - cTopLeftY);
 
+        bool hasChunk = Chunks.LockedAction<bool>((chunks) =>
+        {
+            ChunkAddress ca = new ChunkAddress(cx, cy);
+            return chunks.ContainsKey(ca);
+        });
+
+        if (!hasChunk)
+        {
+            return; // Do nothing if we don't have the chunk
+        }
+
         Chunk c = GetChunk(cx, cy);
 
         int tileID = TileManager.GetTileIDFromName(tileName);

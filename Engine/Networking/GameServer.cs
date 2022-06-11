@@ -120,7 +120,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     {
         // Generate world map
         _ecs = new ThreadSafe<ECS>(new ECS());
-        _ecs.Value.Initialize();
+        _ecs.Value.Initialize(SystemRunner.Server);
 
         this._ecs.Value.ComponentChanged += (entity, component, behaviour) =>
         {
@@ -134,6 +134,21 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                     }
                 });
             }
+        };
+
+        this._ecs.Value.EntityAdded += (sender, e) =>
+        {
+            this._connections.LockedAction((conns) =>
+            {
+                foreach (var conn in conns)
+                {
+                    foreach (Component comp in e.Entity.Components)
+                    {
+                        UpdateEntityComponentPacket uecp = new UpdateEntityComponentPacket(e.Entity.ID, comp);
+                        this.EnqueuePacket(uecp, conn, false, false);
+                    }
+                }
+            });
         };
 
         GameConsole.WriteLine("SERVER", "Generating world map...");
@@ -204,7 +219,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     {
         this._ecs.LockedAction((ecs) =>
         {
-            ecs.Update();
+            ecs.Update(this._world);
         });
 
         foreach (int id in this._playersIds.Values)
@@ -216,42 +231,10 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
             Vector2i tilePos = trans.GetTilePosition();
 
-            if (pic.IsKeyDown(PlayerInputComponent.KEY_SPACE))
+            if (pic.IsKeyPressed(PlayerInputComponent.KEY_SPACE))
             {
                 this._world.UpdateTile(tilePos.X, tilePos.Y, "game:grass");
             }
         }
-
-        // if (counter > interval && this._playersIds.Count > 0)
-        // {
-        //     Vector2 randomVector = Utilities.GetRandomVector2(0, 10, 0, 10);
-
-        //     int x = (int)randomVector.X;
-        //     int y = (int)randomVector.Y;
-        //     int tileId = Utilities.GetRandomInt(1, 4);
-
-        //     while (this._crater.GroundLayer.GetTileIDAtPosition(x, y) == tileId)
-        //     {
-        //         randomVector = Utilities.GetRandomVector2(0, 10, 0, 10);
-
-        //         x = (int)randomVector.X;
-        //         y = (int)randomVector.Y;
-
-        //         tileId = Utilities.GetRandomInt(1, 4);
-        //     }
-
-        //     this._crater.GroundLayer.SetTile(x, y, tileId);
-        //     counter = 0f;
-
-        //     this._connections.LockedAction((conns) =>
-        //     {
-        //         foreach (Connection conn in conns)
-        //         {
-        //             this.EnqueuePacket(new GroundLayerUpdatePacket(x, y, tileId), conn, true, false);
-        //         }
-        //     });
-        // }
-
-        // counter += GameTime.DeltaTime;
     }
 }

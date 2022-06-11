@@ -2,13 +2,14 @@
 	"components": [
 		{
 			"componentType": "Sprite",
-			"texture": "tex_player"
+			"texture": "tex_krobus"
 		},
 		{
 			"componentType": "Transform"
 		},
 		{
-			"componentType": "PlayerInput"
+			"componentType": "Weird",
+			"direction": 3.14
 		}
 	]
 }

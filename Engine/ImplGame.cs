@@ -31,7 +31,7 @@ namespace AGame.Engine
                 gotoScreen = "remotescreen";
             }
 
-            ECS.Instance.Value.Initialize();
+            ECS.Instance.Value.Initialize(SystemRunner.Client);
             inConsole = false;
         }
 

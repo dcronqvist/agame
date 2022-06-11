@@ -39,6 +39,16 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             GameConsole.WriteLine("CLIENT", "<0xFF0000>Connection rejected with reason: " + e.Response.RejectReason + "</>");
         };
 
+        this.ServerDisconnectedClient += (sender, e) =>
+        {
+            Environment.Exit(0);
+        };
+
+        this.TimedOut += (sender, e) =>
+        {
+            GameConsole.WriteLine("CLIENT", "<0xFF0000>Connection timed out</>");
+        };
+
         this.AddPacketHandler<UpdateEntityComponentPacket>((packet) =>
         {
             //GameConsole.WriteLine("CONNECT", $"<0x00FF00>Received component packet from server: Entity {packet.EntityID}, component {packet.ComponentType}</>");
@@ -72,6 +82,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         this.AddPacketHandler<ConnectFinished>((packet) =>
         {
             connectDone = true;
+            GameConsole.WriteLine("CLIENT", $"Connected to server with entity ID {packet.PlayerEntityId}");
             this._player = ECS.Instance.Value.GetEntityFromID(packet.PlayerEntityId);
             this._camera = new Camera2D(this._player.GetComponent<TransformComponent>().Position, 2f);
             this.world = new WorldContainer(new ServerWorldGenerator(this), true);
@@ -90,7 +101,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                 }
             });
 
-            this.world.MaintainChunkAreaAsync(2, 1, this._player.GetComponent<TransformComponent>().GetChunkPosition().X, this._player.GetComponent<TransformComponent>().GetChunkPosition().Y);
+            _ = this.world.MaintainChunkAreaAsync(2, 1, this._player.GetComponent<TransformComponent>().GetChunkPosition().X, this._player.GetComponent<TransformComponent>().GetChunkPosition().Y);
 
             GameConsole.WriteLine("CONNECT", "<0x00FF00>Connected to server</>");
         });
@@ -108,6 +119,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         ECS.Instance.LockedAction((ecs) =>
         {
             ecs.InterpolateProperties();
+            ecs.Update(this.world);
         });
 
         if (connectDone)
@@ -119,7 +131,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             if (!chunkPos.Equals(previousChunkPos))
             {
                 // Entered new chunk. Request this one.
-                this.world.MaintainChunkAreaAsync(2, 1, this._player.GetComponent<TransformComponent>().GetChunkPosition().X, this._player.GetComponent<TransformComponent>().GetChunkPosition().Y);
+                _ = this.world.MaintainChunkAreaAsync(2, 1, this._player.GetComponent<TransformComponent>().GetChunkPosition().X, this._player.GetComponent<TransformComponent>().GetChunkPosition().Y);
 
                 this.previousChunkPos = chunkPos;
             }
@@ -182,7 +194,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             this.world?.Render();
             ECS.Instance.LockedAction((ecs) =>
             {
-                ecs.Render();
+                ecs.Render(this.world);
             });
         }
     }

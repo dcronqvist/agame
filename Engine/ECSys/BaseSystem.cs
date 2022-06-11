@@ -1,8 +1,11 @@
+using AGame.Engine.World;
+
 namespace AGame.Engine.ECSys;
 
 public abstract class BaseSystem
 {
     public List<Type> ComponentTypes { get; set; }
+    public ECS ParentECS { get; set; }
 
     public BaseSystem()
     {
@@ -20,24 +23,40 @@ public abstract class BaseSystem
 
     public abstract void Initialize();
 
-    public void InterpolatePropertiesOfEntitiesComponents(List<Entity> entities)
-    {
-        foreach (Entity entity in entities)
-        {
-            foreach (Component component in entity.Components)
-            {
-                component.InterpolateProperties();
-            }
-        }
-    }
-
-    public virtual void Update(List<Entity> entities)
+    public virtual void BeforeUpdate(List<Entity> entities, WorldContainer gameWorld)
     {
 
     }
 
-    public virtual void Render(List<Entity> entity)
+    public virtual void Update(List<Entity> entities, WorldContainer gameWorld)
     {
 
+    }
+
+    public virtual void AfterUpdate(List<Entity> entities, WorldContainer gameWorld)
+    {
+
+    }
+
+    public virtual void Render(List<Entity> entity, WorldContainer gameWorld)
+    {
+
+    }
+}
+
+[Flags]
+public enum SystemRunner
+{
+    Client = 1 << 0,
+    Server = 1 << 1,
+}
+
+public class SystemRunsOnAttribute : Attribute
+{
+    public SystemRunner RunsOn { get; set; }
+
+    public SystemRunsOnAttribute(SystemRunner runsOn)
+    {
+        RunsOn = runsOn;
     }
 }
