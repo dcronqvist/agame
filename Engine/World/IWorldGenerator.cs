@@ -15,7 +15,19 @@ public class TestWorldGenerator : IWorldGenerator
 {
     public Chunk GenerateChunk(int x, int y)
     {
-        int[,] tileGrid = Utilities.CreateTileGridWith("game:dirt", Chunk.CHUNK_SIZE, Chunk.CHUNK_SIZE);
+        int width = Chunk.CHUNK_SIZE;
+        int height = Chunk.CHUNK_SIZE;
+
+        int[,] tileGrid = new int[width, height];
+
+        for (int _y = 0; _y < height; _y++)
+        {
+            for (int _x = 0; _x < width; _x++)
+            {
+                string tile = Utilities.ChooseUniform<string>("game:dirt");
+                tileGrid[_x, _y] = TileManager.GetTileIDFromName(tile);
+            }
+        }
 
         return new Chunk(x, y, tileGrid);
     }

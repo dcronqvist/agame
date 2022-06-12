@@ -2,16 +2,18 @@ using AGame.Engine.Networking;
 
 namespace AGame.Engine.ECSys.Components;
 
-[NetworkingBehaviour(NBType.Update)]
+[ComponentNetworking(CNType.Snapshot, NDirection.ServerToClient)]
 public class WeirdComponent : Component
 {
     public float Direction { get; set; }
+    public float TimeAlive { get; set; }
 
     public override Component Clone()
     {
         return new WeirdComponent()
         {
-            Direction = this.Direction
+            Direction = this.Direction,
+            TimeAlive = this.TimeAlive
         };
     }
 

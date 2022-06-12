@@ -4,6 +4,8 @@ using System.IO;
 using System.Numerics;
 using System.Reflection;
 using System.Text;
+using AGame.Engine.ECSys;
+using AGame.Engine.Networking;
 using AGame.Engine.World;
 using GameUDPProtocol;
 
@@ -236,6 +238,37 @@ namespace AGame.Engine
             int cy = (int)MathF.Floor(y / (Chunk.CHUNK_SIZE));
 
             return new Vector2i(x, y);
+        }
+
+        public static List<T[]> DivideIPacketables<T>(T[] all, int maxByteSizePerDivision) where T : IPacketable
+        {
+            T[] sorted = all.OrderBy(x => x.ToBytes().Length).ToArray();
+
+            List<T[]> divisions = new List<T[]>();
+            List<T> currentDivision = new List<T>();
+            int currentLength = 0;
+            for (int i = 0; i < sorted.Length; i++)
+            {
+                T c = sorted[i];
+                int length = c.ToBytes().Length;
+
+                if (currentLength + length > maxByteSizePerDivision)
+                {
+                    divisions.Add(currentDivision.ToArray());
+                    currentDivision.Clear();
+                    currentLength = 0;
+                }
+
+                currentDivision.Add(c);
+                currentLength += length;
+            }
+
+            if (currentDivision.Count > 0)
+            {
+                divisions.Add(currentDivision.ToArray());
+            }
+
+            return divisions;
         }
     }
 

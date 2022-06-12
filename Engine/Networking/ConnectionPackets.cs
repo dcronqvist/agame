@@ -27,7 +27,6 @@ public class ConnectFinished : Packet
 {
     public int PlayerEntityId { get; set; }
 
-    [JsonConstructor]
     public ConnectFinished()
     {
 

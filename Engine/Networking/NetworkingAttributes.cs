@@ -1,6 +1,6 @@
 namespace AGame.Engine.Networking;
 
-public enum NBType
+public enum CNType
 {
     /// <summary>
     /// Should be used for components which hold information that should be unreliably broadcasted to all clients.
@@ -13,19 +13,28 @@ public enum NBType
     /// and only when a component's property has changed.
     /// </summary>
     Update,
-
-    /// <summary>
-    /// Should be used for components which are sent from client to server about user input
-    /// </summary>
-    OnlyClientToServer,
 }
 
-public class NetworkingBehaviourAttribute : Attribute
+public enum NDirection
 {
-    public NBType Type { get; set; }
+    ClientToServer,
+    ServerToClient
+}
 
-    public NetworkingBehaviourAttribute(NBType type)
+[AttributeUsage(AttributeTargets.Class)]
+public class ComponentNetworkingAttribute : Attribute
+{
+    public CNType Type { get; set; }
+    public NDirection Direction { get; set; }
+
+    public ComponentNetworkingAttribute(CNType type, NDirection direction)
     {
-        Type = type;
+        this.Type = type;
+        this.Direction = direction;
+    }
+
+    public bool Has(CNType type, NDirection direction)
+    {
+        return this.Type == type && this.Direction == direction;
     }
 }

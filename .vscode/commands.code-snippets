@@ -23,5 +23,24 @@
 		"body": [
 			"AssetManager.GetAsset<${1:AssetClass}>(\"${2:assetname}\")"
 		]
+	},
+	"New Component Property": {
+		"scope": "csharp",
+		"prefix": "newprop",
+		"body": [
+			"private ${1:type} _${2};",
+			"public ${1:type} ${2}",
+			"{",
+			"\tget => _${2};",
+			"\tset",
+			"\t{",
+			"\t\tif (_${2} != value)",
+			"\t\t{",
+			"\t\t\t_${2} = value;",
+			"\t\t\tthis.NotifyPropertyChanged();",
+			"\t\t}",
+			"\t}",
+			"}$0"
+		]
 	}
 }

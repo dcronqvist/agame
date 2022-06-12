@@ -8,10 +8,22 @@ using AGame.Engine.Networking;
 
 namespace AGame.Engine.ECSys.Components;
 
-[NetworkingBehaviour(NBType.Update)]
+[ComponentNetworking(CNType.Update, NDirection.ServerToClient)]
 public class SpriteComponent : Component
 {
-    public string Texture { get; set; }
+    private string _texture;
+    public string Texture
+    {
+        get => _texture;
+        set
+        {
+            if (_texture != value)
+            {
+                _texture = value;
+                this.NotifyPropertyChanged();
+            }
+        }
+    }
 
     [JsonIgnore]
     private Sprite _sprite;

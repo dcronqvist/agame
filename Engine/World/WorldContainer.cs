@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AGame.Engine.Graphics.Rendering;
 using GameUDPProtocol;
 
@@ -198,6 +199,62 @@ public class WorldContainer
                 chunk.Render();
             }
         });
+    }
+
+    public async Task SaveToFile(string file)
+    {
+        using (var stream = File.Open(file, FileMode.OpenOrCreate))
+        {
+            using (BinaryWriter sw = new BinaryWriter(stream))
+            {
+                Chunks.LockedAction((chunks) =>
+                {
+                    foreach (Chunk chunk in chunks.Values)
+                    {
+                        sw.Write(chunk.ToBytes());
+                    }
+                });
+            }
+        }
+    }
+
+    public static async Task<WorldContainer> LoadFromFile(string file, IWorldGenerator generatorForFutureUse)
+    {
+        WorldContainer world = new WorldContainer(generatorForFutureUse);
+
+        using (var stream = File.Open(file, FileMode.Open))
+        {
+            using (BinaryReader sr = new BinaryReader(stream))
+            {
+                while (sr.BaseStream.Position < sr.BaseStream.Length)
+                {
+                    int x = sr.ReadInt32();
+                    int y = sr.ReadInt32();
+
+                    byte[] grid = sr.ReadBytes(Chunk.CHUNK_SIZE * Chunk.CHUNK_SIZE * sizeof(int));
+
+                    int[] gridInt = new int[Chunk.CHUNK_SIZE * Chunk.CHUNK_SIZE];
+
+                    for (int i = 0; i < grid.Length; i += 4)
+                    {
+                        gridInt[i / 4] = BitConverter.ToInt32(grid, i);
+                    }
+
+                    int[,] actualGrid = new int[Chunk.CHUNK_SIZE, Chunk.CHUNK_SIZE];
+
+                    for (int i = 0; i < gridInt.Length; i++)
+                    {
+                        actualGrid[i / Chunk.CHUNK_SIZE, i % Chunk.CHUNK_SIZE] = gridInt[i];
+                    }
+
+                    Chunk c = new Chunk(x, y, actualGrid);
+
+                    world.AddChunk(x, y, c);
+                }
+            }
+        }
+
+        return world;
     }
 }
 

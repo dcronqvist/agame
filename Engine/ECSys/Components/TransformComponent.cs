@@ -4,11 +4,23 @@ using AGame.Engine.World;
 
 namespace AGame.Engine.ECSys.Components;
 
-[NetworkingBehaviour(NBType.Snapshot)]
+[ComponentNetworking(CNType.Snapshot, NDirection.ServerToClient)]
 public class TransformComponent : Component
 {
     private Vector2 _targetPosition;
-    public Vector2 Position { get; set; }
+    private Vector2 _position;
+    public Vector2 Position
+    {
+        get => _position;
+        set
+        {
+            if (_position != value)
+            {
+                _position = value;
+                this.NotifyPropertyChanged();
+            }
+        }
+    }
 
     public TransformComponent()
     {

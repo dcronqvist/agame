@@ -2,7 +2,7 @@ using AGame.Engine.Networking;
 
 namespace AGame.Engine.ECSys.Components;
 
-[NetworkingBehaviour(NBType.OnlyClientToServer)]
+[ComponentNetworking(CNType.Update, NDirection.ClientToServer)]
 public class PlayerInputComponent : Component
 {
     public const int KEY_W = 1 << 0;
@@ -12,7 +12,19 @@ public class PlayerInputComponent : Component
     public const int KEY_SPACE = 1 << 4;
 
     public int PreviousKeyBitmask { get; set; }
-    public int KeyBitmask { get; set; }
+    private int _keyBitmask;
+    public int KeyBitmask
+    {
+        get => _keyBitmask;
+        set
+        {
+            if (_keyBitmask != value)
+            {
+                _keyBitmask = value;
+                this.NotifyPropertyChanged();
+            }
+        }
+    }
     public int NewBitmask { get; set; }
 
     public PlayerInputComponent()

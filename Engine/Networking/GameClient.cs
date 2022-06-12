@@ -19,8 +19,10 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     public WorldContainer world;
     Queue<GroundLayerUpdatePacket> _groundLayerUpdateQueue = new Queue<GroundLayerUpdatePacket>();
     Camera2D _camera;
-
     Entity _player;
+
+    ThreadSafe<Queue<Packet>> receivedPackets = new ThreadSafe<Queue<Packet>>(new Queue<Packet>());
+    ThreadSafe<Queue<Packet>> sentPackets = new ThreadSafe<Queue<Packet>>(new Queue<Packet>());
 
     public GameClient(string host, int port) : base(host, port, 500, 5000)
     {
@@ -49,32 +51,77 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             GameConsole.WriteLine("CLIENT", "<0xFF0000>Connection timed out</>");
         };
 
-        this.AddPacketHandler<UpdateEntityComponentPacket>((packet) =>
+        this.PacketReceived += async (sender, e) =>
         {
-            //GameConsole.WriteLine("CONNECT", $"<0x00FF00>Received component packet from server: Entity {packet.EntityID}, component {packet.ComponentType}</>");
+            this.receivedPackets.LockedAction((rp) =>
+            {
+                rp.Enqueue(e.Packet);
+            });
+            await Task.Delay(1000);
+            this.receivedPackets.LockedAction((rp) =>
+            {
+                rp.Dequeue();
+            });
+        };
+
+        this.PacketSent += async (sender, e) =>
+        {
+            this.sentPackets.LockedAction((rp) =>
+            {
+                rp.Enqueue(e.Packet);
+            });
+            await Task.Delay(1000);
+            this.sentPackets.LockedAction((rp) =>
+            {
+                rp.Dequeue();
+            });
+        };
+
+        this.AddPacketHandler<UpdateEntitiesPacket>((packet) =>
+        {
+            foreach (EntityUpdate update in packet.Updates)
+            {
+                int entityId = update.EntityID;
+
+                ECS.Instance.LockedAction((e) =>
+                {
+                    if (!e.EntityExists(entityId))
+                    {
+                        //GameConsole.WriteLine("CONNECT", $"<0xFF0000>Entity {entityId} does not exist, creating it...</>");
+                        e.CreateEntity(entityId);
+                    }
+
+                    Entity entity = e.GetEntityFromID(entityId);
+
+                    foreach (Component component in update.Components)
+                    {
+                        if (!entity.HasComponent(component.GetType()))
+                        {
+                            //GameConsole.WriteLine("CONNECT", $"<0x00FF00>Adding component {packet.ComponentType} to entity {entityId}</>");
+                            e.AddComponentToEntity(entity, component);
+                        }
+                        else
+                        {
+                            //GameConsole.WriteLine("CONNECT", $"<0x00FF00>Updating component {packet.ComponentType} to entity {entityId}</>");
+
+                            entity.GetComponent(component.GetType()).UpdateComponent(component);
+                        }
+                    }
+                });
+            }
+        });
+
+        this.AddPacketHandler<DestroyEntityPacket>((packet) =>
+        {
+            //GameConsole.WriteLine("CONNECT", $"<0x00FF00>Received destroy entity packet from server: Entity {packet.EntityID}</>");
 
             int entityId = packet.EntityID;
 
             ECS.Instance.LockedAction((e) =>
             {
-                if (!e.EntityExists(entityId))
+                if (e.EntityExists(entityId))
                 {
-                    //GameConsole.WriteLine("CONNECT", $"<0xFF0000>Entity {entityId} does not exist, creating it...</>");
-                    e.CreateEntity(entityId);
-                }
-
-                Entity entity = e.GetEntityFromID(entityId);
-
-                if (!entity.HasComponent(packet.Component.GetType()))
-                {
-                    //GameConsole.WriteLine("CONNECT", $"<0x00FF00>Adding component {packet.ComponentType} to entity {entityId}</>");
-                    e.AddComponentToEntity(entity, packet.Component);
-                }
-                else
-                {
-                    //GameConsole.WriteLine("CONNECT", $"<0x00FF00>Updating component {packet.ComponentType} to entity {entityId}</>");
-
-                    entity.GetComponent(packet.Component.GetType()).UpdateComponent(packet.Component);
+                    e.DestroyEntity(entityId);
                 }
             });
         });
@@ -92,19 +139,18 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                 this._camera.Zoom *= (e > 0) ? 1.05f : 0.95f;
             };
 
-            _ = Task.Run(async () =>
-            {
-                while (true)
-                {
-                    this.EnqueuePacket(new UpdateEntityComponentPacket(this._player.ID, this._player.GetComponent<PlayerInputComponent>()), false, false);
-                    await Task.Delay(16);
-                }
-            });
-
             _ = this.world.MaintainChunkAreaAsync(2, 1, this._player.GetComponent<TransformComponent>().GetChunkPosition().X, this._player.GetComponent<TransformComponent>().GetChunkPosition().Y);
 
             GameConsole.WriteLine("CONNECT", "<0x00FF00>Connected to server</>");
         });
+
+        ECS.Instance.Value.ComponentChanged += (sender, e) =>
+        {
+            if (e.Component.HasCNType(CNType.Update, NDirection.ClientToServer))
+            {
+                this.EnqueuePacket(new UpdateEntitiesPacket(new EntityUpdate(e.Entity.ID, e.Component)), true, false);
+            }
+        };
     }
 
     protected override void HandleInvalidReceive(byte[] data, IPEndPoint remote, Exception e = null)
@@ -116,6 +162,38 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
     public void Update()
     {
+        string tx = "tx=";
+        this.sentPackets.LockedAction((sp) =>
+        {
+            tx += sp.Count.ToString();
+        });
+
+        string rx = "rx=";
+        this.receivedPackets.LockedAction((rp) =>
+        {
+            rx += rp.Count.ToString();
+        });
+
+        string txAvgSize = "tx avgSize=";
+        this.sentPackets.LockedAction((sp) =>
+        {
+            if (sp.Count > 0)
+            {
+                txAvgSize += (sp.Sum(p => p.ToBytes().Length) / sp.Count).ToString();
+            }
+        });
+
+        string rxAvgSize = "rx avgSize=";
+        this.receivedPackets.LockedAction((rp) =>
+        {
+            if (rp.Count > 0)
+            {
+                rxAvgSize += (rp.Sum(p => p.ToBytes().Length) / rp.Count).ToString();
+            }
+        });
+
+        DisplayManager.SetWindowTitle(tx + " " + rx + " " + txAvgSize + " " + rxAvgSize);
+
         ECS.Instance.LockedAction((ecs) =>
         {
             ecs.InterpolateProperties();

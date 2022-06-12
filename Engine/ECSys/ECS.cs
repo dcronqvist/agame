@@ -8,8 +8,6 @@ using GameUDPProtocol;
 
 namespace AGame.Engine.ECSys;
 
-public delegate void ComponentChangedEventHandler(Entity entity, Component component, NBType behaviourType);
-
 public class ECS
 {
     // Helper stuff
@@ -18,16 +16,18 @@ public class ECS
 
     // All entities & systems
     private List<Entity> _entities = new List<Entity>();
+    private List<Entity> _entitiesToDestroy = new List<Entity>();
     private List<BaseSystem> _systems = new List<BaseSystem>();
     private Dictionary<BaseSystem, List<Entity>> _systemEntities = new Dictionary<BaseSystem, List<Entity>>();
     private List<BaseSystem> _systemsToUpdate = new List<BaseSystem>();
 
     // Component stuff
     private Dictionary<string, Type> _componentTypes = new Dictionary<string, Type>();
-    public event ComponentChangedEventHandler ComponentChanged;
+    public event EventHandler<EntityComponentChangedEventArgs> ComponentChanged;
 
     // Events
     public event EventHandler<EntityAddedEventArgs> EntityAdded;
+    public event EventHandler<EntityDestroyedEventArgs> EntityDestroyed;
 
     // Singleton for client
     private static ThreadSafe<ECS> _instance;
@@ -46,8 +46,19 @@ public class ECS
 
     public void Initialize(SystemRunner runner)
     {
-        // Register all component types
         this._runner = runner;
+
+        // Register all component types
+        this.RegisterComponentTypes();
+
+        // Register system
+        RegisterSystem<TestSystem>();
+        RegisterSystem<PlayerInputUpdateSystem>();
+        RegisterSystem<WeirdSystem>();
+    }
+
+    public void RegisterComponentTypes()
+    {
         Type[] componentTypes = Utilities.FindDerivedTypes(typeof(Component)).ToArray();
         componentTypes = componentTypes.OrderBy(t => t.Name).ToArray();
 
@@ -55,11 +66,6 @@ public class ECS
         {
             _componentTypes.Add(componentTypes[i].Name.Replace("Component", ""), componentTypes[i]);
         }
-
-        // Register system
-        RegisterSystem<TestSystem>();
-        RegisterSystem<PlayerInputUpdateSystem>();
-        RegisterSystem<WeirdSystem>();
     }
 
     public Type GetComponentType(string id)
@@ -148,19 +154,13 @@ public class ECS
 
     public void AddComponentToEntity(Entity entity, Component c)
     {
-        c.PropertyChanged += (sender, e) =>
+        if (c.HasCNType(CNType.Update))
         {
-            NetworkingBehaviourAttribute nba = c.GetType().GetCustomAttributes(typeof(NetworkingBehaviourAttribute), false).FirstOrDefault() as NetworkingBehaviourAttribute;
-
-            if (nba is null)
+            c.PropertyChanged += (sender, e) =>
             {
-                ComponentChanged?.Invoke(entity, c, NBType.Snapshot);
-            }
-            else
-            {
-                ComponentChanged?.Invoke(entity, c, nba.Type);
-            }
-        };
+                this.ComponentChanged?.Invoke(this, new EntityComponentChangedEventArgs(entity, c));
+            };
+        }
 
         entity.Components.Add(c);
         RecalculateSystemEntities();
@@ -175,8 +175,7 @@ public class ECS
     public void DestroyEntity(int id)
     {
         Entity entity = _entities.Find(e => e.ID == id);
-        _entities.Remove(entity);
-        RecalculateSystemEntities();
+        _entitiesToDestroy.Add(entity);
     }
 
     public void RecalculateSystemEntities()
@@ -202,6 +201,18 @@ public class ECS
 
     public void Update(WorldContainer gameWorld)
     {
+        bool destroying = this._entitiesToDestroy.Count > 0;
+        foreach (Entity e in this._entitiesToDestroy)
+        {
+            this._entities.Remove(e);
+            this.EntityDestroyed?.Invoke(this, new EntityDestroyedEventArgs(e));
+        }
+        if (destroying)
+        {
+            this.RecalculateSystemEntities();
+            this._entitiesToDestroy.Clear();
+        }
+
         foreach (var system in _systemsToUpdate)
         {
             system.BeforeUpdate(_systemEntities[system], gameWorld);

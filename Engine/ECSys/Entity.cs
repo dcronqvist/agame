@@ -1,3 +1,5 @@
+using AGame.Engine.Networking;
+
 namespace AGame.Engine.ECSys;
 
 public class Entity
@@ -48,5 +50,10 @@ public class Entity
         }
 
         return true;
+    }
+
+    public Component[] GetComponentsWithCNType(CNType type, NDirection direction)
+    {
+        return this.Components.FindAll(c => c.HasCNType(type, direction)).ToArray();
     }
 }

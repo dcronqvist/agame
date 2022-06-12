@@ -1,5 +1,6 @@
 using System.Numerics;
 using AGame.Engine.ECSys.Components;
+using AGame.Engine.Graphics;
 using AGame.Engine.World;
 
 namespace AGame.Engine.ECSys.Systems;
@@ -12,7 +13,7 @@ public class WeirdSystem : BaseSystem
         base.BeforeUpdate(entities, gameWorld);
     }
 
-    float interval = 1f;
+    float interval = 0.5f;
     float counter = 0f;
 
     public override void Update(List<Entity> entities, WorldContainer gameWorld)
@@ -33,6 +34,13 @@ public class WeirdSystem : BaseSystem
             Vector2 move = new Vector2(MathF.Sin(wc.Direction), MathF.Cos(wc.Direction));
 
             tc.Position += move * 20f * GameTime.DeltaTime;
+
+            if (wc.TimeAlive > 20f)
+            {
+                this.ParentECS.DestroyEntity(e.ID);
+            }
+
+            wc.TimeAlive += GameTime.DeltaTime;
         }
     }
 
@@ -54,6 +62,9 @@ public class WeirdSystem : BaseSystem
         {
             var sprite = e.GetComponent<SpriteComponent>();
             var transform = e.GetComponent<TransformComponent>();
+            WeirdComponent wc = e.GetComponent<WeirdComponent>();
+
+            sprite.Sprite.ColorTint = ColorF.White * (1f - (wc.TimeAlive / 5f));
 
             sprite.Sprite.Render(transform.Position);
         }
