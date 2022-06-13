@@ -140,5 +140,11 @@ namespace AGame.Engine
 
             return topLeft + (new Vector2((float)x, (float)y)) / offsetCamera.Zoom;
         }
+
+        public static Vector2 GetMousePositionInWindow()
+        {
+            Glfw.GetCursorPosition(DisplayManager.WindowHandle, out double x, out double y);
+            return new Vector2((float)x, (float)y);
+        }
     }
 }

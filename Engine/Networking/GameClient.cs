@@ -144,11 +144,34 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             GameConsole.WriteLine("CONNECT", "<0x00FF00>Connected to server</>");
         });
 
+        this.AddPacketHandler<TriggerECEventPacket>((packet) =>
+        {
+            ECS.Instance.LockedAction((ecs) =>
+            {
+                Entity e = ecs.GetEntityFromID(packet.EntityID);
+
+                Type compType = ecs.GetComponentType(packet.ComponentType);
+                Component c = e.GetComponent(compType);
+                c.TriggerComponentEvent(c.GetEventArgsType(packet.EventID), packet.EventID, packet.EventArgs);
+            });
+        });
+
+        Dictionary<int, float> lastUpdateTimes = new Dictionary<int, float>();
+
         ECS.Instance.Value.ComponentChanged += (sender, e) =>
         {
             if (e.Component.HasCNType(CNType.Update, NDirection.ClientToServer))
             {
-                this.EnqueuePacket(new UpdateEntitiesPacket(new EntityUpdate(e.Entity.ID, e.Component)), true, false);
+                ComponentNetworkingAttribute cna = e.Component.GetCNAttrib();
+
+                float lastUpdated = lastUpdateTimes.GetValueOrDefault(ECS.Instance.Value.GetComponentID(e.Component.GetType()), 0f);
+
+                if (cna.MaxUpdatesPerSecond == 0 || (GameTime.TotalElapsedSeconds - lastUpdated) > (1f / cna.MaxUpdatesPerSecond))
+                {
+                    this.EnqueuePacket(new UpdateEntitiesPacket(new EntityUpdate(e.Entity.ID, e.Component)), cna.IsReliable, false);
+
+                    lastUpdateTimes[ECS.Instance.Value.GetComponentID(e.Component.GetType())] = GameTime.TotalElapsedSeconds;
+                }
             }
         };
     }
@@ -259,6 +282,8 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             {
                 this._player.GetComponent<PlayerInputComponent>().SetKeyUp(PlayerInputComponent.KEY_SPACE);
             }
+
+            this._player.GetComponent<PlayerInputComponent>().CurrentMousePosition = Input.GetMousePositionInWindow();
         }
     }
 

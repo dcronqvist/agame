@@ -26,11 +26,6 @@ public class PlayerInputUpdateSystem : BaseSystem
         {
             PlayerInputComponent playerInput = e.GetComponent<PlayerInputComponent>();
             playerInput.KeyBitmask = playerInput.NewBitmask;
-
-            if (playerInput.NewBitmask != 0)
-            {
-                int x = 2;
-            }
         }
     }
 

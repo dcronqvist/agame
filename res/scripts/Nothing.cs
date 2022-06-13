@@ -135,18 +135,26 @@ namespace MyMod
     //     }
     // }
 
-    // class ECSEntityCount : ICommand
-    // {
-    //     public CommandResult Execute(Dictionary<string, object> args)
-    //     {
-    //         return CommandResult.CreateOk($"Entity Count: {ECS.Instance.Value.GetAllEntities().Count}");
-    //     }
+    class ECSEntityCount : ICommand
+    {
+        public Command GetConfiguration()
+        {
+            var c = new Command("entitycount");
 
-    //     public CommandConfig GetConfiguration()
-    //     {
-    //         return new CommandConfig().SetHandle("ecsentitycount");
-    //     }
-    // }
+            c.SetHandler(() =>
+            {
+                ECS.Instance.LockedAction((ecs) =>
+                {
+
+                    int count = ecs.GetAllEntities().Count;
+
+                    GameConsole.WriteLine("ECS", $"There are {count} entities in the ECS.");
+                });
+            });
+
+            return c;
+        }
+    }
 
     // class ECSNewEntityAtMouse : ICommand
     // {

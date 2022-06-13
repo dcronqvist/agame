@@ -34,9 +34,14 @@ namespace AGame.Engine.Screening
         {
             Args = args;
 
-            // Add screens
-            AddScreen("testscreen", new TestScreen().Initialize());
-            AddScreen("remotescreen", new RemoteScreen().Initialize());
+            Type[] screenTypes = Utilities.FindDerivedTypes(typeof(Screen)).Where(x => x != typeof(Screen)).ToArray();
+
+            foreach (Type screenType in screenTypes)
+            {
+                Screen screen = (Screen)Activator.CreateInstance(screenType);
+                screen.Initialize();
+                AddScreen(screen.Name, screen);
+            }
         }
 
         public static void GoToScreen(string name)

@@ -54,6 +54,9 @@ namespace AGame.Engine.Graphics
 
         public static ColorF White { get { return new ColorF(1f, 1f, 1f, 1f); } }
         public static ColorF Black { get { return new ColorF(0, 0, 0, 1f); } }
+        public static ColorF Gray { get { return new ColorF(0.5f, 0.5f, 0.5f, 1f); } }
+        public static ColorF LightGray { get { return new ColorF(0.75f, 0.75f, 0.75f, 1f); } }
+        public static ColorF DarkGray { get { return new ColorF(0.25f, 0.25f, 0.25f, 1f); } }
         public static ColorF Transparent { get { return new ColorF(1f, 1f, 1f, 0); } }
         public static ColorF PearlGray { get { return new ColorF(0xf6f5f5); } }
         public static ColorF BlueGray { get { return new ColorF(0x145374); } }

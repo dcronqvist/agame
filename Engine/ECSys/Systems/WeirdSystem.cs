@@ -13,7 +13,7 @@ public class WeirdSystem : BaseSystem
         base.BeforeUpdate(entities, gameWorld);
     }
 
-    float interval = 0.5f;
+    float interval = 0.1f;
     float counter = 0f;
 
     public override void Update(List<Entity> entities, WorldContainer gameWorld)
@@ -21,6 +21,11 @@ public class WeirdSystem : BaseSystem
         if (counter >= interval)
         {
             Entity n = this.ParentECS.CreateEntityFromAsset("entity_weird");
+
+            WeirdComponent wc = n.GetComponent<WeirdComponent>();
+
+            wc.Direction = Utilities.GetRandomFloat(0, MathF.PI * 2f);
+
             counter = 0f;
         }
 

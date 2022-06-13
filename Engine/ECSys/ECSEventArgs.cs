@@ -1,14 +1,18 @@
+using AGame.Engine.Networking;
+
 namespace AGame.Engine.ECSys;
 
 public class EntityComponentChangedEventArgs : EventArgs
 {
     public Entity Entity { get; set; }
     public Component Component { get; set; }
+    public ComponentNetworkingAttribute Attrib { get; set; }
 
     public EntityComponentChangedEventArgs(Entity entity, Component component)
     {
         Entity = entity;
         Component = component;
+        this.Attrib = component.GetCNAttrib();
     }
 }
 

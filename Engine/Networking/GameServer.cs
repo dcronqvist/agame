@@ -166,6 +166,8 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         // Generate world map
         _ecs = new ThreadSafe<ECS>(new ECS());
 
+        Dictionary<int, float> lastUpdateTimes = new Dictionary<int, float>();
+
         this._ecs.LockedAction((ecs) =>
         {
             ecs.Initialize(SystemRunner.Server);
@@ -174,14 +176,23 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             {
                 if (e.Component.HasCNType(CNType.Update, NDirection.ServerToClient))
                 {
-                    this._connections.LockedAction((conns) =>
+                    ComponentNetworkingAttribute cna = e.Component.GetCNAttrib();
+
+                    float lastUpdated = lastUpdateTimes.GetValueOrDefault(ecs.GetComponentID(e.Component.GetType()), 0f);
+
+                    if (cna.MaxUpdatesPerSecond == 0 || (GameTime.TotalElapsedSeconds - lastUpdated) > (1f / cna.MaxUpdatesPerSecond))
                     {
-                        EntityUpdate update = new EntityUpdate(e.Entity.ID, e.Component);
-                        foreach (Connection conn in conns)
+                        this._connections.LockedAction((conns) =>
                         {
-                            this.EnqueuePacket(new UpdateEntitiesPacket(update), conn, true, false);
-                        }
-                    });
+                            EntityUpdate update = new EntityUpdate(e.Entity.ID, e.Component);
+                            foreach (Connection conn in conns)
+                            {
+                                this.EnqueuePacket(new UpdateEntitiesPacket(update), conn, cna.IsReliable, false);
+                            }
+                        });
+
+                        lastUpdateTimes[ecs.GetComponentID(e.Component.GetType())] = GameTime.TotalElapsedSeconds;
+                    }
                 }
             };
 
@@ -233,20 +244,9 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             };
         });
 
-
-        if (File.Exists("world.dat"))
-        {
-            // Attempt to load from file
-            GameConsole.WriteLine("SERVER", "Loading world from file...");
-            this._world = await WorldContainer.LoadFromFile("world.dat", new TestWorldGenerator());
-            GameConsole.WriteLine("SERVER", "World loaded!");
-        }
-        else
-        {
-            GameConsole.WriteLine("SERVER", "Generating world map...");
-            this._world = new WorldContainer(new TestWorldGenerator());
-            GameConsole.WriteLine("SERVER", "World map generated.");
-        }
+        GameConsole.WriteLine("SERVER", "Generating world map...");
+        this._world = new WorldContainer(new TestWorldGenerator());
+        GameConsole.WriteLine("SERVER", "World map generated.");
 
         await base.StartAsync();
 
@@ -254,6 +254,8 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         Stopwatch sw = new Stopwatch();
         _ = Task.Run(async () =>
         {
+            int maxBytesPerSnapshot = 490;
+
             sw.Start();
             while (true)
             {
@@ -268,7 +270,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                         Component[] snapshottedComponents = e.GetComponentsWithCNType(CNType.Snapshot, NDirection.ServerToClient);
 
                         // With divisions at most 200, every packet should be able to fit at least 2 entities
-                        List<Component[]> divisions = Utilities.DivideIPacketables(snapshottedComponents, 400);
+                        List<Component[]> divisions = Utilities.DivideIPacketables(snapshottedComponents, maxBytesPerSnapshot);
 
                         foreach (Component[] division in divisions)
                         {
@@ -276,7 +278,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                         }
                     }
 
-                    List<EntityUpdate[]> entityUpdateDivisions = Utilities.DivideIPacketables(updates.ToArray(), 400);
+                    List<EntityUpdate[]> entityUpdateDivisions = Utilities.DivideIPacketables(updates.ToArray(), maxBytesPerSnapshot);
 
                     foreach (EntityUpdate[] entityUpdateDivision in entityUpdateDivisions)
                     {
@@ -326,8 +328,6 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             {
                 GameConsole.WriteLine("SERVER", $"{e.Message}");
             });
-
-            this._world.SaveToFile("world.dat");
         };
     }
 

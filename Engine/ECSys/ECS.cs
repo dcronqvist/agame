@@ -23,6 +23,7 @@ public class ECS
 
     // Component stuff
     private Dictionary<string, Type> _componentTypes = new Dictionary<string, Type>();
+    private Dictionary<Type, int> _componentTypeIDs = new Dictionary<Type, int>();
     public event EventHandler<EntityComponentChangedEventArgs> ComponentChanged;
 
     // Events
@@ -64,13 +65,25 @@ public class ECS
 
         for (int i = 0; i < componentTypes.Length; i++)
         {
-            _componentTypes.Add(componentTypes[i].Name.Replace("Component", ""), componentTypes[i]);
+            string typeName = componentTypes[i].Name.Replace("Component", "");
+            _componentTypes.Add(typeName, componentTypes[i]);
+            _componentTypeIDs.Add(componentTypes[i], i);
         }
     }
 
     public Type GetComponentType(string id)
     {
         return _componentTypes[id];
+    }
+
+    public int GetComponentID(Type type)
+    {
+        return _componentTypeIDs[type];
+    }
+
+    public int GetComponentID(string name)
+    {
+        return _componentTypeIDs[GetComponentType(name)];
     }
 
     private void RegisterSystem<T>() where T : BaseSystem, new()

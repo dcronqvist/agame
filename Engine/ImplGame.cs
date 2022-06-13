@@ -22,14 +22,14 @@ namespace AGame.Engine
         bool inConsole;
         string currentLoadingAsset = "";
 
-        string gotoScreen = "testscreen";
+        string gotoScreen = "uiscreen";
 
         public override void Initialize(string[] args)
         {
-            if (args.Length > 0)
-            {
-                gotoScreen = "remotescreen";
-            }
+            // if (args.Length > 0)
+            // {
+            //     gotoScreen = "remotescreen";
+            // }
 
             ECS.Instance.Value.Initialize(SystemRunner.Client);
             inConsole = false;

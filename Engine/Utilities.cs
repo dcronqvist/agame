@@ -270,6 +270,12 @@ namespace AGame.Engine
 
             return divisions;
         }
+
+        public static RectangleF Inflate(this RectangleF rec, float amount)
+        {
+            RectangleF r = new RectangleF(rec.X - amount, rec.Y - amount, rec.Width + amount * 2, rec.Height + amount * 2);
+            return r;
+        }
     }
 
     public struct Vector2i : IPacketable

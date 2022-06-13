@@ -42,6 +42,11 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
     public abstract void UpdateComponent(Component newComponent);
     public abstract void InterpolateProperties();
 
+    public ComponentNetworkingAttribute GetCNAttrib()
+    {
+        return this.GetType().GetCustomAttribute<ComponentNetworkingAttribute>(true);
+    }
+
     public bool HasCNType(CNType type)
     {
         return this.GetType().GetCustomAttribute<ComponentNetworkingAttribute>()?.Type == type;
@@ -55,5 +60,29 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
     public int GetPacketSize()
     {
         return this.ToBytes().Length;
+    }
+
+    private EventInfo[] GetEvents()
+    {
+        return this.GetType().GetEvents().OrderBy(e => e.Name).ToArray();
+    }
+
+    public Type GetEventArgsType(int id)
+    {
+        return this.GetEvents()[id].EventHandlerType.GetGenericArguments()[0];
+    }
+
+    public void TriggerComponentEvent<T>(int id, T eventArgs) where T : EventArgs
+    {
+        // Find all
+        EventInfo[] events = this.GetEvents();
+        events[id].GetRaiseMethod().Invoke(this, new object[] { eventArgs });
+    }
+
+    public void TriggerComponentEvent(Type eventArgsType, int id, object eventArgs)
+    {
+        // Find all
+        EventInfo[] events = this.GetEvents();
+        events[id].GetRaiseMethod().Invoke(this, new object[] { Convert.ChangeType(eventArgs, eventArgsType) });
     }
 }
