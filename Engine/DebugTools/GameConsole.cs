@@ -175,7 +175,7 @@ public static class GameConsole
             }
         }
 
-        while (ConsoleLines.Count > 20)
+        while (ConsoleLines.Count > 50)
         {
             ConsoleLines.RemoveAt(0);
         }

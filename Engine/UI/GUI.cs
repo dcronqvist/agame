@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Numerics;
+using AGame.Engine.Assets;
 using AGame.Engine.GLFW;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
@@ -8,10 +9,55 @@ namespace AGame.Engine.UI;
 
 public static class GUI
 {
-    private static int _hotID;
-    private static int _activeID;
+    public static int _hotID;
+    public static int _activeID;
+    public static int _kbdFocusID;
 
     private static int _idCounter;
+
+    private static Queue<char> _charQueue;
+    private static bool _caretVisible;
+    private static float _caretInterval;
+    private static float _currentCaretTime;
+
+    private static Font _font;
+
+    public static void Init()
+    {
+        _font = AssetManager.GetAsset<Font>("font_rainyhearts");
+        _charQueue = new Queue<char>();
+
+        Input.OnChar += (sender, c) =>
+        {
+            if (_kbdFocusID != -1)
+            {
+                _charQueue.Enqueue(c);
+            }
+        };
+
+        Input.OnBackspace += (sender, e) =>
+        {
+            if (_kbdFocusID != -1)
+            {
+                _charQueue.Enqueue('\b');
+            }
+        };
+
+        Input.OnEnterPressed += (sender, e) =>
+        {
+            if (_kbdFocusID != -1)
+            {
+                _charQueue.Enqueue('\n');
+            }
+        };
+
+        _hotID = -1;
+        _activeID = -1;
+        _kbdFocusID = -1;
+        _caretVisible = false;
+        _caretInterval = 0.6f;
+        _currentCaretTime = 0f;
+    }
 
     public static void Begin()
     {
@@ -22,8 +68,20 @@ public static class GUI
     {
         if (!Input.IsMouseButtonDown(MouseButton.Left))
         {
-            _activeID = -1;
             _hotID = -1;
+            _activeID = -1;
+        }
+        else
+        {
+            // Left mouse is down
+
+            if (_activeID == -1)
+            {
+                // Nothing is active, so we pressed nothing
+                _kbdFocusID = -1;
+                _currentCaretTime = 0f;
+                _caretVisible = false;
+            }
         }
     }
 
@@ -36,41 +94,62 @@ public static class GUI
         return false;
     }
 
+    private static bool TryBecomeHot(int id)
+    {
+        if (_hotID == -1)
+        {
+            _hotID = id;
+            return true;
+        }
+        return false;
+    }
+
+    private static bool TryBecomeActive(int id)
+    {
+        if (_activeID == -1 && Input.IsMouseButtonDown(MouseButton.Left))
+        {
+            _kbdFocusID = -1;
+            _activeID = id;
+            return true;
+        }
+        return false;
+    }
+
     private static int GetNextID()
     {
         return _idCounter++;
     }
 
-    public static bool Button(Vector2 position, Vector2 size)
+    public static bool Button(string text, Vector2 position, Vector2 size)
     {
+        ColorF defaultColor = ColorF.DarkGray;
+        ColorF hotColor = ColorF.Gray;
+        ColorF activeColor = ColorF.LightGray;
+
         int id = GetNextID();
 
         RectangleF rect = new RectangleF(position.X, position.Y, size.X, size.Y);
         Vector2 mousePos = Input.GetMousePositionInWindow();
 
-        if (rect.Contains(mousePos.X, mousePos.Y) && CanBecomeHot())
+        float scale = 2f;
+        Vector2 textPos = new Vector2(position.X + size.X / 2, position.Y + size.Y / 2) - _font.MeasureString(text, scale) / 2f;
+
+        if (rect.Contains(mousePos.X, mousePos.Y) && TryBecomeHot(id) && TryBecomeActive(id))
         {
-            _hotID = id;
-
-            if (_activeID == -1 && Input.IsMouseButtonDown(MouseButton.Left))
-            {
-                _activeID = id;
-            }
+            // Hot and active!
         }
-
-        Renderer.Primitive.RenderRectangle(rect, ColorF.Black);
 
         if (_hotID == id)
         {
             if (_activeID == id)
             {
                 // Both active and hot, so hovered and clicked!
-                Renderer.Primitive.RenderRectangle(rect, ColorF.BlueGray);
+                Renderer.Primitive.RenderRectangle(rect, activeColor);
             }
             else
             {
                 // Just hot, so hovered!
-                Renderer.Primitive.RenderRectangle(rect, ColorF.DarkGoldenRod);
+                Renderer.Primitive.RenderRectangle(rect, hotColor);
             }
         }
         else
@@ -78,20 +157,27 @@ public static class GUI
             if (_activeID == id)
             {
                 // Just active, so clicked!
-                Renderer.Primitive.RenderRectangle(rect, ColorF.BlueGray);
+                Renderer.Primitive.RenderRectangle(rect, activeColor);
             }
             else
             {
                 // Neither active nor hot, so not hovered!
-                Renderer.Primitive.RenderRectangle(rect, ColorF.White);
+                Renderer.Primitive.RenderRectangle(rect, defaultColor);
             }
         }
+
+        Renderer.Text.RenderText(_font, text, textPos + Vector2.One * 2f, scale, ColorF.Black, Renderer.Camera);
+        Renderer.Text.RenderText(_font, text, textPos, scale, ColorF.White, Renderer.Camera);
 
         return _activeID == id && Input.IsMouseButtonPressed(MouseButton.Left);
     }
 
-    public static bool Slider(Vector2 position, Vector2 size, ref float value)
+    public static bool Slider(string text, Vector2 position, Vector2 size, ref float value)
     {
+        ColorF defaultColor = ColorF.DarkGray;
+        ColorF hotColor = ColorF.Gray;
+        ColorF activeColor = ColorF.LightGray;
+
         // Should return true if the slider was changed.
         // The value should be updated to the ref parameter.
         // value is always going to be a value between 0 and 1.
@@ -105,14 +191,9 @@ public static class GUI
         RectangleF rect = new RectangleF(position.X, position.Y, size.X, size.Y).Inflate(-2);
         Vector2 mousePos = Input.GetMousePositionInWindow();
 
-        if (rect.Contains(mousePos.X, mousePos.Y) && CanBecomeHot())
+        if (rect.Contains(mousePos.X, mousePos.Y) && TryBecomeHot(id) && TryBecomeActive(id))
         {
-            _hotID = id;
-
-            if (_activeID == -1 && Input.IsMouseButtonDown(MouseButton.Left))
-            {
-                _activeID = id;
-            }
+            // Hot and active!
         }
 
         if (_activeID == id)
@@ -124,10 +205,106 @@ public static class GUI
             }
         }
 
-        Renderer.Primitive.RenderRectangle(rect.Inflate(2), ColorF.Gray);
+        Renderer.Primitive.RenderRectangle(rect.Inflate(2), ColorF.Darken(ColorF.DarkGray, 0.5f));
 
-        Renderer.Primitive.RenderRectangle(new RectangleF(xPos, position.Y, sliderWidth, size.Y).Inflate(-4), _activeID == id ? ColorF.White : ColorF.LightGray);
+        ColorF color = _activeID == id ? activeColor : (_hotID == id ? hotColor : defaultColor);
+
+        Renderer.Primitive.RenderRectangle(new RectangleF(xPos, position.Y, sliderWidth, size.Y).Inflate(-4), color);
+
+        float scale = 2f;
+        Vector2 textPos = new Vector2(rect.X + rect.Width / 2f, rect.Y + rect.Height / 2f) - _font.MeasureString(text, scale) / 2f;
+
+        Renderer.Text.RenderText(_font, text, textPos + Vector2.One * 2f, scale, ColorF.Black, Renderer.Camera);
+        Renderer.Text.RenderText(_font, text, textPos, scale, ColorF.White, Renderer.Camera);
 
         return oldValue != value;
+    }
+
+    public static bool TextField(string placeHolder, Vector2 position, Vector2 size, ref string value)
+    {
+        ColorF defaultColor = ColorF.Darken(ColorF.DarkGray, 0.5f);
+        ColorF hotColor = ColorF.DarkGray;
+        ColorF activeColor = ColorF.Gray;
+
+        int id = GetNextID();
+
+        string startText = value;
+
+        RectangleF rect = new RectangleF(position.X, position.Y, size.X, size.Y);
+        Vector2 mousePos = Input.GetMousePositionInWindow();
+
+        string text = value == "" ? placeHolder : value;
+
+        float scale = 2f;
+        Vector2 textPos = new Vector2(position.X, position.Y + size.Y / 2) - new Vector2(0f, (_font.MeasureString(text, scale).Y / 2f));
+
+        if (rect.Contains(mousePos.X, mousePos.Y) && TryBecomeHot(id) && TryBecomeActive(id))
+        {
+            // Hot and active!
+            _kbdFocusID = id;
+        }
+
+        if (_kbdFocusID == id)
+        {
+            if (_charQueue.Count > 0)
+            {
+                char c = _charQueue.Dequeue();
+
+                if (c == '\b')
+                {
+                    if (value.Length > 0)
+                    {
+                        value = value.Substring(0, value.Length - 1);
+                    }
+                }
+                else if (c == '\n')
+                {
+                    _kbdFocusID = -1;
+                    _caretVisible = false;
+                    _currentCaretTime = 0f;
+                    return true;
+                }
+                else
+                {
+                    float maxSize = size.X - 20f;
+
+                    if (_font.MeasureString(value + c, scale).X < maxSize)
+                    {
+                        value += c;
+                    }
+                }
+            }
+
+            _currentCaretTime += GameTime.DeltaTime;
+
+            if (_currentCaretTime > _caretInterval)
+            {
+                _currentCaretTime = 0f;
+                _caretVisible = !_caretVisible;
+            }
+
+            Renderer.Primitive.RenderRectangle(rect.Inflate(2), ColorF.White);
+        }
+
+        float yOffset = -4f;
+        float xOffset = 10f;
+        Vector2 offset = new Vector2(xOffset, yOffset);
+
+        Renderer.Primitive.RenderRectangle(rect, _hotID == id ? (_activeID == id ? activeColor : hotColor) : defaultColor);
+        Renderer.Text.RenderText(_font, text, textPos + Vector2.One * 2f + offset, scale, ColorF.Black, Renderer.Camera);
+        Renderer.Text.RenderText(_font, text, textPos + offset, scale, text == placeHolder ? ColorF.Gray : ColorF.White, Renderer.Camera);
+
+        if (_caretVisible)
+        {
+            Vector2 endOfString = textPos + new Vector2(_font.MeasureString(text, scale).X, 0f) + offset;
+            Vector2 caretOffset = new Vector2(0f, -2f);
+
+            Vector2 caretPos = text == placeHolder ? textPos + offset + caretOffset : endOfString + caretOffset;
+
+            Renderer.Text.RenderText(_font, "|", caretPos + Vector2.One * 2f, scale, ColorF.Black, Renderer.Camera);
+            Renderer.Text.RenderText(_font, "|", caretPos, scale, ColorF.White, Renderer.Camera);
+        }
+
+        return value != startText;
     }
 }

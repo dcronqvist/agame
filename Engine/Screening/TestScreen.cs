@@ -21,6 +21,8 @@ namespace AGame.Engine.Screening
         GameServer server;
         GameClient client;
 
+        bool init = false;
+
         public TestScreen() : base("testscreen")
         {
 
@@ -30,7 +32,6 @@ namespace AGame.Engine.Screening
         {
             server = new GameServer(28000);
             client = new GameClient("127.0.0.1", 28000);
-
             return this;
         }
 
@@ -38,13 +39,19 @@ namespace AGame.Engine.Screening
         {
             DisplayManager.SetTargetFPS(144);
 
-            await server.StartAsync();
-
-            ConnectResponse response = await client.ConnectAsync(new ConnectRequest());
-
-            if (!(response is null || !response.Accepted))
+            if (!init)
             {
-                client.EnqueuePacket(new ConnectReadyForECS(), false, false);
+                await server.StartAsync();
+
+                Console.WriteLine("Sending connect request");
+                ConnectResponse response = await client.ConnectAsync(new ConnectRequest());
+
+                if (!(response is null || !response.Accepted))
+                {
+                    client.EnqueuePacket(new ConnectReadyForECS(), true, false);
+                }
+
+                init = true;
             }
         }
 

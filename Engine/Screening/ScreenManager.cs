@@ -3,7 +3,7 @@ using AGame.Engine;
 
 namespace AGame.Engine.Screening
 {
-    static class ScreenManager
+    public static class ScreenManager
     {
         public static Dictionary<string, Screen> Screens { get; set; }
         public static string CurrentScreenName { get; set; }

@@ -1,6 +1,6 @@
 namespace AGame.Engine.Screening
 {
-    abstract class Screen
+    public abstract class Screen
     {
         public string Name { get; set; }
 

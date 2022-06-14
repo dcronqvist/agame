@@ -26,6 +26,7 @@ class UIScreen : Screen
 
     public override Screen Initialize()
     {
+        GUI.Init();
         return this;
     }
 
@@ -46,6 +47,7 @@ class UIScreen : Screen
 
     float val = 0f;
     ColorF col = new ColorF(0x4A9077, 255);
+    string text = "";
 
     public override void Render()
     {
@@ -55,20 +57,29 @@ class UIScreen : Screen
 
         GUI.Begin();
 
-        if (GUI.Button(new Vector2(100, 100), new Vector2(200, 100)))
+        if (GUI.Button("Press 1", new Vector2(100, 100), new Vector2(150, 40)))
         {
             Console.WriteLine("PRESSED");
         }
 
-        if (GUI.Slider(new Vector2(100, 220), new Vector2(200, 30), ref val))
+        if (GUI.Button("testscreen", new Vector2(100, 150), new Vector2(150, 40)))
+        {
+            ScreenManager.GoToScreen("testscreen");
+        }
+
+        if (GUI.Slider("Slide 1", new Vector2(100, 200), new Vector2(150, 40), ref val))
         {
             Console.WriteLine("SLIDER is now " + val);
         }
 
-        if (GUI.Button(new Vector2(100, 270), new Vector2(200, 100)))
+        if (GUI.TextField("name...", new Vector2(100, 250), new Vector2(150f, 40), ref text))
         {
-            Console.WriteLine("PRESSED 2");
+            Console.WriteLine("TEXT FIELD is now " + text);
         }
+
+        Renderer.Text.RenderText(AssetManager.GetAsset<Font>("font_rainyhearts"), GUI._hotID.ToString(), new Vector2(400, 50), 1f, ColorF.White, Renderer.Camera);
+        Renderer.Text.RenderText(AssetManager.GetAsset<Font>("font_rainyhearts"), GUI._activeID.ToString(), new Vector2(400, 70), 1f, ColorF.White, Renderer.Camera);
+        Renderer.Text.RenderText(AssetManager.GetAsset<Font>("font_rainyhearts"), GUI._kbdFocusID.ToString(), new Vector2(400, 90), 1f, ColorF.White, Renderer.Camera);
 
 
         GUI.End();

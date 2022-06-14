@@ -10,6 +10,7 @@ using AGame.Engine.Graphics;
 using AGame.Engine.World;
 using static AGame.Engine.OpenGL.GL;
 using System.CommandLine;
+using AGame.Engine.Screening;
 
 namespace MyMod
 {
@@ -149,6 +150,29 @@ namespace MyMod
                     int count = ecs.GetAllEntities().Count;
 
                     GameConsole.WriteLine("ECS", $"There are {count} entities in the ECS.");
+                });
+            });
+
+            return c;
+        }
+    }
+
+    class CommandChangeScreen : ICommand
+    {
+        public Command GetConfiguration()
+        {
+            var c = new Command("goto");
+
+            var a = new Argument<string>("screen", "the screen to go to");
+            c.AddArgument(a);
+
+            c.SetHandler((context) =>
+            {
+                ECS.Instance.LockedAction((ecs) =>
+                {
+                    string arg = context.ParseResult.GetValueForArgument(a);
+
+                    ScreenManager.GoToScreen(arg);
                 });
             });
 

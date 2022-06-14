@@ -22,6 +22,7 @@ namespace AGame.Engine
         public static event EventHandler OnBackspace;
         public static event EventHandler<float> OnScroll;
         public static event EventHandler<Tuple<char, ModifierKeys>> OnCharMods;
+        public static event EventHandler OnEnterPressed;
 
         public static void Init()
         {
@@ -43,6 +44,13 @@ namespace AGame.Engine
                     if (state != InputState.Release)
                     {
                         OnBackspace?.Invoke(null, EventArgs.Empty);
+                    }
+                }
+                else if (key == Keys.Enter)
+                {
+                    if (state != InputState.Release)
+                    {
+                        OnEnterPressed?.Invoke(null, EventArgs.Empty);
                     }
                 }
 

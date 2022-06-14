@@ -52,6 +52,11 @@ namespace AGame.Engine.Graphics
             return new ColorF(i);
         }
 
+        public static ColorF Darken(ColorF c, float f)
+        {
+            return new ColorF(c.R * f, c.G * f, c.B * f, c.A);
+        }
+
         public static ColorF White { get { return new ColorF(1f, 1f, 1f, 1f); } }
         public static ColorF Black { get { return new ColorF(0, 0, 0, 1f); } }
         public static ColorF Gray { get { return new ColorF(0.5f, 0.5f, 0.5f, 1f); } }
