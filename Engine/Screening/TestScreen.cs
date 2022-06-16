@@ -30,8 +30,6 @@ namespace AGame.Engine.Screening
 
         public override Screen Initialize()
         {
-            server = new GameServer(28000);
-            client = new GameClient("127.0.0.1", 28000);
             return this;
         }
 
@@ -41,6 +39,8 @@ namespace AGame.Engine.Screening
 
             if (!init)
             {
+                server = new GameServer(int.Parse(args[0]));
+                client = new GameClient("127.0.0.1", int.Parse(args[0]));
                 await server.StartAsync();
 
                 Console.WriteLine("Sending connect request");
@@ -48,7 +48,7 @@ namespace AGame.Engine.Screening
 
                 if (!(response is null || !response.Accepted))
                 {
-                    client.EnqueuePacket(new ConnectReadyForECS(), true, false);
+                    client.EnqueuePacket(new ConnectReadyForECS(), false, false);
                 }
 
                 init = true;

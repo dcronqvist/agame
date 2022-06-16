@@ -22,7 +22,7 @@ public class UpdateEntitiesPacket : Packet
 public class EntityUpdate : IPacketable
 {
     public int EntityID { get; set; }
-    public string[] ComponentTypes { get; set; }
+    public ushort[] ComponentTypes { get; set; }
     public Component[] Components { get; set; }
 
     public EntityUpdate()
@@ -33,7 +33,7 @@ public class EntityUpdate : IPacketable
     public EntityUpdate(int entityId, params Component[] components)
     {
         this.EntityID = entityId;
-        this.ComponentTypes = components.Select(x => x.GetType().Name.Replace("Component", "")).ToArray();
+        this.ComponentTypes = components.Select(x => (ushort)ECS.Instance.Value.GetComponentID(x.GetType())).ToArray();
         this.Components = components;
     }
 
@@ -43,10 +43,9 @@ public class EntityUpdate : IPacketable
         bytes.AddRange(BitConverter.GetBytes(EntityID));
         bytes.AddRange(BitConverter.GetBytes(ComponentTypes.Length));
 
-        foreach (string componentType in ComponentTypes)
+        foreach (ushort componentType in ComponentTypes)
         {
-            bytes.AddRange(BitConverter.GetBytes(componentType.Length));
-            bytes.AddRange(Encoding.ASCII.GetBytes(componentType));
+            bytes.AddRange(BitConverter.GetBytes(componentType));
         }
 
         foreach (Component component in Components)
@@ -66,15 +65,14 @@ public class EntityUpdate : IPacketable
         int length = BitConverter.ToInt32(data, offset);
         offset += sizeof(int);
 
-        this.ComponentTypes = new string[length];
+        this.ComponentTypes = new ushort[length];
         this.Components = new Component[length];
 
         for (int i = 0; i < length; i++)
         {
-            int len = BitConverter.ToInt32(data, offset);
-            offset += sizeof(int);
-            this.ComponentTypes[i] = Encoding.ASCII.GetString(data, offset, len);
-            offset += len;
+            ushort componentType = BitConverter.ToUInt16(data, offset);
+            this.ComponentTypes[i] = componentType;
+            offset += sizeof(ushort);
         }
 
         for (int i = 0; i < this.ComponentTypes.Length; i++)

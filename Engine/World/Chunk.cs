@@ -14,27 +14,16 @@ public struct ChunkAddress
         this.Y = y;
     }
 
+    public override bool Equals(object obj)
+    {
+        return obj is ChunkAddress address &&
+               X == address.X &&
+               Y == address.Y;
+    }
+
     public override int GetHashCode()
     {
-        unchecked
-        {
-            int hash = 17;
-            hash = hash * 23 + X;
-            hash = hash * 23 + Y;
-            return hash;
-        }
-    }
-    public override bool Equals(Object obj)
-    {
-        if ((obj == null) || !this.GetType().Equals(obj.GetType()))
-        {
-            return false;
-        }
-        else
-        {
-            ChunkAddress other = (ChunkAddress)obj;
-            return (X == other.X) && (Y == other.Y);
-        }
+        return HashCode.Combine(this.X, this.Y);
     }
 }
 

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Threading.Tasks.Dataflow;
 using AGame.Engine.Graphics.Rendering;
 using GameUDPProtocol;
 
@@ -15,6 +16,7 @@ public class WorldContainer
 
     // Private fields
     private bool _asynchronous;
+    private BufferBlock<ChunkEvent> _chunkEvents = new BufferBlock<ChunkEvent>();
 
     public WorldContainer(IWorldGenerator generator, bool useAsync = false)
     {
@@ -98,9 +100,16 @@ public class WorldContainer
 
     public async Task<Chunk> GetChunkAsync(int x, int y)
     {
-        return await Task.Run(() =>
+        return await Chunks.LockedAction<Task<Chunk>>(async (chunks) =>
         {
-            return this.GetChunk(x, y);
+            ChunkAddress addr = new ChunkAddress(x, y);
+
+            if (!chunks.ContainsKey(addr))
+            {
+                await this.GenerateChunkAsync(x, y);
+            }
+
+            return chunks[addr];
         });
     }
 
@@ -146,7 +155,7 @@ public class WorldContainer
         {
             for (int _y = fromY; _y <= toY; _y++)
             {
-                GetChunk(_x, _y);
+                EnqueueChunkEvent(new ChunkEvent(new ChunkAddress(_x, _y), new ChunkEventGenerate()));
             }
         }
 
@@ -156,38 +165,32 @@ public class WorldContainer
             {
                 if (chunk.Key.X < fromX || chunk.Key.X > toX || chunk.Key.Y < fromY || chunk.Key.Y > toY)
                 {
-                    chunks.Remove(chunk.Key);
+                    EnqueueChunkEvent(new ChunkEvent(chunk.Key, new ChunkEventRemove()));
                 }
             }
         });
     }
 
-    public async Task MaintainChunkAreaAsync(int width, int height, int x, int y)
+    private void EnqueueChunkEvent(ChunkEvent ce)
     {
-        // Get/generate chunks in this area and discard chunks that aren't in this area
-        int fromX = x - width;
-        int toX = x + width;
-        int fromY = y - height;
-        int toY = y + height;
+        _chunkEvents.SendAsync(ce);
+    }
 
-        for (int _x = fromX; _x <= toX; _x++)
+    public void Start()
+    {
+        _ = Task.Run(async () =>
         {
-            for (int _y = fromY; _y <= toY; _y++)
+            while (true)
             {
-                await GetChunkAsync(_x, _y);
-            }
-        }
-
-        this.Chunks.LockedAction((chunks) =>
-        {
-            foreach (KeyValuePair<ChunkAddress, Chunk> chunk in chunks)
-            {
-                if (chunk.Key.X < fromX || chunk.Key.X > toX || chunk.Key.Y < fromY || chunk.Key.Y > toY)
-                {
-                    chunks.Remove(chunk.Key);
-                }
+                ChunkEvent ce = await _chunkEvents.ReceiveAsync(TimeSpan.FromMilliseconds(-1));
+                await ce.ExecuteAsync(this);
             }
         });
+    }
+
+    public void Update()
+    {
+
     }
 
     public void Render()
@@ -199,6 +202,47 @@ public class WorldContainer
                 chunk.Render();
             }
         });
+    }
+}
+
+public class ChunkEvent
+{
+    public ChunkAddress Address { get; set; }
+    public IChunkEventExecutor Executor { get; set; }
+
+    public ChunkEvent(ChunkAddress address, IChunkEventExecutor executor)
+    {
+        this.Address = address;
+        this.Executor = executor;
+    }
+
+    public async Task ExecuteAsync(WorldContainer container)
+    {
+        await this.Executor.ExecuteAsync(container, this.Address);
+    }
+}
+
+public interface IChunkEventExecutor
+{
+    Task ExecuteAsync(WorldContainer container, ChunkAddress address);
+}
+
+public class ChunkEventRemove : IChunkEventExecutor
+{
+    public async Task ExecuteAsync(WorldContainer container, ChunkAddress address)
+    {
+        container.Chunks.LockedAction((chunks) =>
+        {
+            chunks.Remove(address);
+        });
+    }
+}
+
+public class ChunkEventGenerate : IChunkEventExecutor
+{
+    public async Task ExecuteAsync(WorldContainer container, ChunkAddress address)
+    {
+        await container.GenerateChunkAsync(address.X, address.Y);
     }
 }
 

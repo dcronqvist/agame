@@ -44,11 +44,11 @@ namespace AGame.Engine.Screening
             }
         }
 
-        public static void GoToScreen(string name)
+        public static void GoToScreen(string name, params string[] args)
         {
             CurrentScreen?.OnLeave();
             CurrentScreenName = name;
-            CurrentScreen.OnEnter(Args);
+            CurrentScreen.OnEnter(args);
         }
 
         public static void Update()

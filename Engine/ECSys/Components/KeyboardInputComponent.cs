@@ -4,7 +4,7 @@ using AGame.Engine.Networking;
 namespace AGame.Engine.ECSys.Components;
 
 [ComponentNetworking(CNType.Update, NDirection.ClientToServer, IsReliable = false)]
-public class PlayerInputComponent : Component
+public class KeyboardInputComponent : Component
 {
     public const int KEY_W = 1 << 0;
     public const int KEY_A = 1 << 1;
@@ -28,21 +28,7 @@ public class PlayerInputComponent : Component
     }
     public int NewBitmask { get; set; }
 
-    private Vector2 _currentMousePosition;
-    public Vector2 CurrentMousePosition
-    {
-        get => _currentMousePosition;
-        set
-        {
-            if (_currentMousePosition != value)
-            {
-                _currentMousePosition = value;
-                this.NotifyPropertyChanged();
-            }
-        }
-    }
-
-    public PlayerInputComponent()
+    public KeyboardInputComponent()
     {
         KeyBitmask = 0;
     }
@@ -69,40 +55,35 @@ public class PlayerInputComponent : Component
 
     public override Component Clone()
     {
-        return new PlayerInputComponent()
+        return new KeyboardInputComponent()
         {
             KeyBitmask = KeyBitmask,
             PreviousKeyBitmask = PreviousKeyBitmask,
-            NewBitmask = NewBitmask,
-            CurrentMousePosition = CurrentMousePosition
+            NewBitmask = NewBitmask
         };
     }
 
     public override int Populate(byte[] data, int offset)
     {
-        KeyBitmask = BitConverter.ToInt32(data, offset);
-        CurrentMousePosition = new Vector2(BitConverter.ToSingle(data, offset + 4), BitConverter.ToSingle(data, offset + 8));
-        return sizeof(int) + 2 * sizeof(float);
+        _keyBitmask = BitConverter.ToInt32(data, offset);
+        return sizeof(int);
     }
 
     public override byte[] ToBytes()
     {
         List<byte> bytes = new List<byte>();
         bytes.AddRange(BitConverter.GetBytes(KeyBitmask));
-        bytes.AddRange(BitConverter.GetBytes(CurrentMousePosition.X));
-        bytes.AddRange(BitConverter.GetBytes(CurrentMousePosition.Y));
         return bytes.ToArray();
     }
 
     public override string ToString()
     {
-        return "PlayerInputComponent";
+        return "KeyboardInputComponent";
     }
 
     public override void UpdateComponent(Component newComponent)
     {
-        this.NewBitmask = ((PlayerInputComponent)newComponent).KeyBitmask;
-        this.CurrentMousePosition = ((PlayerInputComponent)newComponent).CurrentMousePosition;
+        this.NewBitmask = ((KeyboardInputComponent)newComponent).KeyBitmask;
     }
 
     public override void InterpolateProperties()

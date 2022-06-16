@@ -89,6 +89,6 @@ public class TransformComponent : Component
     {
         if ((_targetPosition - Position).AbsLength() < 0.05f) return;
 
-        this.Position += (_targetPosition - Position) * 15f * GameTime.DeltaTime;
+        this.Position += (_targetPosition - Position) * GameTime.DeltaTime * 10f;
     }
 }

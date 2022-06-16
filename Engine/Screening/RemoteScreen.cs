@@ -32,7 +32,7 @@ namespace AGame.Engine.Screening
 
         public override async void OnEnter(string[] args)
         {
-            client = new GameClient(args[0], 28000);
+            client = new GameClient(Utilities.ParseIPOrDomain(args[0]), int.Parse(args[1]));
             ConnectResponse response = await client.ConnectAsync(new ConnectRequest());
 
             if (!(response is null || !response.Accepted))
@@ -55,12 +55,12 @@ namespace AGame.Engine.Screening
 
         public override void Update()
         {
-            client?.Update();
+            client.Update();
         }
 
         public override void Render()
         {
-            client?.Render();
+            client.Render();
         }
     }
 }

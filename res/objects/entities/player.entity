@@ -8,7 +8,10 @@
 			"componentType": "Transform"
 		},
 		{
-			"componentType": "PlayerInput"
+			"componentType": "KeyboardInput"
+		},
+		{
+			"componentType": "MouseInput"
 		}
 	]
 }

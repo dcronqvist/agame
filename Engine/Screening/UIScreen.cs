@@ -45,43 +45,35 @@ class UIScreen : Screen
 
     }
 
-    float val = 0f;
-    ColorF col = new ColorF(0x4A9077, 255);
-    string text = "";
+    string host = "mc.dcronqvist.se";
+    string port = "28000";
 
     public override void Render()
     {
         Renderer.SetRenderTarget(null, null);
 
-        Renderer.Clear(new ColorF(val, 0f, 0f, 1f));
+        Renderer.Clear(ColorF.Darken(ColorF.LightGray, 1.05f));
 
-        GUI.Begin();
+        Vector2 middleOfScreen = DisplayManager.GetWindowSizeInPixels() / 2f;
+        float widths = 300f;
 
-        if (GUI.Button("Press 1", new Vector2(100, 100), new Vector2(150, 40)))
+        GUI.TextField("host...", new Vector2(middleOfScreen.X - widths / 2f, middleOfScreen.Y - 50f), new Vector2(widths, 40f), ref host);
+        GUI.TextField("port...", new Vector2(middleOfScreen.X - widths / 2f, middleOfScreen.Y), new Vector2(widths, 40f), ref port);
+
+        if (GUI.Button("connect", new Vector2(middleOfScreen.X - widths / 2f, middleOfScreen.Y + 50f), new Vector2(widths / 2f - 5f, 40f)))
         {
-            Console.WriteLine("PRESSED");
+            if (host != "" && port != "")
+            {
+                ScreenManager.GoToScreen("remotescreen", host, port);
+            }
         }
 
-        if (GUI.Button("testscreen", new Vector2(100, 150), new Vector2(150, 40)))
+        if (GUI.Button("host", new Vector2(middleOfScreen.X + 5f, middleOfScreen.Y + 50f), new Vector2(widths / 2f - 5f, 40f)))
         {
-            ScreenManager.GoToScreen("testscreen");
+            if (port != "")
+            {
+                ScreenManager.GoToScreen("testscreen", port);
+            }
         }
-
-        if (GUI.Slider("Slide 1", new Vector2(100, 200), new Vector2(150, 40), ref val))
-        {
-            Console.WriteLine("SLIDER is now " + val);
-        }
-
-        if (GUI.TextField("name...", new Vector2(100, 250), new Vector2(150f, 40), ref text))
-        {
-            Console.WriteLine("TEXT FIELD is now " + text);
-        }
-
-        Renderer.Text.RenderText(AssetManager.GetAsset<Font>("font_rainyhearts"), GUI._hotID.ToString(), new Vector2(400, 50), 1f, ColorF.White, Renderer.Camera);
-        Renderer.Text.RenderText(AssetManager.GetAsset<Font>("font_rainyhearts"), GUI._activeID.ToString(), new Vector2(400, 70), 1f, ColorF.White, Renderer.Camera);
-        Renderer.Text.RenderText(AssetManager.GetAsset<Font>("font_rainyhearts"), GUI._kbdFocusID.ToString(), new Vector2(400, 90), 1f, ColorF.White, Renderer.Camera);
-
-
-        GUI.End();
     }
 }

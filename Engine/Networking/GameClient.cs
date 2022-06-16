@@ -24,7 +24,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     ThreadSafe<Queue<Packet>> receivedPackets = new ThreadSafe<Queue<Packet>>(new Queue<Packet>());
     ThreadSafe<Queue<Packet>> sentPackets = new ThreadSafe<Queue<Packet>>(new Queue<Packet>());
 
-    public GameClient(string host, int port) : base(host, port, 500, 5000)
+    public GameClient(string host, int port) : base(host, port, 1000, 10000)
     {
         this.Connecting += (sender, e) =>
         {
@@ -103,7 +103,6 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                         else
                         {
                             //GameConsole.WriteLine("CONNECT", $"<0x00FF00>Updating component {packet.ComponentType} to entity {entityId}</>");
-
                             entity.GetComponent(component.GetType()).UpdateComponent(component);
                         }
                     }
@@ -128,20 +127,21 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
         this.AddPacketHandler<ConnectFinished>((packet) =>
         {
-            connectDone = true;
             GameConsole.WriteLine("CLIENT", $"Connected to server with entity ID {packet.PlayerEntityId}");
             this._player = ECS.Instance.Value.GetEntityFromID(packet.PlayerEntityId);
             this._camera = new Camera2D(this._player.GetComponent<TransformComponent>().Position, 2f);
             this.world = new WorldContainer(new ServerWorldGenerator(this), true);
+            this.world.Start();
 
             Input.OnScroll += (sender, e) =>
             {
                 this._camera.Zoom *= (e > 0) ? 1.05f : 0.95f;
             };
 
-            _ = this.world.MaintainChunkAreaAsync(2, 1, this._player.GetComponent<TransformComponent>().GetChunkPosition().X, this._player.GetComponent<TransformComponent>().GetChunkPosition().Y);
+            this.world.MaintainChunkArea(2, 1, this._player.GetComponent<TransformComponent>().GetChunkPosition().X, this._player.GetComponent<TransformComponent>().GetChunkPosition().Y);
 
             GameConsole.WriteLine("CONNECT", "<0x00FF00>Connected to server</>");
+            connectDone = true;
         });
 
         this.AddPacketHandler<TriggerECEventPacket>((packet) =>
@@ -156,7 +156,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             });
         });
 
-        Dictionary<int, float> lastUpdateTimes = new Dictionary<int, float>();
+        ThreadSafe<Dictionary<int, Dictionary<int, float>>> lastUpdateTimes = new ThreadSafe<Dictionary<int, Dictionary<int, float>>>(new Dictionary<int, Dictionary<int, float>>());
 
         ECS.Instance.Value.ComponentChanged += (sender, e) =>
         {
@@ -164,14 +164,29 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             {
                 ComponentNetworkingAttribute cna = e.Component.GetCNAttrib();
 
-                float lastUpdated = lastUpdateTimes.GetValueOrDefault(ECS.Instance.Value.GetComponentID(e.Component.GetType()), 0f);
-
-                if (cna.MaxUpdatesPerSecond == 0 || (GameTime.TotalElapsedSeconds - lastUpdated) > (1f / cna.MaxUpdatesPerSecond))
+                lastUpdateTimes.LockedAction((lut) =>
                 {
-                    this.EnqueuePacket(new UpdateEntitiesPacket(new EntityUpdate(e.Entity.ID, e.Component)), cna.IsReliable, false);
+                    if (!lut.ContainsKey(e.Entity.ID))
+                    {
+                        lut.Add(e.Entity.ID, new Dictionary<int, float>());
+                    }
 
-                    lastUpdateTimes[ECS.Instance.Value.GetComponentID(e.Component.GetType())] = GameTime.TotalElapsedSeconds;
-                }
+                    Dictionary<int, float> entityTimes = lut[e.Entity.ID];
+
+                    if (!entityTimes.ContainsKey(ECS.Instance.Value.GetComponentID(e.Component.GetType())))
+                    {
+                        entityTimes.Add(ECS.Instance.Value.GetComponentID(e.Component.GetType()), 0f);
+                    }
+
+                    float lastUpdated = entityTimes[ECS.Instance.Value.GetComponentID(e.Component.GetType())];
+
+                    if (cna.MaxUpdatesPerSecond == 0 || (GameTime.TotalElapsedSeconds - lastUpdated) > (1f / cna.MaxUpdatesPerSecond))
+                    {
+                        this.EnqueuePacket(new UpdateEntitiesPacket(new EntityUpdate(e.Entity.ID, e.Component)), cna.IsReliable, false);
+
+                        entityTimes[ECS.Instance.Value.GetComponentID(e.Component.GetType())] = GameTime.TotalElapsedSeconds;
+                    }
+                });
             }
         };
     }
@@ -229,10 +244,12 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
             Vector2i chunkPos = tc.GetChunkPosition();
 
+            this.world.Update();
+
             if (!chunkPos.Equals(previousChunkPos))
             {
                 // Entered new chunk. Request this one.
-                _ = this.world.MaintainChunkAreaAsync(2, 1, this._player.GetComponent<TransformComponent>().GetChunkPosition().X, this._player.GetComponent<TransformComponent>().GetChunkPosition().Y);
+                this.world.MaintainChunkArea(2, 1, this._player.GetComponent<TransformComponent>().GetChunkPosition().X, this._player.GetComponent<TransformComponent>().GetChunkPosition().Y);
 
                 this.previousChunkPos = chunkPos;
             }
@@ -240,50 +257,50 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             this._camera.FocusPosition = tc.Position;
             if (Input.IsKeyDown(GLFW.Keys.W))
             {
-                this._player.GetComponent<PlayerInputComponent>().SetKeyDown(PlayerInputComponent.KEY_W);
+                this._player.GetComponent<KeyboardInputComponent>().SetKeyDown(KeyboardInputComponent.KEY_W);
             }
             else
             {
-                this._player.GetComponent<PlayerInputComponent>().SetKeyUp(PlayerInputComponent.KEY_W);
+                this._player.GetComponent<KeyboardInputComponent>().SetKeyUp(KeyboardInputComponent.KEY_W);
             }
 
             if (Input.IsKeyDown(GLFW.Keys.A))
             {
-                this._player.GetComponent<PlayerInputComponent>().SetKeyDown(PlayerInputComponent.KEY_A);
+                this._player.GetComponent<KeyboardInputComponent>().SetKeyDown(KeyboardInputComponent.KEY_A);
             }
             else
             {
-                this._player.GetComponent<PlayerInputComponent>().SetKeyUp(PlayerInputComponent.KEY_A);
+                this._player.GetComponent<KeyboardInputComponent>().SetKeyUp(KeyboardInputComponent.KEY_A);
             }
 
             if (Input.IsKeyDown(GLFW.Keys.S))
             {
-                this._player.GetComponent<PlayerInputComponent>().SetKeyDown(PlayerInputComponent.KEY_S);
+                this._player.GetComponent<KeyboardInputComponent>().SetKeyDown(KeyboardInputComponent.KEY_S);
             }
             else
             {
-                this._player.GetComponent<PlayerInputComponent>().SetKeyUp(PlayerInputComponent.KEY_S);
+                this._player.GetComponent<KeyboardInputComponent>().SetKeyUp(KeyboardInputComponent.KEY_S);
             }
 
             if (Input.IsKeyDown(GLFW.Keys.D))
             {
-                this._player.GetComponent<PlayerInputComponent>().SetKeyDown(PlayerInputComponent.KEY_D);
+                this._player.GetComponent<KeyboardInputComponent>().SetKeyDown(KeyboardInputComponent.KEY_D);
             }
             else
             {
-                this._player.GetComponent<PlayerInputComponent>().SetKeyUp(PlayerInputComponent.KEY_D);
+                this._player.GetComponent<KeyboardInputComponent>().SetKeyUp(KeyboardInputComponent.KEY_D);
             }
 
             if (Input.IsKeyDown(GLFW.Keys.Space))
             {
-                this._player.GetComponent<PlayerInputComponent>().SetKeyDown(PlayerInputComponent.KEY_SPACE);
+                this._player.GetComponent<KeyboardInputComponent>().SetKeyDown(KeyboardInputComponent.KEY_SPACE);
             }
             else
             {
-                this._player.GetComponent<PlayerInputComponent>().SetKeyUp(PlayerInputComponent.KEY_SPACE);
+                this._player.GetComponent<KeyboardInputComponent>().SetKeyUp(KeyboardInputComponent.KEY_SPACE);
             }
 
-            this._player.GetComponent<PlayerInputComponent>().CurrentMousePosition = Input.GetMousePositionInWindow();
+            this._player.GetComponent<MouseInputComponent>().MousePosition = Input.GetMousePosition(this._camera);
         }
     }
 

@@ -33,6 +33,11 @@ public class ConnectFinished : Packet
     }
 }
 
+public class ClientAlive : Packet
+{
+
+}
+
 public class QueryResponse : PacketQueryResponse
 {
 

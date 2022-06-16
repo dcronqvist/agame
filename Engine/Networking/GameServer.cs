@@ -166,86 +166,101 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         // Generate world map
         _ecs = new ThreadSafe<ECS>(new ECS());
 
-        Dictionary<int, float> lastUpdateTimes = new Dictionary<int, float>();
+        ThreadSafe<Dictionary<int, Dictionary<int, float>>> lastUpdateTimes = new ThreadSafe<Dictionary<int, Dictionary<int, float>>>(new Dictionary<int, Dictionary<int, float>>());
 
-        this._ecs.LockedAction((ecs) =>
+        _ecs.Value.Initialize(SystemRunner.Server);
+
+        _ecs.Value.ComponentChanged += (sender, e) =>
         {
-            ecs.Initialize(SystemRunner.Server);
-
-            ecs.ComponentChanged += (sender, e) =>
+            if (e.Component.HasCNType(CNType.Update, NDirection.ServerToClient))
             {
-                if (e.Component.HasCNType(CNType.Update, NDirection.ServerToClient))
+                _ecs.LockedAction((ecs) =>
                 {
                     ComponentNetworkingAttribute cna = e.Component.GetCNAttrib();
 
-                    float lastUpdated = lastUpdateTimes.GetValueOrDefault(ecs.GetComponentID(e.Component.GetType()), 0f);
-
-                    if (cna.MaxUpdatesPerSecond == 0 || (GameTime.TotalElapsedSeconds - lastUpdated) > (1f / cna.MaxUpdatesPerSecond))
+                    lastUpdateTimes.LockedAction((lut) =>
                     {
-                        this._connections.LockedAction((conns) =>
+                        if (!lut.ContainsKey(e.Entity.ID))
                         {
-                            EntityUpdate update = new EntityUpdate(e.Entity.ID, e.Component);
-                            foreach (Connection conn in conns)
-                            {
-                                this.EnqueuePacket(new UpdateEntitiesPacket(update), conn, cna.IsReliable, false);
-                            }
-                        });
-
-                        lastUpdateTimes[ecs.GetComponentID(e.Component.GetType())] = GameTime.TotalElapsedSeconds;
-                    }
-                }
-            };
-
-            ecs.EntityAdded += (sender, e) =>
-            {
-                this._connections.LockedAction((conns) =>
-                {
-                    List<EntityUpdate> updates = new List<EntityUpdate>();
-
-                    Component[] snapshottedComponents = e.Entity.Components.ToArray();
-
-                    // With divisions at most 200, every packet should be able to fit at least 2 entities
-                    List<Component[]> divisions = Utilities.DivideIPacketables(snapshottedComponents, 200);
-
-                    foreach (Component[] division in divisions)
-                    {
-                        updates.Add(new EntityUpdate(e.Entity.ID, division));
-                    }
-
-                    List<EntityUpdate[]> entityUpdateDivisions = Utilities.DivideIPacketables(updates.ToArray(), 400);
-
-                    foreach (EntityUpdate[] entityUpdateDivision in entityUpdateDivisions)
-                    {
-                        UpdateEntitiesPacket eup = new UpdateEntitiesPacket(entityUpdateDivision);
-                        foreach (var conn in conns)
-                        {
-                            this.EnqueuePacket(eup, conn, false, false);
+                            lut.Add(e.Entity.ID, new Dictionary<int, float>());
                         }
-                    }
-                }, (e) =>
-                {
-                    GameConsole.WriteLine("SERVER", $"{e.Message}");
-                });
-            };
 
-            ecs.EntityDestroyed += (sender, e) =>
+                        Dictionary<int, float> entityTimes = lut[e.Entity.ID];
+
+                        if (!entityTimes.ContainsKey(ECS.Instance.Value.GetComponentID(e.Component.GetType())))
+                        {
+                            entityTimes.Add(ECS.Instance.Value.GetComponentID(e.Component.GetType()), 0f);
+                        }
+
+                        float lastUpdated = entityTimes[ECS.Instance.Value.GetComponentID(e.Component.GetType())];
+
+                        if (cna.MaxUpdatesPerSecond == 0 || (GameTime.TotalElapsedSeconds - lastUpdated) > (1f / cna.MaxUpdatesPerSecond))
+                        {
+                            _connections.LockedAction((conns) =>
+                            {
+                                foreach (Connection conn in conns)
+                                {
+                                    this.EnqueuePacket(new UpdateEntitiesPacket(new EntityUpdate(e.Entity.ID, e.Component)), conn, cna.IsReliable, false);
+                                }
+                            });
+
+                            entityTimes[ECS.Instance.Value.GetComponentID(e.Component.GetType())] = GameTime.TotalElapsedSeconds;
+                        }
+                    });
+                });
+            }
+        };
+
+        _ecs.Value.EntityAdded += (sender, e) =>
+        {
+            this._connections.LockedAction((conns) =>
             {
-                this._connections.LockedAction((conns) =>
+                List<EntityUpdate> updates = new List<EntityUpdate>();
+
+                Component[] snapshottedComponents = e.Entity.Components.ToArray();
+
+                // With divisions at most 200, every packet should be able to fit at least 2 entities
+                List<Component[]> divisions = Utilities.DivideIPacketables(snapshottedComponents, 200);
+
+                foreach (Component[] division in divisions)
                 {
+                    updates.Add(new EntityUpdate(e.Entity.ID, division));
+                }
+
+                List<EntityUpdate[]> entityUpdateDivisions = Utilities.DivideIPacketables(updates.ToArray(), 400);
+
+                foreach (EntityUpdate[] entityUpdateDivision in entityUpdateDivisions)
+                {
+                    UpdateEntitiesPacket eup = new UpdateEntitiesPacket(entityUpdateDivision);
                     foreach (var conn in conns)
                     {
-                        DestroyEntityPacket dep = new DestroyEntityPacket(e.Entity.ID);
-                        this.EnqueuePacket(dep, conn, false, false);
+                        this.EnqueuePacket(eup, conn, false, false);
                     }
-                }, (e) =>
+                }
+            }, (e) =>
+            {
+                GameConsole.WriteLine("SERVER", $"{e.Message}");
+            });
+        };
+
+        _ecs.Value.EntityDestroyed += (sender, e) =>
+        {
+            this._connections.LockedAction((conns) =>
+            {
+                foreach (var conn in conns)
                 {
-                    GameConsole.WriteLine("SERVER", $"{e.Message}");
-                });
-            };
-        });
+                    DestroyEntityPacket dep = new DestroyEntityPacket(e.Entity.ID);
+                    this.EnqueuePacket(dep, conn, false, false);
+                }
+            }, (e) =>
+            {
+                GameConsole.WriteLine("SERVER", $"{e.Message}");
+            });
+        };
 
         GameConsole.WriteLine("SERVER", "Generating world map...");
         this._world = new WorldContainer(new TestWorldGenerator());
+        this._world.Start();
         GameConsole.WriteLine("SERVER", "World map generated.");
 
         await base.StartAsync();
@@ -309,6 +324,25 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             }
         });
 
+        // Asking clients for aliveness
+        _ = Task.Run(() =>
+        {
+            while (true)
+            {
+                this._connections.LockedAction((conns) =>
+                {
+                    foreach (var conn in conns)
+                    {
+                        this.EnqueuePacket(new ClientAlive(), conn, true, false);
+                    }
+                }, (e) =>
+                {
+                    Console.WriteLine(e.Message);
+                });
+                Thread.Sleep(2000);
+            }
+        });
+
         this._world.ChunkUpdated += (sender, e) =>
         {
             this._connections.LockedAction((conns) =>
@@ -331,9 +365,6 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         };
     }
 
-    float counter = 0f;
-    float interval = 1;
-
     public void Update()
     {
         this._ecs.LockedAction((ecs) =>
@@ -341,16 +372,18 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             ecs.Update(this._world);
         });
 
+        this._world.Update();
+
         foreach (int id in this._playersIds.Values)
         {
             Entity e = this._ecs.Value.GetEntityFromID(id);
 
-            var pic = e.GetComponent<PlayerInputComponent>();
+            var pic = e.GetComponent<KeyboardInputComponent>();
             var trans = e.GetComponent<TransformComponent>();
 
             Vector2i tilePos = trans.GetTilePosition();
 
-            if (pic.IsKeyPressed(PlayerInputComponent.KEY_SPACE))
+            if (pic.IsKeyPressed(KeyboardInputComponent.KEY_SPACE))
             {
                 this._world.UpdateTile(tilePos.X, tilePos.Y, "game:grass");
             }

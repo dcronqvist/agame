@@ -53,9 +53,17 @@ public class ECS
         this.RegisterComponentTypes();
 
         // Register system
-        RegisterSystem<TestSystem>();
-        RegisterSystem<PlayerInputUpdateSystem>();
-        RegisterSystem<WeirdSystem>();
+        this.RegisterAllSystems();
+    }
+
+    public void RegisterAllSystems()
+    {
+        List<Type> systems = Utilities.FindDerivedTypes(typeof(BaseSystem)).Where(x => x != typeof(BaseSystem)).ToList();
+
+        foreach (Type systemType in systems)
+        {
+            RegisterSystem(systemType);
+        }
     }
 
     public void RegisterComponentTypes()
@@ -76,6 +84,11 @@ public class ECS
         return _componentTypes[id];
     }
 
+    public Type GetComponentType(int id)
+    {
+        return _componentTypeIDs.FirstOrDefault(x => x.Value == id).Key;
+    }
+
     public int GetComponentID(Type type)
     {
         return _componentTypeIDs[type];
@@ -84,6 +97,31 @@ public class ECS
     public int GetComponentID(string name)
     {
         return _componentTypeIDs[GetComponentType(name)];
+    }
+
+    private void RegisterSystem(Type type)
+    {
+        if (_systems == null)
+        {
+            _systems = new List<BaseSystem>();
+        }
+
+        SystemRunsOnAttribute sroa = type.GetCustomAttributes(typeof(SystemRunsOnAttribute), false).FirstOrDefault() as SystemRunsOnAttribute;
+
+        BaseSystem system = (BaseSystem)Activator.CreateInstance(type);
+        system.ParentECS = this;
+        system.Initialize();
+        _systems.Add(system);
+
+        if (sroa is not null)
+        {
+            if (sroa.RunsOn.HasFlag(this._runner))
+            {
+                this._systemsToUpdate.Add(system);
+            }
+        }
+
+        RecalculateSystemEntities();
     }
 
     private void RegisterSystem<T>() where T : BaseSystem, new()

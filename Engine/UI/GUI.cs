@@ -70,6 +70,7 @@ public static class GUI
         {
             _hotID = -1;
             _activeID = -1;
+            _dropdownHotID = -1;
         }
         else
         {
@@ -81,6 +82,7 @@ public static class GUI
                 _kbdFocusID = -1;
                 _currentCaretTime = 0f;
                 _caretVisible = false;
+                _showingDropdownID = -1;
             }
         }
     }
@@ -110,6 +112,8 @@ public static class GUI
         {
             _kbdFocusID = -1;
             _activeID = id;
+            _showingDropdownID = -1;
+            _caretVisible = false;
             return true;
         }
         return false;
@@ -133,6 +137,9 @@ public static class GUI
 
         float scale = 2f;
         Vector2 textPos = new Vector2(position.X + size.X / 2, position.Y + size.Y / 2) - _font.MeasureString(text, scale) / 2f;
+        float yOffset = -4f;
+        float xOffset = 0;
+        Vector2 offset = new Vector2(xOffset, yOffset);
 
         if (rect.Contains(mousePos.X, mousePos.Y) && TryBecomeHot(id) && TryBecomeActive(id))
         {
@@ -166,8 +173,8 @@ public static class GUI
             }
         }
 
-        Renderer.Text.RenderText(_font, text, textPos + Vector2.One * 2f, scale, ColorF.Black, Renderer.Camera);
-        Renderer.Text.RenderText(_font, text, textPos, scale, ColorF.White, Renderer.Camera);
+        Renderer.Text.RenderText(_font, text, textPos + Vector2.One * 2f + offset, scale, ColorF.Black, Renderer.Camera);
+        Renderer.Text.RenderText(_font, text, textPos + offset, scale, ColorF.White, Renderer.Camera);
 
         return _activeID == id && Input.IsMouseButtonPressed(MouseButton.Left);
     }
@@ -224,7 +231,7 @@ public static class GUI
     {
         ColorF defaultColor = ColorF.Darken(ColorF.DarkGray, 0.5f);
         ColorF hotColor = ColorF.DarkGray;
-        ColorF activeColor = ColorF.Gray;
+        ColorF activeColor = ColorF.DarkGray;
 
         int id = GetNextID();
 
@@ -242,6 +249,7 @@ public static class GUI
         {
             // Hot and active!
             _kbdFocusID = id;
+            _caretVisible = true;
         }
 
         if (_kbdFocusID == id)
@@ -294,7 +302,7 @@ public static class GUI
         Renderer.Text.RenderText(_font, text, textPos + Vector2.One * 2f + offset, scale, ColorF.Black, Renderer.Camera);
         Renderer.Text.RenderText(_font, text, textPos + offset, scale, text == placeHolder ? ColorF.Gray : ColorF.White, Renderer.Camera);
 
-        if (_caretVisible)
+        if (_caretVisible && _kbdFocusID == id)
         {
             Vector2 endOfString = textPos + new Vector2(_font.MeasureString(text, scale).X, 0f) + offset;
             Vector2 caretOffset = new Vector2(0f, -2f);
@@ -306,5 +314,117 @@ public static class GUI
         }
 
         return value != startText;
+    }
+
+    private static int _showingDropdownID = -1;
+    private static int _dropdownHotID = -1;
+
+    public static bool Dropdown(string[] options, Vector2 position, Vector2 size, ref int selectedOption)
+    {
+        ColorF defaultColor = ColorF.Darken(ColorF.DarkGray, 0.5f);
+        ColorF hotColor = ColorF.DarkGray;
+        ColorF activeColor = ColorF.Gray;
+
+        int oldSelect = selectedOption;
+
+        int id = GetNextID();
+
+        RectangleF rect = new RectangleF(position.X, position.Y, size.X, size.Y);
+        Vector2 mousePos = Input.GetMousePositionInWindow();
+
+        if (rect.Contains(mousePos.X, mousePos.Y) && TryBecomeHot(id) && TryBecomeActive(id))
+        {
+            // Hot and active!
+            if (_showingDropdownID == id)
+            {
+                _showingDropdownID = -1;
+            }
+            else
+            {
+                _showingDropdownID = id;
+            }
+        }
+
+        ColorF color = _activeID == id ? activeColor : (_hotID == id ? hotColor : defaultColor);
+        Renderer.Primitive.RenderRectangle(rect, color);
+
+        string currentSelected = options[selectedOption];
+        float scale = 2f;
+        Vector2 textPos = new Vector2(position.X, position.Y + size.Y / 2) - new Vector2(0f, (_font.MeasureString(currentSelected, scale).Y / 2f));
+        float yOffset = -4f;
+        float xOffset = 10f;
+        Vector2 offset = new Vector2(xOffset, yOffset);
+
+        textPos = textPos + offset;
+
+        Renderer.Text.RenderText(_font, currentSelected, textPos + Vector2.One * 2f, scale, ColorF.Black, Renderer.Camera);
+        Renderer.Text.RenderText(_font, currentSelected, textPos, scale, ColorF.White, Renderer.Camera);
+
+        if (_showingDropdownID == id)
+        {
+            for (int i = 0; i < options.Length; i++)
+            {
+                string opt = options[i];
+                Vector2 optionPos = position + new Vector2(0f, (i + 1) * size.Y);
+
+                RectangleF optRect = new RectangleF(optionPos.X, optionPos.Y, size.X, size.Y);
+                if (optRect.Contains(mousePos.X, mousePos.Y))
+                {
+                    _dropdownHotID = i;
+                    if (Input.IsMouseButtonDown(MouseButton.Left))
+                    {
+                        selectedOption = i;
+                        _showingDropdownID = -1;
+                    }
+                }
+
+                Renderer.Primitive.RenderRectangle(optRect, _dropdownHotID == i ? hotColor : ColorF.Darken(defaultColor, 1.5f));
+                Vector2 optTextPos = new Vector2(optionPos.X, optionPos.Y + size.Y / 2) - new Vector2(0f, (_font.MeasureString(opt, scale).Y / 2f)) + offset;
+
+                Renderer.Text.RenderText(_font, opt, optTextPos + Vector2.One * 2f, scale, ColorF.Black, Renderer.Camera);
+                Renderer.Text.RenderText(_font, opt, optTextPos, scale, ColorF.White, Renderer.Camera);
+            }
+        }
+
+        return oldSelect != selectedOption;
+    }
+
+    public static bool Checkbox(string text, Vector2 position, float size, ref bool value)
+    {
+        bool oldValue = value;
+
+        ColorF defaultColor = ColorF.Darken(ColorF.DarkGray, 0.5f);
+        ColorF hotColor = ColorF.DarkGray;
+        ColorF activeColor = ColorF.Gray;
+
+        int id = GetNextID();
+
+        RectangleF rect = new RectangleF(position.X, position.Y, size, size);
+        Vector2 mousePos = Input.GetMousePositionInWindow();
+
+        if (rect.Contains(mousePos.X, mousePos.Y) && TryBecomeHot(id) && TryBecomeActive(id))
+        {
+            // Hot and active!
+            value = !value;
+        }
+
+        ColorF color = _activeID == id ? hotColor : (_hotID == id ? hotColor : defaultColor);
+        Renderer.Primitive.RenderRectangle(rect, color);
+
+        if (value)
+        {
+            Renderer.Primitive.RenderRectangle(rect.Inflate((-size * 0.125f)), ColorF.White);
+        }
+
+        float scale = 2f;
+        Vector2 textPos = new Vector2(position.X + size, position.Y + size / 2) - new Vector2(0f, (_font.MeasureString(text, scale).Y / 2f));
+        float yOffset = -4f;
+        float xOffset = 10f;
+        Vector2 offset = new Vector2(xOffset, yOffset);
+
+        Renderer.Text.RenderText(_font, text, textPos + Vector2.One * 2f + offset, scale, ColorF.Black, Renderer.Camera);
+        Renderer.Text.RenderText(_font, text, textPos + offset, scale, ColorF.White, Renderer.Camera);
+
+        return oldValue != value;
     }
 }

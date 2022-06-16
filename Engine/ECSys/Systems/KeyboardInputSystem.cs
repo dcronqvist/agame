@@ -4,18 +4,18 @@ using AGame.Engine.World;
 namespace AGame.Engine.ECSys.Systems;
 
 [SystemRunsOn(SystemRunner.Server)]
-public class PlayerInputUpdateSystem : BaseSystem
+public class KeyboardInputSystem : BaseSystem
 {
     public override void Initialize()
     {
-        this.RegisterComponentType<PlayerInputComponent>();
+        this.RegisterComponentType<KeyboardInputComponent>();
     }
 
     public override void AfterUpdate(List<Entity> entities, WorldContainer gameWorld)
     {
         foreach (Entity e in entities)
         {
-            PlayerInputComponent playerInput = e.GetComponent<PlayerInputComponent>();
+            KeyboardInputComponent playerInput = e.GetComponent<KeyboardInputComponent>();
             playerInput.PreviousKeyBitmask = playerInput.KeyBitmask;
         }
     }
@@ -24,7 +24,7 @@ public class PlayerInputUpdateSystem : BaseSystem
     {
         foreach (Entity e in entities)
         {
-            PlayerInputComponent playerInput = e.GetComponent<PlayerInputComponent>();
+            KeyboardInputComponent playerInput = e.GetComponent<KeyboardInputComponent>();
             playerInput.KeyBitmask = playerInput.NewBitmask;
         }
     }

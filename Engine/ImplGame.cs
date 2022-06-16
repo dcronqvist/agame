@@ -14,6 +14,7 @@ using AGame.Engine.Screening;
 using System.Threading;
 using AGame.Engine.ECSys;
 using AGame.Engine.World;
+using AGame.Engine.UI;
 
 namespace AGame.Engine
 {
@@ -148,7 +149,9 @@ namespace AGame.Engine
             }
             else
             {
+                GUI.Begin();
                 ScreenManager.Render();
+                GUI.End();
             }
 
             Renderer.SetRenderTarget(null, null);

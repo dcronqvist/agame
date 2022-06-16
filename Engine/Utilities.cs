@@ -276,6 +276,11 @@ namespace AGame.Engine
             RectangleF r = new RectangleF(rec.X - amount, rec.Y - amount, rec.Width + amount * 2, rec.Height + amount * 2);
             return r;
         }
+
+        public static string ParseIPOrDomain(string ipOrDomain)
+        {
+            return System.Net.Dns.GetHostEntry(ipOrDomain).AddressList.First().ToString();
+        }
     }
 
     public struct Vector2i : IPacketable

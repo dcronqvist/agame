@@ -28,7 +28,7 @@ public class SpriteComponent : Component
     [JsonIgnore]
     private Sprite _sprite;
 
-    [JsonIgnore]
+    [JsonIgnore, GameUDPProtocol.PacketPropIgnore]
     public Sprite Sprite
     {
         get

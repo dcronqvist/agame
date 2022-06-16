@@ -24,7 +24,7 @@ public class WeirdSystem : BaseSystem
 
             WeirdComponent wc = n.GetComponent<WeirdComponent>();
 
-            wc.Direction = Utilities.GetRandomFloat(0, MathF.PI * 2f);
+            wc.Direction = MathF.PI * 2f;
 
             counter = 0f;
         }
@@ -40,7 +40,7 @@ public class WeirdSystem : BaseSystem
 
             tc.Position += move * 20f * GameTime.DeltaTime;
 
-            if (wc.TimeAlive > 20f)
+            if (wc.TimeAlive > 10f)
             {
                 this.ParentECS.DestroyEntity(e.ID);
             }

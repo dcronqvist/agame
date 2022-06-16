@@ -75,7 +75,7 @@ public class ChunkUpdatePacket : Packet
 
 public class ServerWorldGenerator : IWorldGenerator
 {
-    private Dictionary<ChunkAddress, Chunk> _requestedChunks = new Dictionary<ChunkAddress, Chunk>();
+    private ThreadSafe<Dictionary<ChunkAddress, Chunk>> _requestedChunks = new ThreadSafe<Dictionary<ChunkAddress, Chunk>>(new Dictionary<ChunkAddress, Chunk>());
     private GameClient _gameClient;
 
     public ServerWorldGenerator(GameClient client)
@@ -83,7 +83,10 @@ public class ServerWorldGenerator : IWorldGenerator
         this._gameClient = client;
         _gameClient.AddPacketHandler<WholeChunkPacket>((packet) =>
         {
-            _requestedChunks[new ChunkAddress(packet.X, packet.Y)] = packet.Chunk;
+            _requestedChunks.LockedAction((rc) =>
+            {
+                rc[new ChunkAddress(packet.X, packet.Y)] = packet.Chunk;
+            });
         });
 
         _gameClient.AddPacketHandler<ChunkUpdatePacket>((packet) =>
@@ -97,16 +100,18 @@ public class ServerWorldGenerator : IWorldGenerator
         this.RequestChunk(x, y);
         ChunkAddress chunkAddress = new ChunkAddress(x, y);
 
-        while (_requestedChunks[chunkAddress] == null)
+        while (_requestedChunks.LockedAction((rc) => { return rc[chunkAddress] == null; }))
         {
 
         }
 
-        Chunk c = _requestedChunks[chunkAddress];
-        _requestedChunks.Remove(chunkAddress);
-
-        GameConsole.WriteLine("CLIENT CHUNKY", "Generated chunk " + x + " " + y);
-        return c;
+        return _requestedChunks.LockedAction((rc) =>
+        {
+            Chunk c = rc[chunkAddress];
+            rc.Remove(chunkAddress);
+            GameConsole.WriteLine("CLIENT CHUNKY", "Generated chunk " + x + " " + y);
+            return c;
+        });
     }
 
     public async Task<Chunk> GenerateChunkAsync(int x, int y)
@@ -114,28 +119,30 @@ public class ServerWorldGenerator : IWorldGenerator
         this.RequestChunk(x, y);
         ChunkAddress chunkAddress = new ChunkAddress(x, y);
 
-        await Task.Run(() =>
+        while (_requestedChunks.LockedAction((rc) => { return rc[chunkAddress] == null; }))
         {
-            while (_requestedChunks[chunkAddress] == null)
-            {
 
-            }
+        }
+
+        return _requestedChunks.LockedAction((rc) =>
+        {
+            Chunk c = rc[chunkAddress];
+            rc.Remove(chunkAddress);
+            GameConsole.WriteLine("CLIENT CHUNKY", "Generated chunk " + x + " " + y);
+            return c;
         });
-
-        Chunk c = _requestedChunks[chunkAddress];
-        _requestedChunks.Remove(chunkAddress);
-
-        GameConsole.WriteLine("CLIENT CHUNKY", "Generated chunk " + x + " " + y);
-        return c;
     }
 
     private void RequestChunk(int x, int y)
     {
         ChunkAddress address = new ChunkAddress(x, y);
-        if (!_requestedChunks.ContainsKey(address))
+        _requestedChunks.LockedAction((rc) =>
         {
-            _requestedChunks.Add(address, null);
-            _gameClient.EnqueuePacket(new RequestChunkPacket() { X = x, Y = y }, true, false);
-        }
+            if (!rc.ContainsKey(address))
+            {
+                _gameClient.EnqueuePacket(new RequestChunkPacket() { X = x, Y = y }, true, false);
+                rc.Add(address, null);
+            }
+        });
     }
 }

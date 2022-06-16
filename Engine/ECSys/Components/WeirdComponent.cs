@@ -2,7 +2,7 @@ using AGame.Engine.Networking;
 
 namespace AGame.Engine.ECSys.Components;
 
-[ComponentNetworking(CNType.Snapshot, NDirection.ServerToClient)]
+[ComponentNetworking(CNType.Update, NDirection.ServerToClient, MaxUpdatesPerSecond = 1)]
 public class WeirdComponent : Component
 {
     public float Direction { get; set; }
