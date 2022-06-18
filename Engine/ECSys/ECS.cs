@@ -292,4 +292,9 @@ public class ECS
     {
         return _entities;
     }
+
+    public List<Entity> GetAllEntities(Func<Entity, bool> predicate)
+    {
+        return _entities.Where(e => predicate(e)).ToList();
+    }
 }

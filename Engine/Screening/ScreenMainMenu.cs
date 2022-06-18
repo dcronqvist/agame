@@ -1,48 +1,29 @@
-using System;
-using System.Drawing;
 using System.Numerics;
-using AGame.Engine;
 using AGame.Engine.Assets;
-using AGame.Engine.DebugTools;
-using AGame.Engine.ECSys;
-using AGame.Engine.ECSys.Components;
-using AGame.Engine.GLFW;
 using AGame.Engine.Graphics;
-using AGame.Engine.Graphics.Cameras;
 using AGame.Engine.Graphics.Rendering;
-using AGame.Engine.Networking;
-using AGame.Engine.Screening;
 using AGame.Engine.UI;
-using AGame.Engine.World;
 
 namespace AGame.Engine.Screening;
 
-class UIScreen : Screen
+public class ScreenMainMenu : Screen
 {
-    public UIScreen() : base("uiscreen")
+    public ScreenMainMenu() : base("screen_main_menu")
     {
 
     }
 
     public override Screen Initialize()
     {
-        GUI.Init();
         return this;
     }
 
-    public override async void OnEnter(string[] args)
+    public override void OnEnter(string[] args)
     {
-
     }
 
-    public override async void OnLeave()
+    public override void OnLeave()
     {
-
-    }
-
-    public override void Update()
-    {
-
     }
 
     string host = "mc.dcronqvist.se";
@@ -60,7 +41,8 @@ class UIScreen : Screen
         GUI.TextField("host...", new Vector2(middleOfScreen.X - widths / 2f, middleOfScreen.Y - 50f), new Vector2(widths, 40f), ref host);
         GUI.TextField("port...", new Vector2(middleOfScreen.X - widths / 2f, middleOfScreen.Y), new Vector2(widths, 40f), ref port);
 
-        if (GUI.Button("connect", new Vector2(middleOfScreen.X - widths / 2f, middleOfScreen.Y + 50f), new Vector2(widths / 2f - 5f, 40f)))
+        string connectText = Localization.GetString("screen.main_menu.button.connect");
+        if (GUI.Button(connectText, new Vector2(middleOfScreen.X - widths / 2f, middleOfScreen.Y + 50f), new Vector2(widths / 2f - 5f, 40f)))
         {
             if (host != "" && port != "")
             {
@@ -68,12 +50,25 @@ class UIScreen : Screen
             }
         }
 
-        if (GUI.Button("host", new Vector2(middleOfScreen.X + 5f, middleOfScreen.Y + 50f), new Vector2(widths / 2f - 5f, 40f)))
+        string hostButton = Localization.GetString("screen.main_menu.button.host");
+        if (GUI.Button(hostButton, new Vector2(middleOfScreen.X + 5f, middleOfScreen.Y + 50f), new Vector2(widths / 2f - 5f, 40f)))
         {
             if (port != "")
             {
                 ScreenManager.GoToScreen("testscreen", port);
             }
         }
+
+        Locale[] locales = Localization.GetAvailableLocales();
+        int currentLocale = Array.IndexOf(locales, Localization.GetLocale());
+        string[] localeNames = locales.Select(x => x.LocaleName).ToArray();
+        if (GUI.Dropdown(localeNames, new Vector2(20, 20), new Vector2(200, 40), ref currentLocale))
+        {
+            Localization.SetLocale(locales[currentLocale].Name, prepend: false);
+        }
+    }
+
+    public override void Update()
+    {
     }
 }

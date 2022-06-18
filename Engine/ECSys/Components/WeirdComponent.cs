@@ -8,13 +8,22 @@ public class WeirdComponent : Component
     public float Direction { get; set; }
     public float TimeAlive { get; set; }
 
+    public event EventHandler<TECEventArgsEmpty> Testing;
+
     public override Component Clone()
     {
-        return new WeirdComponent()
+        WeirdComponent wc = new WeirdComponent()
         {
             Direction = this.Direction,
             TimeAlive = this.TimeAlive
         };
+
+        wc.Testing += (sender, e) =>
+        {
+            Console.WriteLine("I am a WeirdComponent and I received the Testing event!");
+        };
+
+        return wc;
     }
 
     public override void InterpolateProperties()

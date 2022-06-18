@@ -1,0 +1,12 @@
+{
+    "locale_name": "Svenska",
+
+    // Common stuff
+    "screen.loading_assets.title": "Laddar in filer...",
+
+    // context: asset_name
+    "screen.loading_assets.subtitle": "laddar ${asset_name}...",
+
+    "screen.main_menu.button.connect": "anslut",
+    "screen.main_menu.button.host": "hosta"
+}

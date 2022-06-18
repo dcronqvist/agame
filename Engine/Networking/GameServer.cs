@@ -325,7 +325,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         });
 
         // Asking clients for aliveness
-        _ = Task.Run(() =>
+        _ = Task.Run(async () =>
         {
             while (true)
             {
@@ -339,7 +339,38 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 {
                     Console.WriteLine(e.Message);
                 });
-                Thread.Sleep(2000);
+                await Task.Delay(2000);
+            }
+        });
+
+        _ = Task.Run(async () =>
+        {
+            while (true)
+            {
+                // Select random entity with WeirdComponent and send the event to trigger it
+                this._ecs.LockedAction((ecs) =>
+                {
+                    Entity[] ents = ecs.GetAllEntities(x => x.HasComponent<WeirdComponent>()).ToArray();
+
+                    if (ents.Length > 0)
+                    {
+                        Entity e = Utilities.ChooseUniform(ents);
+                        TriggerECEventPacket tece = new TriggerECEventPacket(e.ID, e.GetComponent<WeirdComponent>(), 0, PacketableEventArgs.Empty);
+
+                        this._connections.LockedAction((conns) =>
+                        {
+                            foreach (var conn in conns)
+                            {
+                                this.EnqueuePacket(tece, conn, false, false);
+                            }
+                        }, (e) =>
+                        {
+                            Console.WriteLine(e.Message);
+                        });
+                    }
+                });
+
+                await Task.Delay(2000);
             }
         });
 

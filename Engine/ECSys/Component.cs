@@ -64,12 +64,19 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
 
     private EventInfo[] GetEvents()
     {
-        return this.GetType().GetEvents().OrderBy(e => e.Name).ToArray();
+        return this.GetType().GetEvents().Where(e => e.Name != "PropertyChanged").OrderBy(e => e.Name).ToArray();
+    }
+
+    private int GetEventID(EventInfo eventInfo)
+    {
+        EventInfo[] events = this.GetEvents();
+        return Array.IndexOf(events, eventInfo);
     }
 
     public Type GetEventArgsType(int id)
     {
-        return this.GetEvents()[id].EventHandlerType.GetGenericArguments()[0];
+        EventInfo[] events = this.GetEvents();
+        return events[id].EventHandlerType.GetGenericArguments()[0];
     }
 
     public void TriggerComponentEvent<T>(int id, T eventArgs) where T : EventArgs
@@ -83,6 +90,15 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
     {
         // Find all
         EventInfo[] events = this.GetEvents();
-        events[id].GetRaiseMethod().Invoke(this, new object[] { Convert.ChangeType(eventArgs, eventArgsType) });
+        Type type = this.GetType();
+        FieldInfo info = type.GetField(events[id].Name, BindingFlags.Instance | BindingFlags.NonPublic);
+        var deleg = (MulticastDelegate)info.GetValue(this);
+        if (deleg != null)
+        {
+            foreach (Delegate del in deleg.GetInvocationList())
+            {
+                del.DynamicInvoke(new object[] { this, eventArgs });
+            }
+        }
     }
 }

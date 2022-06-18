@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using AGame.Engine.DebugTools;
+using AGame.Engine.Graphics;
 using Newtonsoft.Json;
 
 namespace AGame.Engine.Assets
@@ -69,7 +70,8 @@ namespace AGame.Engine.Assets
                 { ".png", new TextureLoader() },
                 { ".cs", new ScriptLoader() },
                 { ".entity", new EntityLoader() },
-                { ".tile", new TileLoader() }
+                { ".tile", new TileLoader() },
+                { ".locale", new LocaleLoader() },
             };
 
             AllAssetsLoaded = false;
@@ -154,6 +156,8 @@ namespace AGame.Engine.Assets
             {
                 // Load each resource file
                 string assetName = Path.GetFileNameWithoutExtension(file);
+                string fileName = Path.GetFileName(file);
+                OnAssetStartLoad?.Invoke(null, fileName);
 
                 if (TryLoadAsset(file, out Asset loadedAsset, out IAssetLoader usedLoader, out Exception exception))
                 {
@@ -193,12 +197,13 @@ namespace AGame.Engine.Assets
             {
                 // Load each resource file
                 string assetName = Path.GetFileNameWithoutExtension(file);
+                string fileName = Path.GetFileName(file);
+                OnAssetStartLoad?.Invoke(null, fileName);
 
                 if (TryLoadAsset(file, out Asset loadedAsset, out IAssetLoader usedLoader, out Exception exception))
                 {
                     loadedAsset.Name = usedLoader.AssetPrefix() + "_" + assetName;
-                    loadedAsset.IsCore = true;
-                    loadedAsset.InitOpenGL();
+                    loadedAsset.IsCore = false;
                     AddAsset(loadedAsset.Name, loadedAsset);
                 }
                 else
@@ -222,15 +227,13 @@ namespace AGame.Engine.Assets
             }
         }
 
-        public static void LoadAllAssetsAsync()
+        public static async Task LoadAllAssetsAsync()
         {
             LoadAllCoreAssets();
 
             string[] assetFiles = GetAllAssets();
             TotalAssetsToLoad += assetFiles.Length;
-            Thread thread = new Thread(() => LoadAllAssets(true, false));
-
-            thread.Start();
+            await Task.Run(() => LoadAllAssets(true, false));
         }
 
         public static void FinalizeAssets()

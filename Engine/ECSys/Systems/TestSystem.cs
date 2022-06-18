@@ -29,8 +29,8 @@ public class TestSystem : BaseSystem
             var transform = e.GetComponent<TransformComponent>();
             var mouse = e.GetComponent<MouseInputComponent>();
 
-            Vector2 spriteSize = sprite.Sprite.Texture.Middle;
-            sprite.Sprite.Render(transform.Position - spriteSize / 2f);
+            Vector2 spriteSize = sprite.Sprite.MiddleOfSourceRectangle;
+            sprite.Sprite.Render(transform.Position - spriteSize);
         }
     }
 

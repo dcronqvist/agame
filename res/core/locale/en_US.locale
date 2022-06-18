@@ -1,0 +1,12 @@
+{
+    "locale_name": "English",
+
+    // Common stuff
+    "screen.loading_assets.title": "Loading assets...",
+
+    // context: asset_name
+    "screen.loading_assets.subtitle": "loading ${asset_name}...",
+
+    "screen.main_menu.button.connect": "connect",
+    "screen.main_menu.button.host": "host"
+}

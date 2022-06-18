@@ -12,6 +12,13 @@ namespace AGame.Engine.Graphics
         public Vector2 Origin { get; set; }
         public ColorF ColorTint { get; set; }
         public RectangleF SourceRectangle { get; set; }
+        public Vector2 MiddleOfSourceRectangle
+        {
+            get
+            {
+                return new Vector2(SourceRectangle.Width / 2f, SourceRectangle.Height / 2f);
+            }
+        }
         public float Rotation { get; set; }
         public RectangleF CollisionBox { get; set; }
 

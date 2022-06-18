@@ -64,6 +64,11 @@ namespace AGame.Engine.Graphics
             return window;
         }
 
+        public static void AcquireGLContext()
+        {
+            Glfw.MakeContextCurrent(WindowHandle);
+        }
+
         public static void InitWindow(int width, int height, string title)
         {
             PrepareContext();

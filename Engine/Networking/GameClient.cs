@@ -98,7 +98,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                         if (!entity.HasComponent(component.GetType()))
                         {
                             //GameConsole.WriteLine("CONNECT", $"<0x00FF00>Adding component {packet.ComponentType} to entity {entityId}</>");
-                            e.AddComponentToEntity(entity, component);
+                            e.AddComponentToEntity(entity, component.Clone());
                         }
                         else
                         {
@@ -149,8 +149,9 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             ECS.Instance.LockedAction((ecs) =>
             {
                 Entity e = ecs.GetEntityFromID(packet.EntityID);
+                Console.WriteLine($"Triggering event {packet.EventID} on entity {e.ID}");
 
-                Type compType = ecs.GetComponentType(packet.ComponentType);
+                Type compType = ecs.GetComponentType(packet.ComponentTypeID);
                 Component c = e.GetComponent(compType);
                 c.TriggerComponentEvent(c.GetEventArgsType(packet.EventID), packet.EventID, packet.EventArgs);
             });
