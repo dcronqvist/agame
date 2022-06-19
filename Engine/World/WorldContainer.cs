@@ -188,11 +188,6 @@ public class WorldContainer
         });
     }
 
-    public void Update()
-    {
-
-    }
-
     public void Render()
     {
         Chunks.LockedAction((chunks) =>

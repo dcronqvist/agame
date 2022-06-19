@@ -88,11 +88,6 @@ public class ServerWorldGenerator : IWorldGenerator
                 rc[new ChunkAddress(packet.X, packet.Y)] = packet.Chunk;
             });
         });
-
-        _gameClient.AddPacketHandler<ChunkUpdatePacket>((packet) =>
-        {
-            _gameClient.world.UpdateChunk(packet.X, packet.Y, packet.Chunk);
-        });
     }
 
     public Chunk GenerateChunk(int x, int y)

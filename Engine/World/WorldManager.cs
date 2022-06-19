@@ -26,24 +26,27 @@ public class WorldMetaData
     public DateTime LastPlayedAt { get; set; }
     public string Generator { get; set; }
 
-    public WorldContainer GetAsContainer()
+    public async Task<WorldContainer> GetAsContainerAsync()
     {
         WorldContainer wc = new WorldContainer(Utilities.GetGeneratorFromTypeName(Generator), false);
 
         using (StreamReader sr = new StreamReader(Directory + "/world.json"))
         {
-            string json = sr.ReadToEnd();
+            string json = await sr.ReadToEndAsync();
             wc.Deserialize(json);
         }
+
+        //TODO: Remove this fake time increase
+        await Task.Delay(2000);
 
         return wc;
     }
 
-    public List<Entity> GetEntities()
+    public async Task<List<Entity>> GetEntitiesAsync()
     {
         using (StreamReader sr = new StreamReader(Directory + "/entities.json"))
         {
-            string json = sr.ReadToEnd();
+            string json = await sr.ReadToEndAsync();
 
             // Assume a JSON description of the entity
             JsonSerializerOptions options = new JsonSerializerOptions
@@ -55,6 +58,42 @@ public class WorldMetaData
             };
 
             return JsonSerializer.Deserialize<List<Entity>>(json, options);
+        }
+    }
+
+    public void SaveEntities(List<Entity> entities)
+    {
+        using (StreamWriter sw = new StreamWriter(Directory + "/entities.json"))
+        {
+            // Assume a JSON description of the entity
+            JsonSerializerOptions options = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Converters = { new ComponentConverter() },
+                IncludeFields = true,
+                AllowTrailingCommas = true
+            };
+
+            string json = JsonSerializer.Serialize(entities, options);
+            sw.Write(json);
+        }
+    }
+
+    public async Task<List<PlayerInfo>> GetPlayerInfosAsync()
+    {
+        using (StreamReader sr = new StreamReader(Directory + "/players.json"))
+        {
+            string json = await sr.ReadToEndAsync();
+
+            // Assume a JSON description of the entity
+            JsonSerializerOptions options = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                IncludeFields = true,
+                AllowTrailingCommas = true
+            };
+
+            return JsonSerializer.Deserialize<List<PlayerInfo>>(json, options);
         }
     }
 
@@ -74,6 +113,12 @@ public class WorldMetaData
 
             return JsonSerializer.Deserialize<List<PlayerInfo>>(json, options);
         }
+    }
+
+    public async Task<PlayerInfo> GetPlayerInfoAsync(string playerName)
+    {
+        List<PlayerInfo> players = await GetPlayerInfosAsync();
+        return players.FirstOrDefault(p => p.PlayerName == playerName);
     }
 
     public PlayerInfo GetPlayerInfo(string playerName)
@@ -97,6 +142,15 @@ public class WorldMetaData
             string json = JsonSerializer.Serialize(playerInfos, options);
             sw.Write(json);
         }
+    }
+
+    public async Task UpdatePlayerInfoAsync(string playerName, PlayerInfo info)
+    {
+        List<PlayerInfo> players = await GetPlayerInfosAsync();
+        players.Remove(players.FirstOrDefault(p => p.PlayerName == playerName));
+
+        players.Add(info);
+        SavePlayerInfos(players);
     }
 
     public void UpdatePlayerInfo(string playerName, PlayerInfo info)
@@ -195,21 +249,5 @@ public class WorldManager
     public WorldMetaData[] GetAllWorlds()
     {
         return _worlds.ToArray();
-    }
-
-    public void SinglePlayWorld(WorldMetaData metaData)
-    {
-        int port = Utilities.GetRandomInt(10000, 50000);
-
-        ECS.Instance.Value.Initialize(SystemRunner.Client);
-
-        GameServer gameServer = new GameServer(metaData, port);
-        GameClient gameClient = new GameClient("127.0.0.1", port);
-
-        ScreenPlayingSingle sps = ScreenManager.GetScreen<ScreenPlayingSingle>("screen_playing_single");
-        sps.Server = gameServer;
-        sps.Client = gameClient;
-
-        ScreenManager.GoToScreen("screen_playing_single");
     }
 }

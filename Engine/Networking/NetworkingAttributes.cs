@@ -1,24 +1,26 @@
 namespace AGame.Engine.Networking;
 
+[Flags]
 public enum CNType
 {
     /// <summary>
     /// Should be used for components which hold information that should be unreliably broadcasted to all clients.
     /// If not specified, the default is this type.
     /// </summary>
-    Snapshot,
+    Snapshot = 1 << 0,
 
     /// <summary>
     /// Should be used for components which hold information that should be reliably broadcasted to all clients,
     /// and only when a component's property has changed.
     /// </summary>
-    Update,
+    Update = 1 << 1,
 }
 
+[Flags]
 public enum NDirection
 {
-    ClientToServer,
-    ServerToClient
+    ClientToServer = 1 << 0,
+    ServerToClient = 1 << 1,
 }
 
 [AttributeUsage(AttributeTargets.Class)]
@@ -44,6 +46,6 @@ public class ComponentNetworkingAttribute : Attribute
 
     public bool Has(CNType type, NDirection direction)
     {
-        return this.Type == type && this.Direction == direction;
+        return type.HasFlag(this.Type) && direction.HasFlag(this.Direction);
     }
 }

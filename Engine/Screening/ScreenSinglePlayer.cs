@@ -1,6 +1,8 @@
 using System.Numerics;
+using AGame.Engine.ECSys;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
+using AGame.Engine.Networking;
 using AGame.Engine.UI;
 using AGame.Engine.World;
 
@@ -47,7 +49,7 @@ public class ScreenSinglePlayer : Screen
         {
             if (GUI.Button(worlds[i].Name + " " + worlds[i].CreatedAt.ToShortDateString(), new Vector2(middleOfScreen.X - 200f, middleOfScreen.Y + i * 50f), new Vector2(400f, 40f)))
             {
-                WorldManager.Instance.SinglePlayWorld(worlds[i]);
+                _ = this.PlaySinglePlayerWorldAsync(worlds[i], "TestPlayer");
             }
         }
 
@@ -56,5 +58,48 @@ public class ScreenSinglePlayer : Screen
             ScreenManager.GoToScreen("screen_main_menu");
         }
         GUI.End();
+    }
+
+    public async Task PlaySinglePlayerWorldAsync(WorldMetaData world, string playerName)
+    {
+        await Task.Run(async () =>
+        {
+            // Go to a loading screen, will do later
+            ScreenManager.GoToScreen("screen_temporary_loading");
+
+            WorldContainer container = await world.GetAsContainerAsync();
+            List<Entity> entities = await world.GetEntitiesAsync();
+
+            ECS serverECS = new ECS();
+            serverECS.Initialize(SystemRunner.Server, entities);
+
+            GameServerConfiguration config = new GameServerConfiguration()
+            {
+                MaxClients = 1,
+                OnlyAllowLocalConnections = true,
+                Port = Utilities.GetRandomInt(10000, 50000)
+            };
+
+            GameServer gameServer = new GameServer(serverECS, container, world, config);
+
+            ECS clientECS = new ECS();
+            clientECS.Initialize(SystemRunner.Client, null);
+
+            GameClient gameClient = new GameClient("127.0.0.1", config.Port);
+            ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);
+
+            gameClient.Initialize(clientECS, new WorldContainer(swg, true));
+
+            await gameServer.StartAsync();
+
+            await gameClient.ConnectAsync(playerName); // Cannot fail, as we are connecting to our own host.
+
+            ScreenPlayingSingle sps = ScreenManager.GetScreen<ScreenPlayingSingle>("screen_playing_single");
+
+            sps.Client = gameClient;
+            sps.Server = gameServer;
+
+            ScreenManager.GoToScreen("screen_playing_single");
+        });
     }
 }
