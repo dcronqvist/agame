@@ -203,6 +203,39 @@ public class WorldContainer
             }
         });
     }
+
+    public string Serialize()
+    {
+        return Chunks.LockedAction((chunks) =>
+        {
+            var options = new JsonSerializerOptions()
+            {
+                IncludeFields = true
+            };
+
+            string json = JsonSerializer.Serialize(chunks.Values, options);
+            return json;
+        });
+    }
+
+    public void Deserialize(string json)
+    {
+        Chunks.LockedAction((chunks) =>
+        {
+            var options = new JsonSerializerOptions()
+            {
+                IncludeFields = true
+            };
+
+            var deserialized = JsonSerializer.Deserialize<List<Chunk>>(json, options);
+            chunks.Clear();
+
+            foreach (Chunk c in deserialized)
+            {
+                chunks.Add(new ChunkAddress(c.X, c.Y), c);
+            }
+        });
+    }
 }
 
 public class ChunkEvent

@@ -45,9 +45,11 @@ public class ECS
         }
     }
 
-    public void Initialize(SystemRunner runner)
+    public void Initialize(SystemRunner runner, List<Entity> entities = null)
     {
         this._runner = runner;
+        this._entities = entities ?? new List<Entity>();
+        this._nextEntityID = this._entities.Count;
 
         // Register all component types
         this.RegisterComponentTypes();
@@ -58,6 +60,7 @@ public class ECS
 
     public void RegisterAllSystems()
     {
+        this._systems.Clear();
         List<Type> systems = Utilities.FindDerivedTypes(typeof(BaseSystem)).Where(x => x != typeof(BaseSystem)).ToList();
 
         foreach (Type systemType in systems)
@@ -68,6 +71,9 @@ public class ECS
 
     public void RegisterComponentTypes()
     {
+        this._componentTypes.Clear();
+        this._componentTypeIDs.Clear();
+
         Type[] componentTypes = Utilities.FindDerivedTypes(typeof(Component)).ToArray();
         componentTypes = componentTypes.OrderBy(t => t.Name).ToArray();
 

@@ -1,0 +1,6 @@
+{
+    "name": "Testing World",
+    "createdAt": "2020-01-01T00:00:00Z",
+    "lastPlayedAt": "2020-01-01T00:00:00Z",
+    "generator": "TestWorldGenerator"
+}

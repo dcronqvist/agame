@@ -24,39 +24,28 @@ public class ScreenMainMenu : Screen
 
     public override void OnLeave()
     {
-    }
 
-    string host = "mc.dcronqvist.se";
-    string port = "28000";
+    }
 
     public override void Render()
     {
         Renderer.SetRenderTarget(null, null);
-
         Renderer.Clear(ColorF.Darken(ColorF.LightGray, 1.05f));
 
+        GUI.Begin();
         Vector2 middleOfScreen = DisplayManager.GetWindowSizeInPixels() / 2f;
-        float widths = 300f;
+        float width = 300f;
+        float height = 50f;
+        float distance = 10f;
 
-        GUI.TextField("host...", new Vector2(middleOfScreen.X - widths / 2f, middleOfScreen.Y - 50f), new Vector2(widths, 40f), ref host);
-        GUI.TextField("port...", new Vector2(middleOfScreen.X - widths / 2f, middleOfScreen.Y), new Vector2(widths, 40f), ref port);
-
-        string connectText = Localization.GetString("screen.main_menu.button.connect");
-        if (GUI.Button(connectText, new Vector2(middleOfScreen.X - widths / 2f, middleOfScreen.Y + 50f), new Vector2(widths / 2f - 5f, 40f)))
+        if (GUI.Button(Localization.GetString("screen.main_menu.button.singleplayer"), new Vector2(middleOfScreen.X - width / 2f, middleOfScreen.Y), new Vector2(width, height)))
         {
-            if (host != "" && port != "")
-            {
-                ScreenManager.GoToScreen("remotescreen", host, port);
-            }
+            ScreenManager.GoToScreen("screen_single_player");
         }
 
-        string hostButton = Localization.GetString("screen.main_menu.button.host");
-        if (GUI.Button(hostButton, new Vector2(middleOfScreen.X + 5f, middleOfScreen.Y + 50f), new Vector2(widths / 2f - 5f, 40f)))
+        if (GUI.Button(Localization.GetString("screen.main_menu.button.multiplayer"), new Vector2(middleOfScreen.X - width / 2f, middleOfScreen.Y + height + distance), new Vector2(width, height)))
         {
-            if (port != "")
-            {
-                ScreenManager.GoToScreen("testscreen", port);
-            }
+            ScreenManager.GoToScreen("screen_multiplayer");
         }
 
         Locale[] locales = Localization.GetAvailableLocales();
@@ -66,6 +55,7 @@ public class ScreenMainMenu : Screen
         {
             Localization.SetLocale(locales[currentLocale].Name, prepend: false);
         }
+        GUI.End();
     }
 
     public override void Update()

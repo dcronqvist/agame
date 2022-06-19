@@ -13,20 +13,36 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 {
     private ThreadSafe<ECS> _ecs;
     private WorldContainer _world;
-    private Dictionary<Connection, int> _playersIds;
+    private WorldMetaData _worldMetaData;
 
-    public GameServer(int port) : base(port, 1000, 10000)
+    private Dictionary<Connection, int> _playersIds;
+    private Dictionary<Connection, string> _playerNames;
+
+    public GameServer(WorldMetaData metaData, int port) : base(port, 1000, 10000)
     {
+        this._worldMetaData = metaData;
         this._playersIds = new Dictionary<Connection, int>();
+        this._playerNames = new Dictionary<Connection, string>();
 
         this.ConnectionRequested += (sender, e) =>
         {
             e.Accept(new ConnectResponse());
         };
 
+        this.ConnectionAccepted += (sender, e) =>
+        {
+            ConnectRequest cr = (ConnectRequest)e.ConnectRequestPacket;
+            this._playerNames.Add(e.Connection, cr.Name);
+        };
+
         this.ServerQueryReceived += (sender, e) =>
         {
             e.RespondWith(new QueryResponse());
+        };
+
+        this.ServerStopped += (sender, e) =>
+        {
+            this._worldMetaData.SaveWorld(this._world);
         };
 
         this.ClientTimedOut += (sender, e) =>
@@ -43,7 +59,10 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             });
             this._playersIds.Add(connection, newPlayer.ID);
             GameConsole.WriteLine("SERVER", $"New player with ID {newPlayer.ID} connected from {connection.RemoteEndPoint}");
-            newPlayer.GetComponent<TransformComponent>().Position = Utilities.GetRandomVector2(0, 16 * 10, 0, 16 * 10);
+
+            string playerName = this._playerNames[connection];
+            newPlayer.GetComponent<TransformComponent>().Position = this._worldMetaData.GetPlayerInfo(playerName).Position;
+            newPlayer.GetComponent<PlayerInfoComponent>().Name = playerName;
 
             _ecs.LockedAction((ecs) =>
             {
@@ -133,6 +152,14 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 if (this._playersIds.ContainsKey(e.Connection))
                 {
                     int entityId = this._playersIds[e.Connection];
+
+                    Entity playerEntity = ecs.GetEntityFromID(entityId);
+                    string playerName = this._playerNames[e.Connection];
+                    PlayerInfo pi = this._worldMetaData.GetPlayerInfo(playerName);
+                    pi.Position = playerEntity.GetComponent<TransformComponent>().Position;
+
+                    this._worldMetaData.UpdatePlayerInfo(playerName, pi);
+
                     ecs.DestroyEntity(entityId);
                     this._playersIds.Remove(e.Connection);
                 }
@@ -168,7 +195,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
         ThreadSafe<Dictionary<int, Dictionary<int, float>>> lastUpdateTimes = new ThreadSafe<Dictionary<int, Dictionary<int, float>>>(new Dictionary<int, Dictionary<int, float>>());
 
-        _ecs.Value.Initialize(SystemRunner.Server);
+        _ecs.Value.Initialize(SystemRunner.Server, this._worldMetaData.GetEntities());
 
         _ecs.Value.ComponentChanged += (sender, e) =>
         {
@@ -259,7 +286,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         };
 
         GameConsole.WriteLine("SERVER", "Generating world map...");
-        this._world = new WorldContainer(new TestWorldGenerator());
+        this._world = this._worldMetaData.GetAsContainer();
         this._world.Start();
         GameConsole.WriteLine("SERVER", "World map generated.");
 

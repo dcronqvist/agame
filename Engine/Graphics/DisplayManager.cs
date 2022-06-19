@@ -61,6 +61,8 @@ namespace AGame.Engine.Graphics
             Glfw.MakeContextCurrent(window);
             GL.Import(Glfw.GetProcAddress);
 
+            Glfw.SetWindowSizeLimits(window, 1280, 720, screen.Width, screen.Height);
+
             return window;
         }
 

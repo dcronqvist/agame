@@ -53,7 +53,7 @@ public class TransformComponent : Component
         return new TransformComponent()
         {
             Position = Position,
-            _targetPosition = _targetPosition,
+            _targetPosition = Position,
         };
     }
 

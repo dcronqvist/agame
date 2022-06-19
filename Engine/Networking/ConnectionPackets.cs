@@ -5,7 +5,12 @@ namespace AGame.Engine.Networking;
 
 public class ConnectRequest : Packet
 {
+    public string Name { get; set; }
 
+    public ConnectRequest()
+    {
+
+    }
 }
 
 public class ConnectResponse : PacketConnectionResponse

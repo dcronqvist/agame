@@ -22,6 +22,8 @@ public static class GUI
 
     private static Font _font;
 
+    private static bool _transitionedScreen;
+
     public static void Init()
     {
         _font = AssetManager.GetAsset<Font>("font_rainyhearts");
@@ -62,6 +64,22 @@ public static class GUI
     public static void Begin()
     {
         _idCounter = 0;
+
+        if (_transitionedScreen && !Input.IsMouseButtonDown(MouseButton.Left))
+        {
+            _transitionedScreen = false;
+        }
+    }
+
+    public static void NotifyScreenTransition()
+    {
+        _transitionedScreen = true;
+        _hotID = -1;
+        _activeID = -1;
+        _kbdFocusID = -1;
+        _caretVisible = false;
+        _caretInterval = 0.6f;
+        _currentCaretTime = 0f;
     }
 
     public static void End()
@@ -87,18 +105,9 @@ public static class GUI
         }
     }
 
-    private static bool CanBecomeHot()
-    {
-        if (_hotID == -1)
-        {
-            return true;
-        }
-        return false;
-    }
-
     private static bool TryBecomeHot(int id)
     {
-        if (_hotID == -1)
+        if (_hotID == -1 && !_transitionedScreen)
         {
             _hotID = id;
             return true;

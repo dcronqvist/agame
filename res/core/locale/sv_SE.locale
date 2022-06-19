@@ -7,6 +7,10 @@
     // context: asset_name
     "screen.loading_assets.subtitle": "laddar ${asset_name}...",
 
-    "screen.main_menu.button.connect": "anslut",
-    "screen.main_menu.button.host": "hosta"
+    // Common menu stuff
+    "menu.button.back": "< Tillbaka",
+
+    // Main menu stuff
+    "screen.main_menu.button.singleplayer": "Enspelarläge",
+    "screen.main_menu.button.multiplayer": "Flerspelarläge"
 }

@@ -1,4 +1,5 @@
 using AGame.Engine.Assets;
+using AGame.Engine.Configuration;
 
 namespace AGame.Engine;
 
@@ -16,11 +17,16 @@ public static class Localization
         if (prepend)
         {
             _locale = AssetManager.GetAsset<Locale>($"locale_{locale}");
+            // Also set settings
+            _ = Settings.SetSettingAsync("locale", locale);
         }
         else
         {
             _locale = AssetManager.GetAsset<Locale>($"{locale}");
+            // Also set settings
+            _ = Settings.SetSettingAsync("locale", locale.Replace("locale_", ""));
         }
+
     }
 
     public static string GetString(string key, params (string, string)[] context)

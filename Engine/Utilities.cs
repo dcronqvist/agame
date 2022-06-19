@@ -281,6 +281,21 @@ namespace AGame.Engine
         {
             return System.Net.Dns.GetHostEntry(ipOrDomain).AddressList.First().ToString();
         }
+
+        public static IWorldGenerator GetGeneratorFromTypeName(string name)
+        {
+            Type[] types = FindDerivedTypes(typeof(IWorldGenerator)).Where(x => x != typeof(IWorldGenerator)).ToArray();
+
+            foreach (Type type in types)
+            {
+                if (type.Name == name)
+                {
+                    return (IWorldGenerator)Activator.CreateInstance(type);
+                }
+            }
+
+            return null;
+        }
     }
 
     public struct Vector2i : IPacketable

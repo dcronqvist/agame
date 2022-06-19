@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using AGame.Engine;
+using AGame.Engine.UI;
 
 namespace AGame.Engine.Screening
 {
@@ -19,15 +20,30 @@ namespace AGame.Engine.Screening
         }
         public static string[] Args { get; set; }
 
+        private static string _nextScreenName;
+        private static bool _requestedTransition;
+        private static string[] _nextScreenArgs;
+
         static ScreenManager()
         {
             Screens = new Dictionary<string, Screen>();
             CurrentScreenName = "";
+
+            _nextScreenName = "";
+            _requestedTransition = false;
         }
 
         public static void AddScreen(string name, Screen screen)
         {
             Screens.Add(name, screen);
+        }
+
+        public static T GetScreen<T>(string name) where T : Screen
+        {
+            if (!Screens.ContainsKey(name))
+                return null;
+
+            return Screens[name] as T;
         }
 
         public static void Init(string[] args)
@@ -46,13 +62,22 @@ namespace AGame.Engine.Screening
 
         public static void GoToScreen(string name, params string[] args)
         {
-            CurrentScreen?.OnLeave();
-            CurrentScreenName = name;
-            CurrentScreen.OnEnter(args);
+            _nextScreenName = name;
+            _requestedTransition = true;
+            _nextScreenArgs = args;
         }
 
         public static void Update()
         {
+            if (_requestedTransition)
+            {
+                CurrentScreen?.OnLeave();
+                CurrentScreenName = _nextScreenName;
+                GUI.NotifyScreenTransition();
+                CurrentScreen.OnEnter(_nextScreenArgs);
+                _requestedTransition = false;
+            }
+
             CurrentScreen?.Update();
         }
 

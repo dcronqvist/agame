@@ -12,6 +12,9 @@
 		},
 		{
 			"componentType": "MouseInput"
+		},
+		{
+			"componentType": "PlayerInfo"
 		}
 	]
 }

@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Text.Json.Serialization;
 using GameUDPProtocol;
 
 namespace AGame.Engine.World;
@@ -34,7 +35,36 @@ public class Chunk : IPacketable
     public int X { get; set; }
     public int Y { get; set; }
 
+    [JsonIgnore]
     public int[,] GroundLayer { get; set; }
+
+    public int[] GroundLayerData
+    {
+        get
+        {
+            int[] data = new int[CHUNK_SIZE * CHUNK_SIZE];
+            for (int i = 0; i < CHUNK_SIZE; i++)
+            {
+                for (int j = 0; j < CHUNK_SIZE; j++)
+                {
+                    data[i * CHUNK_SIZE + j] = GroundLayer[i, j];
+                }
+            }
+            return data;
+        }
+
+        set
+        {
+            GroundLayer = new int[CHUNK_SIZE, CHUNK_SIZE];
+            for (int i = 0; i < CHUNK_SIZE; i++)
+            {
+                for (int j = 0; j < CHUNK_SIZE; j++)
+                {
+                    GroundLayer[i, j] = value[i * CHUNK_SIZE + j];
+                }
+            }
+        }
+    }
 
     private StaticTileGrid _staticTileGrid;
     private StaticTileGrid TileGrid => _staticTileGrid ?? (_staticTileGrid = new StaticTileGrid(this.GroundLayer, new Vector2(X * CHUNK_SIZE * AGame.Engine.World.TileGrid.TILE_SIZE, Y * CHUNK_SIZE * AGame.Engine.World.TileGrid.TILE_SIZE)));

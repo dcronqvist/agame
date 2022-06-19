@@ -7,6 +7,10 @@
     // context: asset_name
     "screen.loading_assets.subtitle": "loading ${asset_name}...",
 
-    "screen.main_menu.button.connect": "connect",
-    "screen.main_menu.button.host": "host"
+    // Common menu stuff
+    "menu.button.back": "< Back",
+
+    // Main menu stuff
+    "screen.main_menu.button.singleplayer": "Singleplayer",
+    "screen.main_menu.button.multiplayer": "Multiplayer"
 }
