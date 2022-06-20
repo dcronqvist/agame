@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using AGame.Engine.Networking;
 using GameUDPProtocol;
 
@@ -13,7 +14,15 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
     [PacketPropIgnore]
     public string ComponentType
     {
-        get => _componentType;
+        get
+        {
+            if (_componentType == null)
+            {
+                _componentType = this.GetType().Name.Replace("Component", "");
+            }
+
+            return _componentType;
+        }
 
         set
         {
@@ -38,6 +47,7 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
     public abstract Component Clone();
     public abstract int Populate(byte[] data, int offset);
     public abstract byte[] ToBytes();
+    //public abstract string ToJson(JsonSerializerOptions options);
     public new abstract string ToString();
     public abstract void UpdateComponent(Component newComponent);
     public abstract void InterpolateProperties();

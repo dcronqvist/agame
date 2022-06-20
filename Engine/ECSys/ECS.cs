@@ -49,7 +49,7 @@ public class ECS
     {
         this._runner = runner;
         this._entities = entities ?? new List<Entity>();
-        this._nextEntityID = this._entities.Count;
+        this._nextEntityID = this._entities.Count > 0 ? this._entities.Max(x => x.ID) + 1 : 0;
 
         // Register all component types
         this.RegisterComponentTypes();

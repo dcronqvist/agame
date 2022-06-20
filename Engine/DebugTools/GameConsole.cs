@@ -97,8 +97,8 @@ public static class GameConsole
 
     public static void WriteLine(ICommand command, string message)
     {
-        ConsoleLine line = new ConsoleLine(command.GetConfiguration().Aliases.First(), message);
-        ConsoleLines.Add(line);
+        //ConsoleLine line = new ConsoleLine(command.GetConfiguration().Aliases.First(), message);
+        ///ConsoleLines.Add(line);
     }
 
     public static void WriteLine(string sender, string message)
@@ -113,11 +113,11 @@ public static class GameConsole
         foreach (Type commandType in commandTypes)
         {
             ICommand ic = ScriptingManager.CreateInstance<ICommand>(commandType.FullName);
-            Command cc = ic.GetConfiguration();
-            foreach (string alias in cc.Aliases)
-            {
-                AvailableCommands.Add(alias, ic);
-            }
+            //Command cc = ic.GetConfiguration();
+            //foreach (string alias in cc.Aliases)
+            //{
+            //    AvailableCommands.Add(alias, ic);
+            //}
         }
     }
 
@@ -133,9 +133,9 @@ public static class GameConsole
         }
 
         ICommand ic = AvailableCommands[commandHandle];
-        Command cc = ic.GetConfiguration();
+        //Command cc = ic.GetConfiguration();
 
-        cc.Invoke(splitLine.Skip(1).ToArray());
+        //cc.Invoke(splitLine.Skip(1).ToArray());
     }
 
     public static void Update()

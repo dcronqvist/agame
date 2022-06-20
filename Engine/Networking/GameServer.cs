@@ -466,11 +466,6 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
                         // Update the player info in the world meta data
                         this._worldMetaData.UpdatePlayerInfo(playerName, pi);
-
-                        // Destroy the player's entity and then remove the player from the player ids and player names
-                        ecs.DestroyEntity(entityId);
-                        this._playerIds.Remove(connection);
-                        this._playerNames.Remove(connection);
                     }
                 }
 

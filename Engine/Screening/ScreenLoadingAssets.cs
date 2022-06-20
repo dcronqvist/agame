@@ -49,6 +49,7 @@ public class ScreenLoadingAssets : Screen
     {
         if (_allAssetsLoaded)
         {
+            Audio.Init();
             AssetManager.FinalizeAssets();
             ScreenManager.GoToScreen("screen_main_menu");
         }

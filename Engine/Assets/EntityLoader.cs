@@ -56,6 +56,9 @@ public class ComponentConverter : JsonConverter<Component>
 
     public override void Write(Utf8JsonWriter writer, Component value, JsonSerializerOptions options)
     {
-        writer.WriteRawValue(JsonSerializer.Serialize(value));
+        JsonSerializerOptions opts = new JsonSerializerOptions(options);
+        opts.Converters.Remove(this);
+
+        writer.WriteRawValue(JsonSerializer.Serialize(value, value.GetType(), opts));
     }
 }

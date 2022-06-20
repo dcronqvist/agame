@@ -22,7 +22,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     private ThreadSafe<Queue<Packet>> _receivedPackets;
     private ThreadSafe<Queue<Packet>> _sentPackets;
     private bool _connectFinished;
-    private Vector2i _previousChunk;
+    private ChunkAddress _previousChunk;
 
     public GameClient(string host, int port) : base(host, port, 1000, 10000)
     {
@@ -33,7 +33,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         this._receivedPackets = new ThreadSafe<Queue<Packet>>(new Queue<Packet>());
         this._sentPackets = new ThreadSafe<Queue<Packet>>(new Queue<Packet>());
         this._connectFinished = false;
-        this._previousChunk = new Vector2i(0, 0);
+        this._previousChunk = new ChunkAddress(0, 0);
 
         this.RegisterClientEventHandlers();
     }
@@ -97,7 +97,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         });
 
         TransformComponent transform = this._playerEntity.GetComponent<TransformComponent>();
-        Vector2i chunkPos = transform.GetChunkPosition();
+        ChunkAddress chunkPos = transform.Position.ToChunkAddress();
 
         this._world.MaintainChunkArea(2, 1, chunkPos.X, chunkPos.Y);
 
@@ -261,7 +261,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             this.UpdatePlayerInput(camera);
 
         TransformComponent transform = this._playerEntity.GetComponent<TransformComponent>();
-        Vector2i chunkPos = transform.GetChunkPosition();
+        ChunkAddress chunkPos = transform.Position.ToChunkAddress();
 
         if (!chunkPos.Equals(this._previousChunk))
         {
@@ -279,7 +279,8 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             (GLFW.Keys.A, KeyboardInputComponent.KEY_A),
             (GLFW.Keys.S, KeyboardInputComponent.KEY_S),
             (GLFW.Keys.D, KeyboardInputComponent.KEY_D),
-            (GLFW.Keys.Space, KeyboardInputComponent.KEY_SPACE)
+            (GLFW.Keys.Space, KeyboardInputComponent.KEY_SPACE),
+            (GLFW.Keys.LeftShift, KeyboardInputComponent.KEY_SHIFT),
         };
 
         KeyboardInputComponent playerInputComponent = this._playerEntity.GetComponent<KeyboardInputComponent>();

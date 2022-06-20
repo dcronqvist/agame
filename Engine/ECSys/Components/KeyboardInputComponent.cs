@@ -12,6 +12,8 @@ public class KeyboardInputComponent : Component
     public const int KEY_D = 1 << 3;
     public const int KEY_SPACE = 1 << 4;
 
+    public const int KEY_SHIFT = 1 << 5;
+
     public int PreviousKeyBitmask { get; set; }
     private int _keyBitmask;
     public int KeyBitmask

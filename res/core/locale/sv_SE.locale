@@ -12,5 +12,6 @@
 
     // Main menu stuff
     "screen.main_menu.button.singleplayer": "Enspelarläge",
-    "screen.main_menu.button.multiplayer": "Flerspelarläge"
+    "screen.main_menu.button.multiplayer": "Flerspelarläge",
+    "screen.main_menu.button.exit": "Avsluta"
 }

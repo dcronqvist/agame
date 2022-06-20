@@ -7,14 +7,14 @@ namespace AGame.Engine.ECSys.Components;
 [ComponentNetworking(CNType.Snapshot, NDirection.ServerToClient)]
 public class TransformComponent : Component
 {
-    private Vector2 _targetPosition;
-    private Vector2 _position;
-    public Vector2 Position
+    public CoordinateVector _targetPosition;
+    private CoordinateVector _position;
+    public CoordinateVector Position
     {
         get => _position;
         set
         {
-            if (_position != value)
+            if (!_position.Equals(value))
             {
                 _position = value;
                 this.NotifyPropertyChanged();
@@ -25,27 +25,6 @@ public class TransformComponent : Component
     public TransformComponent()
     {
 
-    }
-
-    public Vector2i GetTilePosition()
-    {
-        float fx = Position.X > 0 ? Position.X : (Position.X - 1);
-        float fy = Position.Y > 0 ? Position.Y : (Position.Y - 1);
-
-        int x = (int)MathF.Floor(fx / (TileGrid.TILE_SIZE));
-        int y = (int)MathF.Floor(fy / (TileGrid.TILE_SIZE));
-        return new Vector2i(x, y);
-    }
-
-    public Vector2i GetChunkPosition()
-    {
-        float fx = Position.X > 0 ? Position.X : (Position.X - 1);
-        float fy = Position.Y > 0 ? Position.Y : (Position.Y - 1);
-
-        int x = (int)MathF.Floor(fx / (Chunk.CHUNK_SIZE * TileGrid.TILE_SIZE));
-        int y = (int)MathF.Floor(fy / (Chunk.CHUNK_SIZE * TileGrid.TILE_SIZE));
-
-        return new Vector2i(x, y);
     }
 
     public override Component Clone()
@@ -60,8 +39,11 @@ public class TransformComponent : Component
     public override int Populate(byte[] data, int offset)
     {
         int initialOffset = offset;
-        Position = new Vector2(BitConverter.ToSingle(data, offset), BitConverter.ToSingle(data, offset + 4));
-        offset += 8;
+        float x = BitConverter.ToSingle(data, offset);
+        offset += sizeof(float);
+        float y = BitConverter.ToSingle(data, offset);
+        offset += sizeof(float);
+        this.Position = new CoordinateVector(x, y);
         return offset - initialOffset;
     }
 
@@ -87,8 +69,8 @@ public class TransformComponent : Component
 
     public override void InterpolateProperties()
     {
-        if ((_targetPosition - Position).AbsLength() < 0.05f) return;
+        if ((_targetPosition - Position).Length() < 0.01f) return;
 
-        this.Position += (_targetPosition - Position) * GameTime.DeltaTime * 10f;
+        this.Position += (_targetPosition - Position) * GameTime.DeltaTime * 9f;
     }
 }

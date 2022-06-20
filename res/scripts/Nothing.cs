@@ -16,7 +16,7 @@ namespace MyMod
 {
     class MyCommand : ICommand
     {
-        public Command GetConfiguration()
+        public Command GetConfiguration(ECS ecs, WorldContainer world)
         {
             var c = new Command("nocommand");
 
@@ -31,7 +31,7 @@ namespace MyMod
 
     class ExitCommand : ICommand
     {
-        public Command GetConfiguration()
+        public Command GetConfiguration(ECS ecs, WorldContainer world)
         {
             var c = new Command("exit");
 
@@ -47,7 +47,7 @@ namespace MyMod
 
     class CommandsCommand : ICommand
     {
-        public Command GetConfiguration()
+        public Command GetConfiguration(ECS ecs, WorldContainer world)
         {
             var c = new Command("commands");
 
@@ -65,7 +65,7 @@ namespace MyMod
 
     class WindowSizeCommand : ICommand
     {
-        public Command GetConfiguration()
+        public Command GetConfiguration(ECS ecs, WorldContainer world)
         {
             var c = new Command("windowsize");
 
@@ -86,7 +86,7 @@ namespace MyMod
 
     class ClearConsoleCommand : ICommand
     {
-        public Command GetConfiguration()
+        public Command GetConfiguration(ECS ecs, WorldContainer world)
         {
             var c = new Command("clear");
 
@@ -138,19 +138,15 @@ namespace MyMod
 
     class ECSEntityCount : ICommand
     {
-        public Command GetConfiguration()
+        public Command GetConfiguration(ECS ecs, WorldContainer world)
         {
             var c = new Command("entitycount");
 
             c.SetHandler(() =>
             {
-                ECS.Instance.LockedAction((ecs) =>
-                {
+                int count = ecs.GetAllEntities().Count;
 
-                    int count = ecs.GetAllEntities().Count;
-
-                    GameConsole.WriteLine("ECS", $"There are {count} entities in the ECS.");
-                });
+                GameConsole.WriteLine("ECS", $"There are {count} entities in the ECS.");
             });
 
             return c;
@@ -159,7 +155,7 @@ namespace MyMod
 
     class CommandChangeScreen : ICommand
     {
-        public Command GetConfiguration()
+        public Command GetConfiguration(ECS ecs, WorldContainer world)
         {
             var c = new Command("goto");
 

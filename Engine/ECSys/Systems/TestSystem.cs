@@ -15,22 +15,16 @@ public class TestSystem : BaseSystem
 
     public override void Initialize()
     {
-        this.RegisterComponentType<SpriteComponent>();
         this.RegisterComponentType<TransformComponent>();
         this.RegisterComponentType<KeyboardInputComponent>();
         this.RegisterComponentType<MouseInputComponent>();
     }
 
-    public override void Render(List<Entity> entity, WorldContainer gameWorld)
+    public override void Render(List<Entity> entities, WorldContainer gameWorld)
     {
-        foreach (var e in entity)
+        foreach (Entity e in entities)
         {
-            var sprite = e.GetComponent<SpriteComponent>();
-            var transform = e.GetComponent<TransformComponent>();
-            var mouse = e.GetComponent<MouseInputComponent>();
-
-            Vector2 spriteSize = sprite.Sprite.MiddleOfSourceRectangle;
-            sprite.Sprite.Render(transform.Position - spriteSize);
+            Renderer.Primitive.RenderCircle(e.GetComponent<TransformComponent>().Position.ToWorldVector().ToVector2(), 5f, ColorF.Blue, false);
         }
     }
 
@@ -43,8 +37,8 @@ public class TestSystem : BaseSystem
             MouseInputComponent mouse = entity.GetComponent<MouseInputComponent>();
 
             Vector2 movement = new Vector2(0, 0);
-            Vector2i tilePos = transform.GetTilePosition();
-            float speed = 150f;
+            Vector2i tilePos = transform.Position.ToTileAligned();
+            float speed = 5f;
 
             if (keyboard.IsKeyDown(KeyboardInputComponent.KEY_W))
             {
@@ -70,7 +64,15 @@ public class TestSystem : BaseSystem
 
             if (keyboard.IsKeyPressed(KeyboardInputComponent.KEY_SPACE))
             {
-                gameWorld.UpdateTile(tilePos.X, tilePos.Y, "game:grass");
+                if (keyboard.IsKeyDown(KeyboardInputComponent.KEY_SHIFT))
+                {
+                    gameWorld.UpdateTile((int)tilePos.X, (int)tilePos.Y, "game:grass");
+                }
+                else
+                {
+                    Entity e = base.ParentECS.CreateEntityFromAsset("entity_weird");
+                    e.GetComponent<TransformComponent>().Position = transform.Position;
+                }
             }
         }
     }

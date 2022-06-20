@@ -32,6 +32,7 @@ public static class Settings
     {
         return new List<Setting>() {
             new Setting() { Name = "locale", Value = "en_US" },
+            new Setting() { Name = "volume_master", Value = 1f }
         };
     }
 

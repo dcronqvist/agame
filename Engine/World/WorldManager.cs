@@ -93,7 +93,8 @@ public class WorldMetaData
                 AllowTrailingCommas = true
             };
 
-            return JsonSerializer.Deserialize<List<PlayerInfo>>(json, options);
+            List<PlayerInfo> infos = JsonSerializer.Deserialize<List<PlayerInfo>>(json, options);
+            return infos;
         }
     }
 
@@ -111,7 +112,8 @@ public class WorldMetaData
                 AllowTrailingCommas = true
             };
 
-            return JsonSerializer.Deserialize<List<PlayerInfo>>(json, options);
+            List<PlayerInfo> infos = JsonSerializer.Deserialize<List<PlayerInfo>>(json, options);
+            return infos;
         }
     }
 
@@ -183,9 +185,9 @@ public class WorldMetaData
 public class PlayerInfo
 {
     public string PlayerName { get; set; }
-    public Vector2 Position { get; set; }
+    public CoordinateVector Position { get; set; }
 
-    public PlayerInfo(string playerName, Vector2 position)
+    public PlayerInfo(string playerName, CoordinateVector position)
     {
         PlayerName = playerName;
         Position = position;

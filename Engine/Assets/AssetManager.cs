@@ -72,6 +72,7 @@ namespace AGame.Engine.Assets
                 { ".entity", new EntityLoader() },
                 { ".tile", new TileLoader() },
                 { ".locale", new LocaleLoader() },
+                { ".wav", new AudioLoader() }
             };
 
             AllAssetsLoaded = false;

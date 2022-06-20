@@ -31,6 +31,18 @@ public class ScreenPlayingSingle : Screen
     {
         _paused = false;
         Camera = new Camera2D(Vector2.Zero, 2f);
+
+        Input.OnScroll += (sender, e) =>
+        {
+            if (e > 0)
+            {
+                Camera.Zoom *= 1.05f;
+            }
+            else
+            {
+                Camera.Zoom *= 1 / 1.05f;
+            }
+        };
     }
 
     public override void OnLeave()
@@ -40,7 +52,7 @@ public class ScreenPlayingSingle : Screen
 
     public override void Render()
     {
-        this.Camera.FocusPosition = this.Client.GetPlayerEntity().GetComponent<TransformComponent>().Position;
+        this.Camera.FocusPosition = this.Client.GetPlayerEntity().GetComponent<TransformComponent>().Position.ToWorldVector().ToVector2();
 
         Renderer.SetRenderTarget(null, this.Camera);
         Renderer.Clear(ColorF.Black);
@@ -76,6 +88,11 @@ public class ScreenPlayingSingle : Screen
         {
             this._paused = !this._paused;
         }
+
+        int rx = this.Client.GetRX();
+        int tx = this.Client.GetTX();
+
+        DisplayManager.SetWindowTitle($"RX: {rx} TX: {tx}");
     }
 
     public async Task ExitSinglePlay()
