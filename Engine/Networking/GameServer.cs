@@ -136,7 +136,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 {
                     foreach (var conn in conns.Where(x => this._playerFullyConnected[x]))
                     {
-                        this.EnqueuePacket(packet, conn, false, false);
+                        this.EnqueuePacket(packet, conn, false, true);
                     }
                 }
             });

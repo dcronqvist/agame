@@ -155,7 +155,16 @@ public class WorldContainer
         {
             for (int _y = fromY; _y <= toY; _y++)
             {
-                EnqueueChunkEvent(new ChunkEvent(new ChunkAddress(_x, _y), new ChunkEventGenerate()));
+                ChunkAddress ca = new ChunkAddress(_x, _y);
+                bool contains = Chunks.LockedAction<bool>((chunks) =>
+                {
+                    return chunks.ContainsKey(ca);
+                });
+
+                if (!contains)
+                {
+                    EnqueueChunkEvent(new ChunkEvent(new ChunkAddress(_x, _y), new ChunkEventGenerate()));
+                }
             }
         }
 

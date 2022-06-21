@@ -5,23 +5,27 @@ using AGame.Engine.Graphics.Rendering;
 
 namespace AGame.Engine.Screening;
 
-public class ScreenTemporaryLoading : Screen
+public class EnterTemporaryLoading : ScreenEnterArgs
 {
-    public ScreenTemporaryLoading() : base("screen_temporary_loading")
+    public string Text { get; set; }
+}
+
+public class ScreenTemporaryLoading : Screen<EnterTemporaryLoading>
+{
+    private string _text;
+
+    public override void Initialize()
     {
     }
 
-    public override Screen Initialize()
+    public override void OnEnter(EnterTemporaryLoading args)
     {
-        return this;
-    }
-
-    public override void OnEnter(string[] args)
-    {
+        this._text = args.Text;
     }
 
     public override void OnLeave()
     {
+
     }
 
     public override void Render()
@@ -29,9 +33,7 @@ public class ScreenTemporaryLoading : Screen
         Renderer.SetRenderTarget(null, null);
         Renderer.Clear(ColorF.Black);
 
-        string text = "loading...";
-
-        Renderer.Text.RenderText(AssetManager.GetAsset<Font>("font_rainyhearts"), text, new Vector2(100, 100), 3f, ColorF.White, Renderer.Camera);
+        Renderer.Text.RenderText(AssetManager.GetAsset<Font>("font_rainyhearts"), this._text, new Vector2(100, 100), 3f, ColorF.White, Renderer.Camera);
     }
 
     public override void Update()

@@ -6,63 +6,49 @@ namespace AGame.Engine.Screening
 {
     public static class ScreenManager
     {
-        public static Dictionary<string, Screen> Screens { get; set; }
-        public static string CurrentScreenName { get; set; }
-        public static Screen CurrentScreen
-        {
-            get
-            {
-                if (!Screens.ContainsKey(CurrentScreenName))
-                    return null;
-
-                return Screens[CurrentScreenName];
-            }
-        }
+        public static List<BaseScreen> Screens { get; set; }
+        public static BaseScreen CurrentScreen { get; set; }
         public static string[] Args { get; set; }
 
-        private static string _nextScreenName;
+        private static Type _nextScreen;
         private static bool _requestedTransition;
-        private static string[] _nextScreenArgs;
+        private static ScreenEnterArgs _nextScreenArgs;
 
         static ScreenManager()
         {
-            Screens = new Dictionary<string, Screen>();
-            CurrentScreenName = "";
-
-            _nextScreenName = "";
+            Screens = new List<BaseScreen>();
+            _nextScreen = null;
             _requestedTransition = false;
-        }
-
-        public static void AddScreen(string name, Screen screen)
-        {
-            Screens.Add(name, screen);
-        }
-
-        public static T GetScreen<T>(string name) where T : Screen
-        {
-            if (!Screens.ContainsKey(name))
-                return null;
-
-            return Screens[name] as T;
+            CurrentScreen = null;
         }
 
         public static void Init(string[] args)
         {
             Args = args;
 
-            Type[] screenTypes = Utilities.FindDerivedTypes(typeof(Screen)).Where(x => x != typeof(Screen)).ToArray();
+            Type[] screenTypes = Utilities.FindDerivedTypes(typeof(BaseScreen)).Where(x => !x.IsAbstract).ToArray();
 
             foreach (Type screenType in screenTypes)
             {
-                Screen screen = (Screen)Activator.CreateInstance(screenType);
+                BaseScreen screen = (BaseScreen)Activator.CreateInstance(screenType);
                 screen.Initialize();
-                AddScreen(screen.Name, screen);
+                Screens.Add(screen);
             }
         }
 
-        public static void GoToScreen(string name, params string[] args)
+        public static T GetScreen<T>() where T : BaseScreen
         {
-            _nextScreenName = name;
+            return (T)Screens.Find(x => x.GetType() == typeof(T));
+        }
+
+        public static BaseScreen GetScreen(Type screenType)
+        {
+            return Screens.Find(x => x.GetType() == screenType);
+        }
+
+        public static void GoToScreen<TScreen, TScreenOnEnter>(TScreenOnEnter args) where TScreen : BaseScreen where TScreenOnEnter : ScreenEnterArgs
+        {
+            _nextScreen = typeof(TScreen);
             _requestedTransition = true;
             _nextScreenArgs = args;
         }
@@ -72,9 +58,9 @@ namespace AGame.Engine.Screening
             if (_requestedTransition)
             {
                 CurrentScreen?.OnLeave();
-                CurrentScreenName = _nextScreenName;
                 GUI.NotifyScreenTransition();
-                CurrentScreen.OnEnter(_nextScreenArgs);
+                CurrentScreen = GetScreen(_nextScreen);
+                CurrentScreen?.OnEnter(_nextScreenArgs);
                 _requestedTransition = false;
             }
 

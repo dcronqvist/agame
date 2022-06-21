@@ -31,7 +31,8 @@
     <PackageReference Include="OpenTK.OpenAL" Version="4.7.4" />
     <PackageReference Include="SimplexNoise" Version="2.0.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
-    <ResourceFiles Include="$(ProjectDir)\res\**\*.*" />
+    <ResourceFiles Include="$(ProjectDir)\assets\**\*.*" />
+    <WorldFiles Include="$(ProjectDir)\worlds\**\*.*" />
     <LibDlls Include="$(ProjectDir)\libs\win\**\*.*" />
     <PackageReference Include="StbImageSharp" Version="2.22.6" />
   </ItemGroup>
@@ -39,7 +40,8 @@
   <Target Name="CopyGameResources" AfterTargets="Build">
     <Message Text="Copying game resources to output directory..." Importance="High" />
 
-    <Copy SourceFiles="@(ResourceFiles)" DestinationFolder="$(OutDir)\res\%(RecursiveDir)" />
+    <Copy SourceFiles="@(ResourceFiles)" DestinationFolder="$(OutDir)\assets\%(RecursiveDir)" />
+    <Copy SourceFiles="@(WorldFiles)" DestinationFolder="$(OutDir)\worlds\%(RecursiveDir)" />
   </Target>
 
   <Target Name="CopyLibDlls" AfterTargets="Build">
@@ -51,6 +53,6 @@
   <Target Name="RemoveGameResources" AfterTargets="Clean">
     <Message Text="Removing game resources directory from output..." Importance="High" />
 
-    <RemoveDir Directories="$(OutDir)\res" />
+    <RemoveDir Directories="$(OutDir)\assets" />
   </Target>
 </Project>

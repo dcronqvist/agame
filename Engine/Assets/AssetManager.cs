@@ -28,7 +28,7 @@ namespace AGame.Engine.Assets
         private static Dictionary<string, IAssetLoader> AssetLoaders { get; set; }
 
         public static string BaseDirectory { get; set; }
-        public static string AssetDirectory { get => BaseDirectory + @"/res"; }
+        public static string AssetDirectory { get => BaseDirectory + @"/assets"; }
         public static string CoreDirectory { get => AssetDirectory + @"/core"; }
 
         public static event EventHandler OnAllAssetsLoaded;

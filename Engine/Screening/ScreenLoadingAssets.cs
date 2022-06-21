@@ -8,25 +8,25 @@ using AGame.Engine.World;
 
 namespace AGame.Engine.Screening;
 
-public class ScreenLoadingAssets : Screen
+public class EnterLoadingAssetsArgs : ScreenEnterArgs
+{
+    public string FinalCoreAsset { get; set; }
+}
+
+public class ScreenLoadingAssets : Screen<EnterLoadingAssetsArgs>
 {
     private string _windowIconTexture = "tex_marsdirt";
     private string _currentLoadingAsset = "";
     private bool _allAssetsLoaded = false;
 
-    public ScreenLoadingAssets() : base("screen_loading_assets")
+    public override void Initialize()
     {
 
     }
 
-    public override Screen Initialize()
+    public override void OnEnter(EnterLoadingAssetsArgs args)
     {
-        return this;
-    }
-
-    public override void OnEnter(string[] args)
-    {
-        _currentLoadingAsset = Localization.GetString("screen.loading_assets.subtitle", ("asset_name", args[0])); // Get the last loaded texture from ImplGame
+        _currentLoadingAsset = Localization.GetString("screen.loading_assets.subtitle", ("asset_name", args.FinalCoreAsset)); // Get the last loaded texture from ImplGame
         DisplayManager.SetWindowIcon(AssetManager.GetAsset<Texture2D>(_windowIconTexture));
 
         AssetManager.OnAssetStartLoad += (sender, e) =>
@@ -51,7 +51,7 @@ public class ScreenLoadingAssets : Screen
         {
             Audio.Init();
             AssetManager.FinalizeAssets();
-            ScreenManager.GoToScreen("screen_main_menu");
+            ScreenManager.GoToScreen<ScreenMainMenu, EnterMainMenuArgs>(new EnterMainMenuArgs());
         }
     }
 

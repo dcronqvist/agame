@@ -29,14 +29,13 @@ namespace AGame.Engine
             ECS.Instance.Value.Initialize(SystemRunner.Client);
         }
 
-        public unsafe override void LoadContent(string[] args)
+        public override void LoadContent(string[] args)
         {
             GameConsole.Initialize();
 
             DisplayManager.OnFramebufferResize += (window, size) =>
             {
                 glViewport(0, 0, (int)size.X, (int)size.Y);
-                Renderer.DefaultCamera.FocusPosition = size / 2.0f;
             };
 
             AssetManager.OnFinalizeEnd += (sender, e) =>
@@ -77,7 +76,7 @@ namespace AGame.Engine
         {
             if (_coreLoaded && ScreenManager.CurrentScreen == null)
             {
-                ScreenManager.GoToScreen("screen_loading_assets", _lastAssetLoaded);
+                ScreenManager.GoToScreen<ScreenLoadingAssets, EnterLoadingAssetsArgs>(new EnterLoadingAssetsArgs() { FinalCoreAsset = _lastAssetLoaded });
             }
 
             // Game updating

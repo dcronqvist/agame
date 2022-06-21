@@ -153,29 +153,6 @@ namespace MyMod
         }
     }
 
-    class CommandChangeScreen : ICommand
-    {
-        public Command GetConfiguration(ECS ecs, WorldContainer world)
-        {
-            var c = new Command("goto");
-
-            var a = new Argument<string>("screen", "the screen to go to");
-            c.AddArgument(a);
-
-            c.SetHandler((context) =>
-            {
-                ECS.Instance.LockedAction((ecs) =>
-                {
-                    string arg = context.ParseResult.GetValueForArgument(a);
-
-                    ScreenManager.GoToScreen(arg);
-                });
-            });
-
-            return c;
-        }
-    }
-
     // class ECSNewEntityAtMouse : ICommand
     // {
     //     public CommandResult Execute(Dictionary<string, object> args)

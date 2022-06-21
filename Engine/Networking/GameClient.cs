@@ -226,7 +226,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
     public async Task<bool> ConnectAsync(string clientName)
     {
-        ConnectResponse response = await base.ConnectAsync(new ConnectRequest() { Name = clientName });
+        ConnectResponse response = await base.ConnectAsync(new ConnectRequest() { Name = clientName }, 100000);
 
         if (response is not null && response.Accepted)
         {

@@ -307,7 +307,7 @@ namespace AGame.Engine
                 Component[] snapshottedComponents = e.GetComponentsWithCNType(cnType, direction);
 
                 // With divisions at most 200, every packet should be able to fit at least 2 entities
-                List<Component[]> divisions = Utilities.DivideIPacketables(snapshottedComponents, 200);
+                List<Component[]> divisions = Utilities.DivideIPacketables(snapshottedComponents, 500);
 
                 foreach (Component[] division in divisions)
                 {
@@ -315,7 +315,7 @@ namespace AGame.Engine
                 }
             }
 
-            List<EntityUpdate[]> entityUpdateDivisions = Utilities.DivideIPacketables(updates.ToArray(), 400);
+            List<EntityUpdate[]> entityUpdateDivisions = Utilities.DivideIPacketables(updates.ToArray(), 500);
             List<UpdateEntitiesPacket> packets = new List<UpdateEntitiesPacket>();
             foreach (EntityUpdate[] entityUpdateDivision in entityUpdateDivisions)
             {

@@ -3,7 +3,7 @@ using AGame.Engine.Networking;
 
 namespace AGame.Engine.ECSys.Components;
 
-[ComponentNetworking(CNType.Update, NDirection.ClientToServer, IsReliable = false)]
+[ComponentNetworking(CNType.Update, NDirection.ClientToServer, IsReliable = false, MaxUpdatesPerSecond = 20)]
 public class KeyboardInputComponent : Component
 {
     public const int KEY_W = 1 << 0;

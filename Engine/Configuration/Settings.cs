@@ -41,7 +41,21 @@ public static class Settings
         return _settingsFileLocation + _settingsFile;
     }
 
-    private static async Task CreateSettingsFileWithDefaults()
+    private static void CreateSettingsFileWithDefaults()
+    {
+        List<Setting> settings = GetDefaultSettings();
+
+        Dictionary<string, object> settingsDict = new Dictionary<string, object>();
+
+        foreach (Setting setting in settings)
+        {
+            settingsDict.Add(setting.Name, setting.Value);
+        }
+
+        SaveSettings(settingsDict);
+    }
+
+    private static async Task CreateSettingsFileWithDefaultsAsync()
     {
         List<Setting> settings = GetDefaultSettings();
 
@@ -55,11 +69,40 @@ public static class Settings
         await SaveSettingsAsync(settingsDict);
     }
 
-    public static async Task LoadSettings()
+    public static void LoadSettings()
     {
         if (!File.Exists(GetSettingsFilePath()))
         {
-            await CreateSettingsFileWithDefaults();
+            CreateSettingsFileWithDefaultsAsync();
+        }
+
+        List<Setting> defaultSettings = GetDefaultSettings();
+
+        using (StreamReader sr = new StreamReader(GetSettingsFilePath()))
+        {
+            string json = sr.ReadToEnd();
+            Dictionary<string, JsonElement> settings = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, _jsonSerializerOptions);
+
+            foreach (KeyValuePair<string, JsonElement> kvp in settings)
+            {
+                if (defaultSettings.Find(x => x.Name == kvp.Key) != null)
+                {
+                    defaultSettings.Find(x => x.Name == kvp.Key).Value = kvp.Value.Deserialize(defaultSettings.Find(x => x.Name == kvp.Key).Value.GetType(), _jsonSerializerOptions);
+                }
+            }
+        }
+
+        foreach (Setting setting in defaultSettings)
+        {
+            _settings.Add(setting.Name, setting);
+        }
+    }
+
+    public static async Task LoadSettingsAsync()
+    {
+        if (!File.Exists(GetSettingsFilePath()))
+        {
+            await CreateSettingsFileWithDefaultsAsync();
         }
 
         List<Setting> defaultSettings = GetDefaultSettings();
@@ -82,6 +125,26 @@ public static class Settings
         {
             _settings.Add(setting.Name, setting);
         }
+    }
+
+    public static void SaveSettings(Dictionary<string, object> settings)
+    {
+        using (StreamWriter sw = new StreamWriter(GetSettingsFilePath()))
+        {
+            string json = JsonSerializer.Serialize(settings, _jsonSerializerOptions);
+            sw.Write(json);
+        }
+    }
+
+    public static void SaveSettings(Dictionary<string, Setting> settings)
+    {
+        Dictionary<string, object> settingsDict = new Dictionary<string, object>();
+        foreach (KeyValuePair<string, Setting> kvp in settings)
+        {
+            settingsDict.Add(kvp.Key, kvp.Value.Value);
+        }
+
+        SaveSettings(settingsDict);
     }
 
     public static async Task SaveSettingsAsync(Dictionary<string, object> settings)
