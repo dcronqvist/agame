@@ -136,7 +136,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 {
                     foreach (var conn in conns.Where(x => this._playerFullyConnected[x]))
                     {
-                        this.EnqueuePacket(packet, conn, false, true);
+                        this.EnqueuePacket(packet, conn, false, false);
                     }
                 }
             });
@@ -149,7 +149,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         {
             foreach (UpdateEntitiesPacket packet in packets)
             {
-                this.EnqueuePacket(packet, connection, true, true);
+                this.EnqueuePacket(packet, connection, true, false);
             }
         });
     }

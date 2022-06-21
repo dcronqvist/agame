@@ -24,7 +24,7 @@ public class TestSystem : BaseSystem
     {
         foreach (Entity e in entities)
         {
-            Renderer.Primitive.RenderCircle(e.GetComponent<TransformComponent>().Position.ToWorldVector().ToVector2(), 5f, ColorF.Blue, false);
+            //Renderer.Primitive.RenderCircle(e.GetComponent<TransformComponent>().Position.ToWorldVector().ToVector2(), 5f, ColorF.Blue, false);
         }
     }
 

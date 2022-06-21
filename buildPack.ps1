@@ -1,8 +1,8 @@
 # Create publish pack
 dotnet publish --configuration Release --use-current-runtime --self-contained
 
-# Copy res to publish folder
-Copy-Item -r ./res ./bin/Release/net6.0/win-x64/publish/ -Force
+# Copy assets to publish folder
+Copy-Item -r ./assets ./bin/Release/net6.0/win-x64/publish/ -Force
 
 # Copy settings.json
 Copy-Item -r ./settings.json ./bin/Release/net6.0/win-x64/publish/ -Force
