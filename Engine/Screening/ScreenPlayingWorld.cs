@@ -50,6 +50,15 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             }
         };
 
+        _client.ServerDisconnectedClient += (sender, e) =>
+        {
+            Task.Run(async () =>
+            {
+                ScreenManager.GoToScreen<ScreenTemporaryLoading, EnterTemporaryLoading>(new EnterTemporaryLoading() { Text = "Disconnected from server..." });
+                await Task.Delay(1000);
+                ScreenManager.GoToScreen<ScreenJoinWorld, EnterJoinWorldArgs>(new EnterJoinWorldArgs());
+            });
+        };
 
         Input.OnScroll += (sender, e) =>
         {
@@ -110,7 +119,6 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
 
         //     Renderer.Text.RenderText(f, p.ToString(), pos, 1.2f, ColorF.White, Renderer.Camera);
         // }
-
     }
 
     public override void Update()

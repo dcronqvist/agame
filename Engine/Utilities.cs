@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.IO;
+using System.Net;
 using System.Numerics;
 using System.Reflection;
 using System.Text;
@@ -277,9 +278,16 @@ namespace AGame.Engine
             return r;
         }
 
-        public static string ParseIPOrDomain(string ipOrDomain)
+        public static string ResolveIPOrDomain(string ipOrDomain)
         {
-            return System.Net.Dns.GetHostEntry(ipOrDomain).AddressList.First().ToString();
+            if (IPAddress.TryParse(ipOrDomain, out IPAddress ip))
+            {
+                return ip.ToString();
+            }
+            else
+            {
+                return System.Net.Dns.GetHostAddresses(ipOrDomain, System.Net.Sockets.AddressFamily.InterNetwork).First().ToString();
+            }
         }
 
         public static IWorldGenerator GetGeneratorFromTypeName(string name)

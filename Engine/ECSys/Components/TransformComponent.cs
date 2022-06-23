@@ -4,7 +4,7 @@ using AGame.Engine.World;
 
 namespace AGame.Engine.ECSys.Components;
 
-[ComponentNetworking(CNType.Snapshot, NDirection.ServerToClient)]
+[ComponentNetworking(CNType.Update, NDirection.ServerToClient, MaxUpdatesPerSecond = 20, IsReliable = false)]
 public class TransformComponent : Component
 {
     public CoordinateVector _targetPosition;

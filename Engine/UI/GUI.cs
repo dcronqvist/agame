@@ -23,6 +23,8 @@ public static class GUI
     private static Font _font;
 
     private static bool _transitionedScreen;
+    private static bool _playedHotSound;
+    private static bool _playedActiveSound;
 
     public static void Init()
     {
@@ -59,6 +61,8 @@ public static class GUI
         _caretVisible = false;
         _caretInterval = 0.6f;
         _currentCaretTime = 0f;
+        _playedHotSound = false;
+        _playedActiveSound = false;
     }
 
     public static void Begin()
@@ -84,6 +88,16 @@ public static class GUI
 
     public static void End()
     {
+        if (_hotID == -1 && _playedHotSound)
+        {
+            _playedHotSound = false;
+        }
+
+        if (_activeID == -1 && _playedActiveSound)
+        {
+            _playedActiveSound = false;
+        }
+
         if (!Input.IsMouseButtonDown(MouseButton.Left))
         {
             _hotID = -1;
@@ -109,6 +123,12 @@ public static class GUI
     {
         if (_hotID == -1 && !_transitionedScreen)
         {
+            if (!_playedHotSound)
+            {
+                Audio.Play("audio_click");
+                _playedHotSound = true;
+            }
+
             _hotID = id;
             return true;
         }
@@ -119,6 +139,12 @@ public static class GUI
     {
         if (_activeID == -1 && Input.IsMouseButtonDown(MouseButton.Left))
         {
+            if (!_playedActiveSound)
+            {
+                Audio.Play("audio_click", 1.2f);
+                _playedActiveSound = true;
+            }
+
             _kbdFocusID = -1;
             _activeID = id;
             _showingDropdownID = -1;

@@ -53,7 +53,7 @@ public class ScreenJoinWorld : Screen<EnterJoinWorldArgs>
                 ECS clientECS = new ECS();
                 clientECS.Initialize(SystemRunner.Client, null);
 
-                GameClient gameClient = new GameClient(this._ip, int.Parse(this._port));
+                GameClient gameClient = new GameClient(Utilities.ResolveIPOrDomain(this._ip), int.Parse(this._port));
                 ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);
 
                 gameClient.Initialize(clientECS, new WorldContainer(swg, true));

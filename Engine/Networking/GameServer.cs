@@ -29,6 +29,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     private Dictionary<Connection, string> _playerNames;
     private Dictionary<Connection, bool> _playerFullyConnected;
     private ThreadSafe<Dictionary<int, Dictionary<int, float>>> _updateEntityTimes;
+    private ThreadSafe<Dictionary<Connection, List<Entity>>> _playersVisibleEntities;
 
     public GameServer(ECS ecs, WorldContainer world, WorldMetaData worldMeta, GameServerConfiguration config) : base(config.Port, 1000, 10000)
     {
@@ -41,6 +42,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         this._playerNames = new Dictionary<Connection, string>();
         this._playerFullyConnected = new Dictionary<Connection, bool>();
         this._updateEntityTimes = new ThreadSafe<Dictionary<int, Dictionary<int, float>>>(new Dictionary<int, Dictionary<int, float>>());
+        this._playersVisibleEntities = new ThreadSafe<Dictionary<Connection, List<Entity>>>(new Dictionary<Connection, List<Entity>>());
 
         this.RegisterServerEventHandlers();
         this.RegisterPacketHandlers();
@@ -117,39 +119,39 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         this._world.ChunkUpdated += HandleWorldChunkUpdates;
     }
 
-    public void SendEntityUpdatePacketsWithCNType(CNType cnType, NDirection direction, Action<List<UpdateEntitiesPacket>> sendAction)
+    public void SendEntityUpdatePacketsWithCNType(Connection connection, CNType cnType, NDirection direction, Action<List<UpdateEntitiesPacket>> sendAction)
     {
-        _ecs.LockedAction((ecs) =>
+        _playersVisibleEntities.LockedAction((pve) =>
         {
-            List<UpdateEntitiesPacket> packets = Utilities.CreateEntityUpdatePackets(cnType, direction, ecs.GetAllEntities().ToArray());
+            List<UpdateEntitiesPacket> packets = Utilities.CreateEntityUpdatePackets(cnType, direction, pve[connection].ToArray());
             sendAction(packets);
         });
     }
 
     public void BroadcastSnapshotEntityUpdatesToAllClients()
     {
-        this.SendEntityUpdatePacketsWithCNType(CNType.Snapshot, NDirection.ServerToClient, (packets) =>
+        this._connections.LockedAction((conns) =>
         {
-            this._connections.LockedAction((conns) =>
+            foreach (Connection conn in conns.Where(x => this._playerFullyConnected[x]))
             {
-                foreach (UpdateEntitiesPacket packet in packets)
+                this.SendEntityUpdatePacketsWithCNType(conn, CNType.Snapshot, NDirection.ServerToClient, (packets) =>
                 {
-                    foreach (var conn in conns.Where(x => this._playerFullyConnected[x]))
+                    foreach (UpdateEntitiesPacket packet in packets)
                     {
-                        this.EnqueuePacket(packet, conn, false, false);
+                        this.EnqueuePacket(packet, conn, false, true);
                     }
-                }
-            });
+                });
+            }
         });
     }
 
     public void SendCompleteECSToClient(Connection connection)
     {
-        this.SendEntityUpdatePacketsWithCNType(CNType.Snapshot | CNType.Update, NDirection.ServerToClient | NDirection.ClientToServer, (packets) =>
+        this.SendEntityUpdatePacketsWithCNType(connection, CNType.Snapshot | CNType.Update, NDirection.ServerToClient | NDirection.ClientToServer, (packets) =>
         {
             foreach (UpdateEntitiesPacket packet in packets)
             {
-                this.EnqueuePacket(packet, connection, true, false);
+                this.EnqueuePacket(packet, connection, true, true);
             }
         });
     }
@@ -203,6 +205,13 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             newPlayer.GetComponent<TransformComponent>().Position = this._worldMetaData.GetPlayerInfo(playerName).Position;
             // Assign the player's name to the new entity
             newPlayer.GetComponent<PlayerInfoComponent>().Name = playerName;
+
+            this._playersVisibleEntities.LockedAction((pve) =>
+            {
+                pve.Add(connection, new List<Entity>());
+
+                pve[connection] = this.GetEntitiesInRangeOfPlayer(connection, 10);
+            });
 
             // Send the entire ECS to the client so that they can reconstruct the world state
             this.SendCompleteECSToClient(connection);
@@ -284,11 +293,19 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 EntityUpdate eu = new EntityUpdate(e.Entity.ID, e.Component);
                 UpdateEntitiesPacket uep = new UpdateEntitiesPacket(eu);
 
-                this._connections.LockedAction((conns) =>
+                List<Connection> conns = this._connections.LockedAction((conns) =>
+                {
+                    return conns.ToList();
+                });
+
+                this._playersVisibleEntities.LockedAction((pve) =>
                 {
                     foreach (Connection conn in conns.Where(x => this._playerFullyConnected[x]))
                     {
-                        this.EnqueuePacket(uep, conn, true, false);
+                        if (pve[conn].Contains(e.Entity))
+                        {
+                            this.EnqueuePacket(uep, conn, true, false);
+                        }
                     }
                 });
             }
@@ -301,14 +318,37 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         {
             List<UpdateEntitiesPacket> packets = Utilities.CreateEntityUpdatePackets(CNType.Update | CNType.Snapshot, NDirection.ClientToServer | NDirection.ServerToClient, e.Entity);
 
-            foreach (UpdateEntitiesPacket packet in packets)
+            this._playersVisibleEntities.LockedAction((pve) =>
             {
-                foreach (var conn in conns.Where(x => this._playerFullyConnected[x]))
+                foreach (UpdateEntitiesPacket packet in packets)
                 {
-                    this.EnqueuePacket(packet, conn, false, false);
+                    foreach (var conn in conns.Where(x => this._playerFullyConnected[x]))
+                    {
+                        if (pve[conn].Contains(e.Entity))
+                            this.EnqueuePacket(packet, conn, true, false);
+                    }
                 }
-            }
+            });
         });
+    }
+
+    public void CreateEntitiesOnClient(Connection connection, params Entity[] entities)
+    {
+        List<UpdateEntitiesPacket> packets = Utilities.CreateEntityUpdatePackets(CNType.Snapshot | CNType.Update, NDirection.ClientToServer | NDirection.ServerToClient, entities);
+
+        foreach (UpdateEntitiesPacket packet in packets)
+        {
+            this.EnqueuePacket(packet, connection, true, true);
+        }
+    }
+
+    public void DestroyEntitiesOnClient(Connection connection, params Entity[] entities)
+    {
+        foreach (Entity e in entities)
+        {
+            DestroyEntityPacket dep = new DestroyEntityPacket(e.ID);
+            this.EnqueuePacket(dep, connection, true, true);
+        }
     }
 
     public void HandleEntityDestroyedInECS(object sender, EntityDestroyedEventArgs e)
@@ -316,10 +356,15 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         this._connections.LockedAction((conns) =>
         {
             DestroyEntityPacket dep = new DestroyEntityPacket(e.Entity.ID);
-            foreach (var conn in conns.Where(x => this._playerFullyConnected[x]))
+
+            this._playersVisibleEntities.LockedAction((pve) =>
             {
-                this.EnqueuePacket(dep, conn, true, false);
-            }
+                foreach (var conn in conns.Where(x => this._playerFullyConnected[x]))
+                {
+                    if (pve[conn].Contains(e.Entity))
+                        this.EnqueuePacket(dep, conn, true, false);
+                }
+            });
         });
     }
 
@@ -353,6 +398,37 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             while (true)
             {
                 long startTime = sw.ElapsedMilliseconds;
+
+                List<Connection> conns = this._connections.LockedAction((conns) =>
+                {
+                    return conns.ToList();
+                });
+
+                this._playersVisibleEntities.LockedAction((pve) =>
+                {
+                    try
+                    {
+                        foreach (Connection conn in conns.Where(x => this._playerFullyConnected[x]))
+                        {
+                            List<Entity> oldInRange = pve[conn];
+                            List<Entity> inRange = this.GetEntitiesInRangeOfPlayer(conn, 10);
+                            pve[conn] = inRange;
+
+                            List<Entity> newInRange = inRange.Except(oldInRange).ToList();
+                            if (newInRange.Count > 0)
+                                this.CreateEntitiesOnClient(conn, newInRange.ToArray());
+
+                            List<Entity> outOfRange = oldInRange.Except(inRange).ToList();
+                            if (outOfRange.Count > 0)
+                                this.DestroyEntitiesOnClient(conn, outOfRange.ToArray());
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.ToString());
+                    }
+                });
+
                 this.BroadcastSnapshotEntityUpdatesToAllClients();
                 long endTime = sw.ElapsedMilliseconds;
 
@@ -418,6 +494,26 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
         // Autosaving task
         this.StartAutosaving();
+    }
+
+    public List<Entity> GetEntitiesInRangeOfPlayer(Connection connection, float range)
+    {
+        return this._ecs.LockedAction((ecs) =>
+        {
+            List<Entity> entities = ecs.GetAllEntities();
+
+            TransformComponent playerTransform = ecs.GetEntityFromID(this._playerIds[connection]).GetComponent<TransformComponent>();
+
+            List<Entity> entitiesInRange = entities.Where(e => e.HasComponent<TransformComponent>()).Where(e =>
+            {
+                TransformComponent tc = e.GetComponent<TransformComponent>();
+                return (tc.Position - playerTransform.Position).Length() <= range;
+            }).ToList();
+
+            entitiesInRange.AddRange(entities.Where(e => !e.HasComponent<TransformComponent>()));
+
+            return entitiesInRange;
+        });
     }
 
     public void Update()
