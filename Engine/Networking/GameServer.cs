@@ -395,7 +395,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         _ = Task.Run(async () =>
         {
             sw.Start();
-            while (true)
+            while (!this._cancellationTokenSource.Token.IsCancellationRequested)
             {
                 long startTime = sw.ElapsedMilliseconds;
 

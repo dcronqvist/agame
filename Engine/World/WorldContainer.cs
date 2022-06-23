@@ -272,6 +272,8 @@ public class ChunkEventRemove : IChunkEventExecutor
         {
             chunks.Remove(address);
         });
+
+        await Task.CompletedTask;
     }
 }
 

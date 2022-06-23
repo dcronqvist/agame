@@ -116,8 +116,9 @@ public class ServerWorldGenerator : IWorldGenerator
 
         while (_requestedChunks.LockedAction((rc) => { return rc[chunkAddress] == null; }))
         {
-
         }
+
+        await Task.CompletedTask;
 
         return _requestedChunks.LockedAction((rc) =>
         {

@@ -73,7 +73,7 @@ public static class Settings
     {
         if (!File.Exists(GetSettingsFilePath()))
         {
-            CreateSettingsFileWithDefaultsAsync();
+            _ = CreateSettingsFileWithDefaultsAsync();
         }
 
         List<Setting> defaultSettings = GetDefaultSettings();

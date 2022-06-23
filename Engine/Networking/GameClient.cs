@@ -211,7 +211,6 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     protected override void HandleInvalidReceive(byte[] data, IPEndPoint remote, Exception e = null)
     {
         // TODO: Must do something to know that the client received an invalid packet.
-        int x = 2;
     }
 
     public int GetRX()
