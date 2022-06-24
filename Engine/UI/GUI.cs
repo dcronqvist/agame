@@ -121,7 +121,7 @@ public static class GUI
 
     private static bool TryBecomeHot(int id)
     {
-        if (_hotID == -1 && !_transitionedScreen)
+        if (_hotID == -1 && !_transitionedScreen && DisplayManager.IsWindowFocused())
         {
             if (!_playedHotSound)
             {

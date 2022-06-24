@@ -69,7 +69,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 Entity playerEntity = ecs.GetEntityFromID(entityId);
 
                 string playerName = this._playerNames[connection];
-                PlayerInfo pi = this._worldMetaData.GetPlayerInfo(playerName);
+                PlayerInfo pi = this._worldMetaData.GetPlayerInfo(playerName, new CoordinateVector(0, 0));
 
                 // Save relevant data about the player
                 pi.Position = playerEntity.GetComponent<TransformComponent>().Position;
@@ -184,45 +184,50 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         });
     }
 
+    public async Task HandleFinishedConnectingPlayer(Connection connection)
+    {
+        Entity newPlayer = null;
+        _ecs.LockedAction((ecs) =>
+        {
+            // Create a new entity for the player
+            newPlayer = ecs.CreateEntityFromAsset("entity_player");
+        });
+
+        // Assign the new entity's ID to this connection
+        this._playerIds.Add(connection, newPlayer.ID);
+
+        // Get the player's name from the connection
+        string playerName = this._playerNames[connection];
+
+        // Assign the player's position from the world's meta data
+        newPlayer.GetComponent<TransformComponent>().Position = this._worldMetaData.GetPlayerInfo(playerName, new CoordinateVector(0, 0)).Position;
+        // Assign the player's name to the new entity
+        newPlayer.GetComponent<PlayerInfoComponent>().Name = playerName;
+
+        this._playersVisibleEntities.LockedAction((pve) =>
+        {
+            pve.Add(connection, new List<Entity>());
+
+            pve[connection] = this.GetEntitiesInRangeOfPlayer(connection, this._config.EntityViewDistance);
+        });
+
+        // Send the entire ECS to the client so that they can reconstruct the world state
+        this.SendCompleteECSToClient(connection);
+
+        await Task.Delay(1000);
+
+        // Tell the client that the ECS has been sent and that they can start playing
+        // Also tell the client their entity ID so they can control the correct character
+        this.EnqueuePacket(new ConnectFinished() { PlayerEntityId = newPlayer.ID }, connection, true, true);
+        this._playerFullyConnected[connection] = true;
+    }
+
     public void RegisterPacketHandlers()
     {
         // This packet is part of the connection protocol/sequence, and is the final step towards letting the player connect
         this.AddPacketHandler<ConnectReadyForECS>(async (packet, connection) =>
         {
-            Entity newPlayer = null;
-            _ecs.LockedAction((ecs) =>
-            {
-                // Create a new entity for the player
-                newPlayer = ecs.CreateEntityFromAsset("entity_player");
-            });
-
-            // Assign the new entity's ID to this connection
-            this._playerIds.Add(connection, newPlayer.ID);
-
-            // Get the player's name from the connection
-            string playerName = this._playerNames[connection];
-
-            // Assign the player's position from the world's meta data
-            newPlayer.GetComponent<TransformComponent>().Position = this._worldMetaData.GetPlayerInfo(playerName).Position;
-            // Assign the player's name to the new entity
-            newPlayer.GetComponent<PlayerInfoComponent>().Name = playerName;
-
-            this._playersVisibleEntities.LockedAction((pve) =>
-            {
-                pve.Add(connection, new List<Entity>());
-
-                pve[connection] = this.GetEntitiesInRangeOfPlayer(connection, this._config.EntityViewDistance);
-            });
-
-            // Send the entire ECS to the client so that they can reconstruct the world state
-            this.SendCompleteECSToClient(connection);
-
-            await Task.Delay(1000);
-
-            // Tell the client that the ECS has been sent and that they can start playing
-            // Also tell the client their entity ID so they can control the correct character
-            this.EnqueuePacket(new ConnectFinished() { PlayerEntityId = newPlayer.ID }, connection, true, true);
-            this._playerFullyConnected[connection] = true;
+            await this.HandleFinishedConnectingPlayer(connection);
         });
 
         // This packet is whenever a client tells the server that a component has changed client side and that it should be 
@@ -363,7 +368,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 foreach (var conn in conns.Where(x => this._playerFullyConnected[x]))
                 {
                     if (pve[conn].Contains(e.Entity))
-                        this.EnqueuePacket(dep, conn, true, false);
+                        this.EnqueuePacket(dep, conn, true, true);
                 }
             });
         });
@@ -556,7 +561,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                         Entity playerEntity = ecs.GetEntityFromID(entityId);
 
                         string playerName = this._playerNames[connection];
-                        PlayerInfo pi = this._worldMetaData.GetPlayerInfo(playerName);
+                        PlayerInfo pi = this._worldMetaData.GetPlayerInfo(playerName, new CoordinateVector(0, 0));
 
                         // Save relevant data about the player
                         pi.Position = playerEntity.GetComponent<TransformComponent>().Position;

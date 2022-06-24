@@ -123,10 +123,10 @@ public class WorldMetaData
         return players.FirstOrDefault(p => p.PlayerName == playerName);
     }
 
-    public PlayerInfo GetPlayerInfo(string playerName)
+    public PlayerInfo GetPlayerInfo(string playerName, CoordinateVector newPositionIfNoExist)
     {
         List<PlayerInfo> players = GetPlayerInfos();
-        return players.FirstOrDefault(p => p.PlayerName == playerName);
+        return players.FirstOrDefault(p => p.PlayerName == playerName, new PlayerInfo(playerName, newPositionIfNoExist));
     }
 
     private void SavePlayerInfos(List<PlayerInfo> playerInfos)

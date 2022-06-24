@@ -102,6 +102,11 @@ namespace AGame.Engine.Graphics
             Glfw.SetWindowSize(WindowHandle, (int)size.X, (int)size.Y);
         }
 
+        public static bool IsWindowFocused()
+        {
+            return Glfw.GetWindowAttribute(WindowHandle, WindowAttribute.Focused);
+        }
+
         public unsafe static void SetWindowIcon(Texture2D tex)
         {
             byte[] pixelData = tex.GetPixelData();
