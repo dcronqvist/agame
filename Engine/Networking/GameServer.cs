@@ -112,12 +112,16 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         this.ClientTimedOut += (sender, e) => HandleClientDisconnected(e.Connection);
 
         // ECS Events
-        this._ecs.Value.ComponentChanged += HandleEntityComponentChangedInECS;
-        this._ecs.Value.EntityAdded += HandleEntityAddedToECS;
-        this._ecs.Value.EntityDestroyed += HandleEntityDestroyedInECS;
+        this._ecs.Value.ComponentChanged += (sender, e) =>
+        {
+            Task.Run(() => HandleEntityComponentChangedInECS(sender, e));
+        };
 
         // World Events
-        this._world.ChunkUpdated += HandleWorldChunkUpdates;
+        this._world.ChunkUpdated += (sender, e) =>
+        {
+            Task.Run(() => HandleWorldChunkUpdates(sender, e));
+        };
     }
 
     public void SendEntityUpdatePacketsWithCNType(Connection connection, CNType cnType, NDirection direction, Action<List<UpdateEntitiesPacket>> sendAction)
@@ -320,22 +324,24 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
     public void HandleEntityAddedToECS(object sender, EntityAddedEventArgs e)
     {
-        this._connections.LockedAction((conns) =>
-        {
-            List<UpdateEntitiesPacket> packets = Utilities.CreateEntityUpdatePackets(CNType.Update | CNType.Snapshot, NDirection.ClientToServer | NDirection.ServerToClient, e.Entity);
+        // List<Connection> conns = this._connections.LockedAction((conns) =>
+        // {
+        //     return conns.ToList();
+        // });
 
-            this._playersVisibleEntities.LockedAction((pve) =>
-            {
-                foreach (UpdateEntitiesPacket packet in packets)
-                {
-                    foreach (var conn in conns.Where(x => this._playerFullyConnected[x]))
-                    {
-                        if (pve[conn].Contains(e.Entity))
-                            this.EnqueuePacket(packet, conn, true, false);
-                    }
-                }
-            });
-        });
+        // List<UpdateEntitiesPacket> packets = Utilities.CreateEntityUpdatePackets(CNType.Update | CNType.Snapshot, NDirection.ClientToServer | NDirection.ServerToClient, e.Entity);
+
+        // this._playersVisibleEntities.LockedAction((pve) =>
+        // {
+        //     foreach (UpdateEntitiesPacket packet in packets)
+        //     {
+        //         foreach (var conn in conns.Where(x => this._playerFullyConnected[x]))
+        //         {
+        //             if (pve[conn].Contains(e.Entity))
+        //                 this.EnqueuePacket(packet, conn, true, false);
+        //         }
+        //     }
+        // });
     }
 
     public void CreateEntitiesOnClient(Connection connection, params Entity[] entities)
@@ -344,7 +350,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
         foreach (UpdateEntitiesPacket packet in packets)
         {
-            this.EnqueuePacket(packet, connection, true, true);
+            this.EnqueuePacket(packet, connection, true, false);
         }
     }
 
@@ -353,7 +359,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         foreach (Entity e in entities)
         {
             DestroyEntityPacket dep = new DestroyEntityPacket(e.ID);
-            this.EnqueuePacket(dep, connection, true, true);
+            this.EnqueuePacket(dep, connection, true, false);
         }
     }
 

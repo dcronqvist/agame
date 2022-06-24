@@ -43,6 +43,8 @@ public class ScreenSelectWorld : Screen<EnterSelectWorldArgs>
 
     }
 
+    string _newWorldName = "";
+
     public override void Render()
     {
         Renderer.SetRenderTarget(null, null);
@@ -54,9 +56,17 @@ public class ScreenSelectWorld : Screen<EnterSelectWorldArgs>
         Vector2 middleOfScreen = DisplayManager.GetWindowSizeInPixels() / 2f;
         Vector2 bottomLeft = new Vector2(0, DisplayManager.GetWindowSizeInPixels().Y);
 
+        GUI.TextField("world name...", new Vector2(middleOfScreen.X - 100, 20), new Vector2(200, 50), ref _newWorldName);
+
+        if (GUI.Button("Create World", new Vector2(middleOfScreen.X - 100, 90), new Vector2(200, 50)))
+        {
+            WorldManager.Instance.CreateNewWorld(_newWorldName, "CoolWorldGenerator");
+            WorldManager.Instance.LoadWorlds();
+        }
+
         for (int i = 0; i < worlds.Length; i++)
         {
-            if (GUI.Button(worlds[i].Name + " " + worlds[i].CreatedAt.ToShortDateString(), new Vector2(middleOfScreen.X - 200f, middleOfScreen.Y + i * 50f), new Vector2(400f, 40f)))
+            if (GUI.Button(worlds[i].Name + " " + worlds[i].LastPlayedAt.ToShortDateString(), new Vector2(middleOfScreen.X - 200f, middleOfScreen.Y + i * 50f), new Vector2(400f, 40f)))
             {
                 //_ = this.PlaySinglePlayerWorldAsync(worlds[i], "TestPlayer");
                 this._onWorldSelected?.Invoke(worlds[i]);

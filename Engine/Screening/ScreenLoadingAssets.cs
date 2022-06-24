@@ -15,7 +15,7 @@ public class EnterLoadingAssetsArgs : ScreenEnterArgs
 
 public class ScreenLoadingAssets : Screen<EnterLoadingAssetsArgs>
 {
-    private string _windowIconTexture = "tex_marsdirt";
+    private string _windowIconTexture = "tex_pine_tree";
     private string _currentLoadingAsset = "";
     private bool _allAssetsLoaded = false;
 
