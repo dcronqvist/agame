@@ -17,6 +17,11 @@ Copy-Item -r ./libs/win/* ./bin/Release/net6.0/win-x64/publish/ -Force
 New-Item -ItemType Directory -Force ./publish
 
 $filename = $args[0]
+$startUpHelp = $args[1]
+
+# Create new text file with the startup help text in it
+New-Item -ItemType File -Path "./bin/Release/net6.0/win-x64/publish/STARTUP_HELP.txt" -Force
+Set-Content -Path "./bin/Release/net6.0/win-x64/publish/STARTUP_HELP.txt" -Value $startUpHelp
 
 $compress = @{
     Path             = "./bin/Release/net6.0/win-x64/publish/*"
