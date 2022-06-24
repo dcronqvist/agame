@@ -16,6 +16,7 @@ public class GameServerConfiguration
     public int Port { get; set; }
     public int MaxClients { get; set; }
     public bool OnlyAllowLocalConnections { get; set; }
+    public float EntityViewDistance { get; set; }
 }
 
 public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
@@ -210,7 +211,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             {
                 pve.Add(connection, new List<Entity>());
 
-                pve[connection] = this.GetEntitiesInRangeOfPlayer(connection, 10);
+                pve[connection] = this.GetEntitiesInRangeOfPlayer(connection, this._config.EntityViewDistance);
             });
 
             // Send the entire ECS to the client so that they can reconstruct the world state
@@ -411,7 +412,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                         foreach (Connection conn in conns.Where(x => this._playerFullyConnected[x]))
                         {
                             List<Entity> oldInRange = pve[conn];
-                            List<Entity> inRange = this.GetEntitiesInRangeOfPlayer(conn, 10);
+                            List<Entity> inRange = this.GetEntitiesInRangeOfPlayer(conn, this._config.EntityViewDistance);
                             pve[conn] = inRange;
 
                             List<Entity> newInRange = inRange.Except(oldInRange).ToList();

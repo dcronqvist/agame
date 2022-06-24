@@ -95,20 +95,38 @@ public class Chunk : IPacketable
             bytes.AddRange(BitConverter.GetBytes(groundGrid[i]));
         }
 
+        byte[] encodedBuffer = Utilities.RunLengthEncode(bytes.ToArray());
+        bytes = new List<byte>();
+
+        bytes.AddRange(BitConverter.GetBytes(encodedBuffer.Length));
+        bytes.AddRange(encodedBuffer);
+
         return bytes.ToArray();
     }
 
     public int Populate(byte[] data, int offset)
     {
         int startOffset = offset;
-        int x = BitConverter.ToInt32(data, offset);
-        int y = BitConverter.ToInt32(data, offset + 4);
+
+        int length = BitConverter.ToInt32(data, offset);
+        offset += sizeof(int);
+        List<byte> bytes = new List<byte>();
+
+        for (int i = 0; i < length; i++)
+        {
+            bytes.Add(data[offset + i]);
+        }
+
+        byte[] decodedBuffer = Utilities.RunLengthDecode(bytes.ToArray());
+
+        int x = BitConverter.ToInt32(decodedBuffer, 0);
+        int y = BitConverter.ToInt32(decodedBuffer, 4);
 
         int[] groundGrid = new int[CHUNK_SIZE * CHUNK_SIZE];
 
         for (int i = 0; i < groundGrid.Length; i++)
         {
-            groundGrid[i] = BitConverter.ToInt32(data, offset + 8 + (i * 4));
+            groundGrid[i] = BitConverter.ToInt32(decodedBuffer, 8 + (i * 4));
         }
 
         int[,] grid = new int[CHUNK_SIZE, CHUNK_SIZE];
@@ -126,7 +144,7 @@ public class Chunk : IPacketable
         this.X = x;
         this.Y = y;
 
-        return offset - startOffset;
+        return length + sizeof(int);
     }
 
     public void Render()

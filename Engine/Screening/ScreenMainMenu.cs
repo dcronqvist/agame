@@ -67,7 +67,8 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
                     {
                         MaxClients = 1,
                         OnlyAllowLocalConnections = true,
-                        Port = Utilities.GetRandomInt(10000, 50000)
+                        Port = 28000,
+                        EntityViewDistance = 20
                     };
 
                     GameServer gameServer = new GameServer(serverECS, container, world, config);

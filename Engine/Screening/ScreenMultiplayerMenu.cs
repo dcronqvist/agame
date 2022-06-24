@@ -53,7 +53,8 @@ public class ScreenMultiplayerMenu : Screen<EnterMultiplayerMenuArgs>
                     {
                         MaxClients = 20,
                         OnlyAllowLocalConnections = false,
-                        Port = 28000
+                        Port = 28000,
+                        EntityViewDistance = 20
                     };
 
                     GameServer gameServer = new GameServer(serverECS, container, world, config);

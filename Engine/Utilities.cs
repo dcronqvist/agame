@@ -333,6 +333,52 @@ namespace AGame.Engine
 
             return packets;
         }
+
+        public static byte[] RunLengthEncode(byte[] buffer)
+        {
+            List<byte> output = new List<byte>();
+            byte last = buffer[0];
+            int count = 1;
+            for (int i = 1; i < buffer.Length; i++)
+            {
+                if (count == 255)
+                {
+                    output.Add(last);
+                    output.Add((byte)count);
+                    count = 1;
+                }
+
+                if (buffer[i] == last)
+                {
+                    count++;
+                }
+                else
+                {
+                    output.Add(last);
+                    output.Add((byte)count);
+                    last = buffer[i];
+                    count = 1;
+                }
+            }
+            output.Add(last);
+            output.Add((byte)count);
+            return output.ToArray();
+        }
+
+        public static byte[] RunLengthDecode(byte[] encodedBuffer)
+        {
+            List<byte> output = new List<byte>();
+            for (int i = 0; i < encodedBuffer.Length; i += 2)
+            {
+                byte b = encodedBuffer[i];
+                int count = encodedBuffer[i + 1];
+                for (int j = 0; j < count; j++)
+                {
+                    output.Add(b);
+                }
+            }
+            return output.ToArray();
+        }
     }
 
     public struct Vector2i : IPacketable
