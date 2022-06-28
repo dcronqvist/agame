@@ -16,6 +16,7 @@ public class EnterPlayingWorldArgs : ScreenEnterArgs
 {
     public GameServer Server { get; set; } = null;
     public GameClient Client { get; set; } = null;
+    public int PlayerEntityID { get; set; } = -1;
 }
 
 public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
@@ -106,23 +107,13 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             }
             GUI.End();
         }
-
-        // Renderer.SetRenderTarget(null, null);
-        // Font f = AssetManager.GetAsset<Font>("font_rainyhearts");
-
-        // Vector2 top = new Vector2(20, 20);
-        // for (int i = this._receivedPackets.Count - 1; i > 0; i--)
-        // {
-        //     // Start at the top of the screen and move down, 0th index always at the top
-        //     Vector2 pos = top + new Vector2(0, (this._receivedPackets.Count - 1 - i) * 20);
-        //     Packet p = this._receivedPackets[i];
-
-        //     Renderer.Text.RenderText(f, p.ToString(), pos, 1.2f, ColorF.White, Renderer.Camera);
-        // }
     }
 
     public override void Update()
     {
+        // Set audio's listener's position to player's position
+        Audio.SetListenerPosition(this._client.GetPlayerEntity().GetComponent<TransformComponent>().Position);
+
         this._server?.Update();
         this._client.Update(this.Camera, !this._paused);
 

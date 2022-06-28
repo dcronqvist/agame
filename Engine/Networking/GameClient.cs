@@ -38,6 +38,11 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         this.RegisterClientEventHandlers();
     }
 
+    public int GetPlayerEntityID()
+    {
+        return this._playerEntityId;
+    }
+
     public void Initialize(ECS ecs, WorldContainer world)
     {
         this._ecs = new ThreadSafe<ECS>(ecs);

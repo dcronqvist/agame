@@ -18,6 +18,7 @@ public class TestSystem : BaseSystem
         this.RegisterComponentType<TransformComponent>();
         this.RegisterComponentType<KeyboardInputComponent>();
         this.RegisterComponentType<MouseInputComponent>();
+        this.RegisterComponentType<AudioComponent>();
     }
 
     public override void Render(List<Entity> entities, WorldContainer gameWorld)
@@ -35,6 +36,7 @@ public class TestSystem : BaseSystem
             TransformComponent transform = entity.GetComponent<TransformComponent>();
             KeyboardInputComponent keyboard = entity.GetComponent<KeyboardInputComponent>();
             MouseInputComponent mouse = entity.GetComponent<MouseInputComponent>();
+            AudioComponent audio = entity.GetComponent<AudioComponent>();
 
             Vector2 movement = new Vector2(0, 0);
             Vector2i tilePos = transform.Position.ToTileAligned();
@@ -66,6 +68,7 @@ public class TestSystem : BaseSystem
             {
                 if (keyboard.IsKeyDown(KeyboardInputComponent.KEY_SHIFT))
                 {
+                    audio.EnqueueAudio("audio_click");
                     gameWorld.UpdateTile((int)tilePos.X, (int)tilePos.Y, "game:grass");
                 }
                 else

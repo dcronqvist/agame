@@ -15,6 +15,9 @@
 		},
 		{
 			"componentType": "PlayerInfo"
+		},
+		{
+			"componentType": "Audio"
 		}
 	]
 }

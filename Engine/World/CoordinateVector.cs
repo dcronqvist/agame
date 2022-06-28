@@ -5,6 +5,8 @@ namespace AGame.Engine.World;
 
 public struct CoordinateVector
 {
+    public static readonly CoordinateVector Zero = new CoordinateVector(0, 0);
+
     public float X { get; set; }
     public float Y { get; set; }
 

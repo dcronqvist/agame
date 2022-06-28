@@ -46,6 +46,6 @@ public class ComponentNetworkingAttribute : Attribute
 
     public bool Has(CNType type, NDirection direction)
     {
-        return type.HasFlag(this.Type) && direction.HasFlag(this.Direction);
+        return (type.HasFlag(this.Type) || this.Type.HasFlag(type)) && (direction.HasFlag(this.Direction) || this.Direction.HasFlag(direction));
     }
 }
