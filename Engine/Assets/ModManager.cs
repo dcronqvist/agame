@@ -29,6 +29,11 @@ public class AssetFailedLoadEventArgs : EventArgs
     public ModContainer Mod { get; set; }
 }
 
+public class OverwroteAssetEventArgs : EventArgs
+{
+    public ModOverwriteDefinition Overwrite { get; set; }
+}
+
 public static class ModManager
 {
     private static string _modsFolder => $"{Utilities.GetExecutableDirectory()}/mods";
@@ -43,6 +48,7 @@ public static class ModManager
     public static event EventHandler<EventArgs> AllCoreAssetsLoaded;
     public static event EventHandler<EventArgs> AllNonCoreAssetsLoaded;
     public static event EventHandler<EventArgs> AllAssetsFinalized;
+    public static event EventHandler<OverwroteAssetEventArgs> OverwroteAsset;
 
     public static void Init()
     {
@@ -106,6 +112,7 @@ public static class ModManager
                 {
                     _assets[def.Original] = _assets[def.New];
                     _assets.Remove(def.New);
+                    OverwroteAsset?.Invoke(null, new OverwroteAssetEventArgs() { Overwrite = def });
                 }
             }
         }

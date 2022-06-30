@@ -27,6 +27,8 @@ namespace AGame.Engine
         public override void Initialize(string[] args)
         {
             ECS.Instance.Value.Initialize(SystemRunner.Client);
+            //Logging.AddLogStream(new FileLogger("log.txt"));
+            Logging.AddLogStream(new ConsoleLogger());
         }
 
         public override void LoadContent(string[] args)
@@ -38,15 +40,7 @@ namespace AGame.Engine
                 glViewport(0, 0, (int)size.X, (int)size.Y);
             };
 
-            // AssetManager.OnFinalizeEnd += (sender, e) =>
-            // {
-            //     ScriptingManager.LoadScripts();
-            //     GameConsole.LoadCommands();
-
-            //     TileManager.Init();
-            //     Utilities.InitRNG();
-            // };
-            ModManager.AllNonCoreAssetsLoaded += (sender, e) =>
+            ModManager.AllAssetsFinalized += (sender, e) =>
             {
                 ScriptingManager.LoadScripts();
                 GameConsole.LoadCommands();
@@ -58,6 +52,17 @@ namespace AGame.Engine
             ModManager.AssetLoaded += (sender, e) =>
             {
                 _lastAssetLoaded = e.Asset.Name;
+                Logging.Log(LogLevel.Info, $"Loaded asset {e.Asset.Name}");
+            };
+
+            ModManager.AssetFailedLoad += (sender, e) =>
+            {
+                Logging.Log(LogLevel.Error, $"Failed to load asset {e.FailedAsset.FileName} in mod {e.Mod.Name}");
+            };
+
+            ModManager.OverwroteAsset += (sender, e) =>
+            {
+                Logging.Log(LogLevel.Info, $"Overwrote asset {e.Overwrite.Original} with {e.Overwrite.New}");
             };
 
             ModManager.AllCoreAssetsLoaded += (sender, e) =>
@@ -69,20 +74,6 @@ namespace AGame.Engine
                 _coreLoaded = true;
             };
 
-            // AssetManager.OnAssetStartLoad += (sender, e) =>
-            // {
-            //     _lastAssetLoaded = e;
-            // };
-
-            // AssetManager.OnAllCoreAssetsLoaded += (sender, e) =>
-            // {
-            //     Renderer.Init();
-            //     ScreenManager.Init(args);
-            //     Localization.Init(Settings.GetSetting<string>("locale"));
-            //     GUI.Init();
-            //     _coreLoaded = true;
-            // };
-
             glEnable(GL_BLEND);
             glDisable(GL_DEPTH_TEST);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -91,7 +82,6 @@ namespace AGame.Engine
 
             Settings.LoadSettings();
 
-            //_ = AssetManager.LoadAllAssetsAsync();
             ModManager.Init();
             _ = ModManager.LoadAllModsAsync();
         }

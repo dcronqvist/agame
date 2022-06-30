@@ -1,0 +1,23 @@
+{
+	"components": [
+		{
+			"componentType": "Sprite",
+			"texture": "testmod.tex.sk"
+		},
+		{
+			"componentType": "Transform"
+		},
+		{
+			"componentType": "KeyboardInput"
+		},
+		{
+			"componentType": "MouseInput"
+		},
+		{
+			"componentType": "PlayerInfo"
+		},
+		{
+			"componentType": "Audio"
+		}
+	]
+}
