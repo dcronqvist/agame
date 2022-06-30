@@ -13,9 +13,9 @@ class LocaleLoader : IAssetLoader
         return "locale";
     }
 
-    public Asset LoadAsset(string filePath)
+    public Asset LoadAsset(Stream fileStream)
     {
-        using (StreamReader sr = new StreamReader(filePath))
+        using (StreamReader sr = new StreamReader(fileStream))
         {
             string text = sr.ReadToEnd();
 

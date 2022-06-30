@@ -22,18 +22,18 @@ namespace AGame.Engine.Graphics.Rendering
 
         public static void Init()
         {
-            Shader textRendererShader = AssetManager.GetAsset<Shader>("shader_basictext");
+            Shader textRendererShader = ModManager.GetAsset<Shader>("default.shader.basictext");
             Text = new TextRenderer(textRendererShader);
-            Shader textureShader = AssetManager.GetAsset<Shader>("shader_texture");
+            Shader textureShader = ModManager.GetAsset<Shader>("default.shader.texture");
             Texture = new TextureRenderer(textureShader);
-            Shader primitiveShader = AssetManager.GetAsset<Shader>("shader_primitives");
+            Shader primitiveShader = ModManager.GetAsset<Shader>("default.shader.primitives");
             Primitive = new PrimitiveRenderer(primitiveShader);
 
             DefaultCamera = new Camera2D(DisplayManager.GetWindowSizeInPixels() / 2.0f, 1.0f);
             Camera = DefaultCamera;
 
             ClearColor = ColorF.Black;
-            renderTextureShader = AssetManager.GetAsset<Shader>("shader_render_texture");
+            renderTextureShader = ModManager.GetAsset<Shader>("default.shader.render_texture");
         }
 
         public static void SetRenderTarget(RenderTexture renderTexture, Camera2D camera2D)

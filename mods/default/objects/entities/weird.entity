@@ -2,7 +2,7 @@
 	"components": [
 		{
 			"componentType": "Sprite",
-			"texture": "tex_player"
+			"texture": "default.tex.player"
 		},
 		{
 			"componentType": "Transform"

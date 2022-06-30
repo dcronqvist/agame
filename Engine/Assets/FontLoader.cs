@@ -11,9 +11,14 @@ namespace AGame.Engine.Assets
             return "font";
         }
 
-        public Asset LoadAsset(string filePath)
+        public Asset LoadAsset(Stream fileStream)
         {
-            return new Font(filePath, 16, Font.FontFilter.NearestNeighbour, Font.FontFilter.NearestNeighbour);
+            using (BinaryReader br = new BinaryReader(fileStream))
+            {
+                // Gather all bytes from binary reader
+                byte[] data = br.ReadBytes((int)fileStream.Length);
+                return new Font(data, 16, Font.FontFilter.NearestNeighbour, Font.FontFilter.NearestNeighbour);
+            }
         }
     }
 }

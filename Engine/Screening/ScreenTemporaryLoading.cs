@@ -33,7 +33,7 @@ public class ScreenTemporaryLoading : Screen<EnterTemporaryLoading>
         Renderer.SetRenderTarget(null, null);
         Renderer.Clear(ColorF.Black);
 
-        Renderer.Text.RenderText(AssetManager.GetAsset<Font>("font_rainyhearts"), this._text, new Vector2(100, 100), 3f, ColorF.White, Renderer.Camera);
+        Renderer.Text.RenderText(ModManager.GetAsset<Font>("default.font.rainyhearts"), this._text, new Vector2(100, 100), 3f, ColorF.White, Renderer.Camera);
     }
 
     public override void Update()

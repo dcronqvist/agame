@@ -64,6 +64,20 @@ namespace AGame.Engine.Assets
             return this.pixelData;
         }
 
+        public static Texture2D FromData(byte[] data)
+        {
+            ImageResult imageResult = ImageResult.FromMemory(data, ColorComponents.RedGreenBlueAlpha);
+            return new Texture2D(imageResult.Width, imageResult.Height, imageResult.Data);
+        }
+
+        public static Texture2D FromStream(Stream stream)
+        {
+            // ImageResult for loading texture data
+            ImageResult imageResult = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
+
+            return new Texture2D(imageResult.Width, imageResult.Height, imageResult.Data);
+        }
+
         public static bool TryLoadFromFile(string file, out Texture2D tex)
         {
             try

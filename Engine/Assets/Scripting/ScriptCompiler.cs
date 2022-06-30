@@ -17,9 +17,9 @@ namespace AGame.Engine.Assets.Scripting
 {
     internal class ScriptCompiler
     {
-        public byte[] Compile(string filepath, out string[] errorMsgs)
+        public byte[] Compile(string code, out string[] errorMsgs)
         {
-            var sourceCode = File.ReadAllText(filepath);
+            var sourceCode = code;
 
             using (var peStream = new MemoryStream())
             {
@@ -50,7 +50,7 @@ namespace AGame.Engine.Assets.Scripting
         private static CSharpCompilation GenerateCode(string sourceCode)
         {
             var codeString = SourceText.From(sourceCode);
-            var options = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp9);
+            var options = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Latest);
 
             var parsedSyntaxTree = SyntaxFactory.ParseSyntaxTree(codeString, options);
 

@@ -8,35 +8,30 @@ namespace AGame.Engine.Assets
 {
     class ShaderLoader : IAssetLoader
     {
-        class ShaderAssetDescription
-        {
-            public string vertexShaderFile;
-            public string fragmentShaderFile;
-
-            public ShaderAssetDescription()
-            {
-                this.vertexShaderFile = "";
-                this.fragmentShaderFile = "";
-            }
-        }
-
         public string AssetPrefix()
         {
             return "shader";
         }
 
-        public Asset LoadAsset(string filePath)
+        // Get the contained substring of a source string between two delimiters. 
+        // Delimiters are not included in the result
+        private string GetSubstringContainedWithin(string source, string startTag, string endTag)
         {
-            using (StreamReader sr = new StreamReader(filePath))
+            int startIndex = source.IndexOf(startTag) + startTag.Length;
+            int endIndex = source.IndexOf(endTag);
+            return source.Substring(startIndex, endIndex - startIndex);
+        }
+
+        public Asset LoadAsset(Stream fileStream)
+        {
+            using (StreamReader sr = new StreamReader(fileStream))
             {
-                ShaderAssetDescription sad = JsonConvert.DeserializeObject<ShaderAssetDescription>(sr.ReadToEnd());
+                string text = sr.ReadToEnd();
 
-                string pathOfShaderFile = Path.GetDirectoryName(filePath);
+                string vertexShader = GetSubstringContainedWithin(text, "#VERTEX_SHADER_BEGIN", "#VERTEX_SHADER_END");
+                string fragmentShader = GetSubstringContainedWithin(text, "#FRAGMENT_SHADER_BEGIN", "#FRAGMENT_SHADER_END");
 
-                string vsFile = pathOfShaderFile + $"/{sad.vertexShaderFile}";
-                string fsFile = pathOfShaderFile + $"/{sad.fragmentShaderFile}";
-
-                Shader s = new Shader(File.ReadAllText(vsFile), File.ReadAllText(fsFile));
+                Shader s = new Shader(vertexShader, fragmentShader);
 
                 return s;
             }

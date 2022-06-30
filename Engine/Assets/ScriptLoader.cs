@@ -14,19 +14,22 @@ namespace AGame.Engine.Assets
             return "script";
         }
 
-        public Asset LoadAsset(string filePath)
+        public Asset LoadAsset(Stream fileStream)
         {
-            ScriptCompiler sc = new ScriptCompiler();
-            byte[] iass = sc.Compile(filePath, out string[] errorMsgs);
-            if (errorMsgs.Length > 0)
+            using (StreamReader sr = new StreamReader(fileStream))
             {
-                // This failed to load the script.
-                throw new Exception(string.Join("\n", errorMsgs));
-            }
+                ScriptCompiler sc = new ScriptCompiler();
+                byte[] iass = sc.Compile(sr.ReadToEnd(), out string[] errorMsgs);
+                if (errorMsgs.Length > 0)
+                {
+                    // This failed to load the script.
+                    throw new Exception(string.Join("\n", errorMsgs));
+                }
 
-            //Assembly assembly = Assembly.LoadFile(filePath);
-            Assembly assembly = Assembly.Load(iass);
-            return new Script(assembly, Path.GetFileNameWithoutExtension(filePath));
+                //Assembly assembly = Assembly.LoadFile(filePath);
+                Assembly assembly = Assembly.Load(iass);
+                return new Script(assembly);
+            }
         }
     }
 }

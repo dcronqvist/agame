@@ -52,7 +52,7 @@ namespace AGame.Engine.World
                     matrices.Add(matrix);
                 }
 
-                TileIDToRenderer.Add(kvp.Key, new DynamicInstancedTextureRenderer(AssetManager.GetAsset<Shader>("shader_texture"), TileManager.GetTileFromID(kvp.Key).GetTexture(), new RectangleF(0, 0, 16, 16), matrices.ToArray()));
+                TileIDToRenderer.Add(kvp.Key, new DynamicInstancedTextureRenderer(ModManager.GetAsset<Shader>("default.shader.texture"), TileManager.GetTileFromID(kvp.Key).GetTexture(), new RectangleF(0, 0, 16, 16), matrices.ToArray()));
             }
         }
 
@@ -115,7 +115,7 @@ namespace AGame.Engine.World
 
             if (!this.TileIDToRenderer.ContainsKey(tileID))
             {
-                this.TileIDToRenderer.Add(tileID, new DynamicInstancedTextureRenderer(AssetManager.GetAsset<Shader>("shader_texture"), TileManager.GetTileFromID(tileID).GetTexture(), new RectangleF(0, 0, 16, 16), new Matrix4x4[] { modelMatrix }));
+                this.TileIDToRenderer.Add(tileID, new DynamicInstancedTextureRenderer(ModManager.GetAsset<Shader>("default.shader.texture"), TileManager.GetTileFromID(tileID).GetTexture(), new RectangleF(0, 0, 16, 16), new Matrix4x4[] { modelMatrix }));
             }
             else
             {

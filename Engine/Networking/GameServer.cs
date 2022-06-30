@@ -194,7 +194,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         _ecs.LockedAction((ecs) =>
         {
             // Create a new entity for the player
-            newPlayer = ecs.CreateEntityFromAsset("entity_player");
+            newPlayer = ecs.CreateEntityFromAsset("default.entity.player");
         });
 
         // Assign the new entity's ID to this connection

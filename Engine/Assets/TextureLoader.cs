@@ -11,15 +11,13 @@ namespace AGame.Engine.Assets
             return "tex";
         }
 
-        public Asset LoadAsset(string filePath)
+        public Asset LoadAsset(Stream fileStream)
         {
-            if (Texture2D.TryLoadFromFile(filePath, out Texture2D tex))
+            using (MemoryStream ms = new MemoryStream())
             {
-                return tex;
-            }
-            else
-            {
-                throw new Exception("Failed to load texture from file: " + filePath);
+                fileStream.CopyTo(ms);
+
+                return Texture2D.FromStream(ms);
             }
         }
     }

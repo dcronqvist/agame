@@ -15,7 +15,7 @@ public class EnterLoadingAssetsArgs : ScreenEnterArgs
 
 public class ScreenLoadingAssets : Screen<EnterLoadingAssetsArgs>
 {
-    private string _windowIconTexture = "tex_pine_tree";
+    private string _windowIconTexture = "default.tex.pine_tree";
     private string _currentLoadingAsset = "";
     private bool _allAssetsLoaded = false;
 
@@ -27,14 +27,14 @@ public class ScreenLoadingAssets : Screen<EnterLoadingAssetsArgs>
     public override void OnEnter(EnterLoadingAssetsArgs args)
     {
         _currentLoadingAsset = Localization.GetString("screen.loading_assets.subtitle", ("asset_name", args.FinalCoreAsset)); // Get the last loaded texture from ImplGame
-        DisplayManager.SetWindowIcon(AssetManager.GetAsset<Texture2D>(_windowIconTexture));
+        DisplayManager.SetWindowIcon(ModManager.GetAsset<Texture2D>(_windowIconTexture));
 
-        AssetManager.OnAssetStartLoad += (sender, e) =>
+        ModManager.AssetLoaded += (sender, e) =>
         {
-            _currentLoadingAsset = Localization.GetString("screen.loading_assets.subtitle", ("asset_name", e));
+            _currentLoadingAsset = Localization.GetString("screen.loading_assets.subtitle", ("asset_name", e.Asset.Name));
         };
 
-        AssetManager.OnAllAssetsLoaded += (sender, e) =>
+        ModManager.AllNonCoreAssetsLoaded += (sender, e) =>
         {
             _allAssetsLoaded = true;
         };
@@ -50,7 +50,7 @@ public class ScreenLoadingAssets : Screen<EnterLoadingAssetsArgs>
         if (_allAssetsLoaded)
         {
             Audio.Init();
-            AssetManager.FinalizeAssets();
+            ModManager.FinalizeAllAssets();
             ScreenManager.GoToScreen<ScreenMainMenu, EnterMainMenuArgs>(new EnterMainMenuArgs());
         }
     }
@@ -58,7 +58,7 @@ public class ScreenLoadingAssets : Screen<EnterLoadingAssetsArgs>
     public override void Render()
     {
         Renderer.Clear(ColorF.Black);
-        Font coreFont = AssetManager.GetAsset<Font>("font_rainyhearts");
+        Font coreFont = ModManager.GetAsset<Font>("default.font.rainyhearts");
 
         Vector2 middleOfScreen = DisplayManager.GetWindowSizeInPixels() / 2.0f;
 
@@ -67,7 +67,7 @@ public class ScreenLoadingAssets : Screen<EnterLoadingAssetsArgs>
         Renderer.Text.RenderText(coreFont, topText, topTextPos, 1.0f, ColorF.White, Renderer.Camera);
 
         int loadbarLength = 80;
-        int hashtagAmount = (int)(AssetManager.LoadedPercentage * loadbarLength);
+        int hashtagAmount = (int)(1f * loadbarLength);
         string hashtags = "#".Repeat(hashtagAmount);
         string loadBar = hashtags + "_".Repeat(loadbarLength - hashtagAmount);
         Vector2 loadBarPos = (middleOfScreen - coreFont.MeasureString(loadBar, 1.0f) / 2.0f).Round();

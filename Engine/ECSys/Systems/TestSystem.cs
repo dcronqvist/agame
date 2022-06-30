@@ -68,12 +68,12 @@ public class TestSystem : BaseSystem
             {
                 if (keyboard.IsKeyDown(KeyboardInputComponent.KEY_SHIFT))
                 {
-                    audio.EnqueueAudio("audio_click");
+                    audio.EnqueueAudio("default.audio.click");
                     gameWorld.UpdateTile((int)tilePos.X, (int)tilePos.Y, "game:grass");
                 }
                 else
                 {
-                    Entity e = base.ParentECS.CreateEntityFromAsset("entity_weird");
+                    Entity e = base.ParentECS.CreateEntityFromAsset("default.entity.weird");
                     e.GetComponent<TransformComponent>().Position = transform.Position;
                 }
             }

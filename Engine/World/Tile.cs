@@ -38,7 +38,7 @@ public class Tile
         return TileManager.GetTileIDFromName(this.Name);
     }
 
-    public Texture2D GetTexture() => AssetManager.GetAsset<Texture2D>(this.Texture);
+    public Texture2D GetTexture() => ModManager.GetAsset<Texture2D>(this.Texture);
 }
 
 public class GroundTile : Tile

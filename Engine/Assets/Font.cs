@@ -37,10 +37,6 @@ namespace AGame.Engine.Assets
         /// </summary>
         public Dictionary<char, FontCharacter> Characters { get; set; }
         /// <summary>
-        /// Which file that was used to load this font.
-        /// </summary>
-        public string TTFFile { get; set; }
-        /// <summary>
         /// Which font size this font is.
         /// </summary>
         public uint Size { get; set; }
@@ -59,17 +55,19 @@ namespace AGame.Engine.Assets
 
         public float MaxY { get; private set; }
 
-        public Font(string ttfFile, uint size, FontFilter magFilter, FontFilter minFilter)
+        public byte[] Data { get; private set; }
+
+        public Font(byte[] data, uint size, FontFilter magFilter, FontFilter minFilter)
         {
             this.Characters = new Dictionary<char, FontCharacter>();
-            this.TTFFile = ttfFile;
             this.Size = size;
+            this.Data = data;
 
             this.MagFilter = magFilter;
             this.MinFilter = minFilter;
         }
 
-        private void Load()
+        private unsafe void Load()
         {
             // Have to init the freetype2 lib.
             this.Lib = new FreeTypeLibrary();
@@ -81,7 +79,11 @@ namespace AGame.Engine.Assets
             IntPtr aFace;
 
             // Init the font using FreeType2
-            FT_New_Face(Lib.Native, TTFFile, 0, out aFace);
+            //FT_New_Face(Lib.Native, TTFFile, 0, out aFace);
+            fixed (byte* ptr = &this.Data[0])
+            {
+                FT_New_Memory_Face(Lib.Native, new IntPtr(ptr), this.Data.Length, 0, out aFace);
+            }
             // Set font size
             FT_Set_Pixel_Sizes(aFace, 0, Size);
             // Then create facade for getting all the data.

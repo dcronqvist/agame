@@ -109,7 +109,7 @@ public class Audio : Asset
 
     public static void Play(string audioName, float pitch = 1.0f)
     {
-        Audio audio = AssetManager.GetAsset<Audio>(audioName);
+        Audio audio = ModManager.GetAsset<Audio>(audioName);
         audio.Play(pitch);
     }
 

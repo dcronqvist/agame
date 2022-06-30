@@ -11,7 +11,7 @@ public class EntityLoader : IAssetLoader
         return "entity";
     }
 
-    public Asset LoadAsset(string filePath)
+    public Asset LoadAsset(Stream fileStream)
     {
         // Assume a JSON description of the entity
         JsonSerializerOptions options = new JsonSerializerOptions
@@ -22,7 +22,7 @@ public class EntityLoader : IAssetLoader
             AllowTrailingCommas = true
         };
 
-        using (StreamReader sr = new StreamReader(filePath))
+        using (StreamReader sr = new StreamReader(fileStream))
         {
             string json = sr.ReadToEnd();
             EntityDescription ed = JsonSerializer.Deserialize<EntityDescription>(json, options);

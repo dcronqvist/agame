@@ -1,8 +1,8 @@
 namespace AGame.Engine.Assets
 {
-    interface IAssetLoader
+    public interface IAssetLoader
     {
-        Asset LoadAsset(string filePath);
+        Asset LoadAsset(Stream fileStream);
         string AssetPrefix();
     }
 }

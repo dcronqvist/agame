@@ -19,7 +19,7 @@ namespace AGame.Engine.World
         public static void Init()
         {
             // Get all tiles from the assetmanager
-            TileDescription[] descriptions = AssetManager.GetAssetsOfType<TileDescription>().ToArray();
+            TileDescription[] descriptions = ModManager.GetAssetsOfType<TileDescription>().ToArray();
 
 
             foreach (TileDescription td in descriptions)

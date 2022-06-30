@@ -122,7 +122,7 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
         string[] localeNames = locales.Select(x => x.LocaleName).ToArray();
         if (GUI.Dropdown(localeNames, new Vector2(20, 20), new Vector2(200, 40), ref currentLocale))
         {
-            Localization.SetLocale(locales[currentLocale].Name, prepend: false);
+            Localization.SetLocale(locales[currentLocale].Name);
         }
         GUI.End();
     }

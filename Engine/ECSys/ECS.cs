@@ -1,5 +1,6 @@
 using System.Linq;
 using AGame.Engine.Assets;
+using AGame.Engine.Assets.Scripting;
 using AGame.Engine.DebugTools;
 using AGame.Engine.ECSys.Systems;
 using AGame.Engine.Networking;
@@ -61,6 +62,7 @@ public class ECS
     public void RegisterAllSystems()
     {
         this._systems.Clear();
+        //List<Type> systems = ScriptingManager.GetAllTypesWithBaseType<BaseSystem>().ToList();
         List<Type> systems = Utilities.FindDerivedTypes(typeof(BaseSystem)).Where(x => x != typeof(BaseSystem)).ToList();
 
         foreach (Type systemType in systems)
@@ -74,8 +76,8 @@ public class ECS
         this._componentTypes.Clear();
         this._componentTypeIDs.Clear();
 
-        Type[] componentTypes = Utilities.FindDerivedTypes(typeof(Component)).ToArray();
-        componentTypes = componentTypes.OrderBy(t => t.Name).ToArray();
+        Type[] componentTypes = Utilities.FindDerivedTypes(typeof(Component)).Where(x => x != typeof(Component)).ToArray();
+        componentTypes = componentTypes.OrderBy(t => t.Name).DistinctBy(x => x.Name).ToArray();
 
         for (int i = 0; i < componentTypes.Length; i++)
         {
@@ -186,7 +188,7 @@ public class ECS
 
     public Entity CreateEntityFromAsset(string assetName)
     {
-        EntityDescription ed = AssetManager.GetAsset<EntityDescription>(assetName);
+        EntityDescription ed = ModManager.GetAsset<EntityDescription>(assetName);
 
         Entity entity = new Entity(_nextEntityID++);
 

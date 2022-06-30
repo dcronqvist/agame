@@ -41,7 +41,7 @@ public class AudioSystem : BaseSystem
             if (audioComponent.HasAudio())
             {
                 string audio = audioComponent.DequeueAudio();
-                Audio asset = AssetManager.GetAsset<Audio>(audio);
+                Audio asset = ModManager.GetAsset<Audio>(audio);
                 TransformComponent tc = e.GetComponent<TransformComponent>();
                 asset.Play(tc.Position, refDistance: 1f, maxDistance: 100f);
             }

@@ -35,7 +35,7 @@ public class SpriteComponent : Component
         {
             if (_sprite == null || _sprite.Texture.Name != this.Texture)
             {
-                _sprite = new Sprite(AssetManager.GetAsset<Texture2D>(this.Texture), Vector2.One, Vector2.Zero, ColorF.White, new RectangleF(0, 0, 16, 16), 0f, new RectangleF(0, 0, 16, 16));
+                _sprite = new Sprite(ModManager.GetAsset<Texture2D>(this.Texture), Vector2.One, Vector2.Zero, ColorF.White, new RectangleF(0, 0, 16, 16), 0f, new RectangleF(0, 0, 16, 16));
             }
 
             return _sprite;

@@ -28,7 +28,7 @@ public static class GUI
 
     public static void Init()
     {
-        _font = AssetManager.GetAsset<Font>("font_rainyhearts");
+        _font = ModManager.GetAsset<Font>("default.font.rainyhearts");
         _charQueue = new Queue<char>();
 
         Input.OnChar += (sender, c) =>
@@ -125,7 +125,7 @@ public static class GUI
         {
             if (!_playedHotSound)
             {
-                Audio.Play("audio_click");
+                Audio.Play("default.audio.click");
                 _playedHotSound = true;
             }
 
@@ -141,7 +141,7 @@ public static class GUI
         {
             if (!_playedActiveSound)
             {
-                Audio.Play("audio_click", 1.2f);
+                Audio.Play("default.audio.click", 1.2f);
                 _playedActiveSound = true;
             }
 

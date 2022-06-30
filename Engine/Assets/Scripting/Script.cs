@@ -7,10 +7,9 @@ namespace AGame.Engine.Assets.Scripting
     {
         public Assembly Assembly { get; set; }
 
-        public Script(Assembly ass, string name)
+        public Script(Assembly ass)
         {
             this.Assembly = ass;
-            this.Name = name;
         }
 
         public Type[] GetTypes()

@@ -57,7 +57,7 @@ public class StaticTileGrid : TileGrid
                 matrices.Add(mscale * rot * transPos);
             }
 
-            TileIDToRenderer.Add(kvp.Key, new StaticInstancedTextureRenderer(AssetManager.GetAsset<Shader>("shader_texture"), TileManager.GetTileFromID(kvp.Key).GetTexture(), new RectangleF(0, 0, 16, 16), matrices.ToArray()));
+            TileIDToRenderer.Add(kvp.Key, new StaticInstancedTextureRenderer(ModManager.GetAsset<Shader>("default.shader.texture"), TileManager.GetTileFromID(kvp.Key).GetTexture(), new RectangleF(0, 0, 16, 16), matrices.ToArray()));
         }
     }
 

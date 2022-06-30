@@ -13,14 +13,6 @@ namespace AGame.Engine.Assets.Scripting
 {
     static class ScriptingManager
     {
-        public static string ScriptDirectory
-        {
-            get
-            {
-                return AssetManager.AssetDirectory + @"/scripts";
-            }
-        }
-
         private static Dictionary<string, Script> Scripts { get; set; }
         private static Dictionary<string, Script> TypeToScript { get; set; }
 
@@ -57,9 +49,7 @@ namespace AGame.Engine.Assets.Scripting
 
         public static void LoadScripts()
         {
-            string[] coreScripts = Directory.GetFiles(ScriptDirectory, "*.cs", SearchOption.AllDirectories);
-
-            Script[] scripts = AssetManager.GetAssetsOfType<Script>();
+            Script[] scripts = ModManager.GetAssetsOfType<Script>();
 
             foreach (Script script in scripts)
             {

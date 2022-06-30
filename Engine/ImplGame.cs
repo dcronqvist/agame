@@ -38,7 +38,15 @@ namespace AGame.Engine
                 glViewport(0, 0, (int)size.X, (int)size.Y);
             };
 
-            AssetManager.OnFinalizeEnd += (sender, e) =>
+            // AssetManager.OnFinalizeEnd += (sender, e) =>
+            // {
+            //     ScriptingManager.LoadScripts();
+            //     GameConsole.LoadCommands();
+
+            //     TileManager.Init();
+            //     Utilities.InitRNG();
+            // };
+            ModManager.AllNonCoreAssetsLoaded += (sender, e) =>
             {
                 ScriptingManager.LoadScripts();
                 GameConsole.LoadCommands();
@@ -47,12 +55,12 @@ namespace AGame.Engine
                 Utilities.InitRNG();
             };
 
-            AssetManager.OnAssetStartLoad += (sender, e) =>
+            ModManager.AssetLoaded += (sender, e) =>
             {
-                _lastAssetLoaded = e;
+                _lastAssetLoaded = e.Asset.Name;
             };
 
-            AssetManager.OnAllCoreAssetsLoaded += (sender, e) =>
+            ModManager.AllCoreAssetsLoaded += (sender, e) =>
             {
                 Renderer.Init();
                 ScreenManager.Init(args);
@@ -60,6 +68,20 @@ namespace AGame.Engine
                 GUI.Init();
                 _coreLoaded = true;
             };
+
+            // AssetManager.OnAssetStartLoad += (sender, e) =>
+            // {
+            //     _lastAssetLoaded = e;
+            // };
+
+            // AssetManager.OnAllCoreAssetsLoaded += (sender, e) =>
+            // {
+            //     Renderer.Init();
+            //     ScreenManager.Init(args);
+            //     Localization.Init(Settings.GetSetting<string>("locale"));
+            //     GUI.Init();
+            //     _coreLoaded = true;
+            // };
 
             glEnable(GL_BLEND);
             glDisable(GL_DEPTH_TEST);
@@ -69,7 +91,9 @@ namespace AGame.Engine
 
             Settings.LoadSettings();
 
-            _ = AssetManager.LoadAllAssetsAsync();
+            //_ = AssetManager.LoadAllAssetsAsync();
+            ModManager.Init();
+            _ = ModManager.LoadAllModsAsync();
         }
 
         public override void Update()
