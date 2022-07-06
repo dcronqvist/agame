@@ -27,8 +27,14 @@ namespace AGame.Engine
         public override void Initialize(string[] args)
         {
             ECS.Instance.Value.Initialize(SystemRunner.Client);
-            //Logging.AddLogStream(new FileLogger("log.txt"));
+            Logging.AddLogStream(new FileLogger("log.txt"));
             Logging.AddLogStream(new ConsoleLogger());
+
+            Logging.StartLogging();
+
+            DisplayManager.SetTargetFPS(144);
+
+            Logging.Log(LogLevel.Info, "Starting game...");
         }
 
         public override void LoadContent(string[] args)
@@ -38,10 +44,12 @@ namespace AGame.Engine
             DisplayManager.OnFramebufferResize += (window, size) =>
             {
                 glViewport(0, 0, (int)size.X, (int)size.Y);
+                Logging.Log(LogLevel.Info, $"glViewport set to {size.X}x{size.Y}");
             };
 
             ModManager.AllAssetsFinalized += (sender, e) =>
             {
+                Logging.Log(LogLevel.Info, $"All assets loaded");
                 ScriptingManager.LoadScripts();
                 GameConsole.LoadCommands();
 
@@ -57,7 +65,7 @@ namespace AGame.Engine
 
             ModManager.AssetFailedLoad += (sender, e) =>
             {
-                Logging.Log(LogLevel.Error, $"Failed to load asset {e.FailedAsset.FileName} in mod {e.Mod.Name}");
+                Logging.Log(LogLevel.Error, $"Failed to load asset {e.FailedAsset.FileName} in mod {e.Mod.Name}, reason: {e.FailedAsset.Exception.Message}");
             };
 
             ModManager.OverwroteAsset += (sender, e) =>
@@ -68,8 +76,18 @@ namespace AGame.Engine
             ModManager.AllCoreAssetsLoaded += (sender, e) =>
             {
                 Renderer.Init();
+                Logging.Log(LogLevel.Info, "All core assets loaded!");
                 ScreenManager.Init(args);
-                Localization.Init(Settings.GetSetting<string>("locale"));
+                Logging.Log(LogLevel.Info, "Screen manager initialized!");
+
+                bool success = Localization.Init(Settings.GetSetting<string>("locale"));
+
+                if (!success)
+                {
+                    Logging.Log(LogLevel.Info, "Failed to load localization, falling back to default locale");
+                    Localization.Init("default.locale.en_US");
+                }
+
                 GUI.Init();
                 _coreLoaded = true;
             };
@@ -90,6 +108,7 @@ namespace AGame.Engine
         {
             if (_coreLoaded && ScreenManager.CurrentScreen == null)
             {
+                Logging.Log(LogLevel.Info, "All core assets loaded, entering loading screen to load the rest...");
                 ScreenManager.GoToScreen<ScreenLoadingAssets, EnterLoadingAssetsArgs>(new EnterLoadingAssetsArgs() { FinalCoreAsset = _lastAssetLoaded });
             }
 

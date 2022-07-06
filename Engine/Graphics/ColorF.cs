@@ -46,6 +46,16 @@ namespace AGame.Engine.Graphics
             return new ColorF(left.R, left.G, left.B, left.A * right);
         }
 
+        public static ColorF Lerp(ColorF from, ColorF to, float amt)
+        {
+            return new ColorF(
+                from.R + (to.R - from.R) * amt,
+                from.G + (to.G - from.G) * amt,
+                from.B + (to.B - from.B) * amt,
+                from.A + (to.A - from.A) * amt
+            );
+        }
+
         public static ColorF FromString(string s)
         {
             int i = Convert.ToInt32(s, 16);

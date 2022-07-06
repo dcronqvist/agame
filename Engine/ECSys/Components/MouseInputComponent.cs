@@ -58,7 +58,17 @@ public class MouseInputComponent : Component
         this._mousePosition = newMouseInputComponent.MousePosition;
     }
 
-    public override void InterpolateProperties()
+    public override void InterpolateProperties(Component from, Component to, float amt)
+    {
+        // No interpolation really needed
+    }
+
+    public override int GetHashCode()
+    {
+        return this.MousePosition.GetHashCode();
+    }
+
+    public override void ApplyInput(UserCommand command)
     {
 
     }

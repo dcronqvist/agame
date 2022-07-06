@@ -35,7 +35,7 @@ public class Locale : Asset
     {
         if (!_locale.ContainsKey(key))
         {
-            return $"{key}_NOT_FOUND";
+            return $"{key}_NOT_LOCALIZED";
         }
 
         if (context == null)

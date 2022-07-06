@@ -104,6 +104,11 @@ public struct CoordinateVector
         return new CoordinateVector(X / length, Y / length);
     }
 
+    public static CoordinateVector Lerp(CoordinateVector from, CoordinateVector to, float amt)
+    {
+        return from + (to - from) * amt;
+    }
+
     public CoordinateVector MoveToward(CoordinateVector target, float distance)
     {
         CoordinateVector direction = target - this;

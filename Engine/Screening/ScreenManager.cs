@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using AGame.Engine;
+using AGame.Engine.Assets;
+using AGame.Engine.Configuration;
 using AGame.Engine.UI;
+using AGame.Engine.World;
 
 namespace AGame.Engine.Screening
 {
@@ -51,6 +54,8 @@ namespace AGame.Engine.Screening
             _nextScreen = typeof(TScreen);
             _requestedTransition = true;
             _nextScreenArgs = args;
+
+            Logging.Log(LogLevel.Info, $"Requested screen transition to {_nextScreen.Name}");
         }
 
         public static void Update()
@@ -62,6 +67,8 @@ namespace AGame.Engine.Screening
                 CurrentScreen = GetScreen(_nextScreen);
                 CurrentScreen?.OnEnter(_nextScreenArgs);
                 _requestedTransition = false;
+                Logging.Log(LogLevel.Info, $"Transitioned to screen {_nextScreen.Name}");
+                Audio.SetListenerPosition(CoordinateVector.Zero);
             }
 
             CurrentScreen?.Update();

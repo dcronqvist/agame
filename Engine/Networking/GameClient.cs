@@ -1,5 +1,6 @@
 using System.Net;
 using System.Numerics;
+using AGame.Engine.Configuration;
 using AGame.Engine.DebugTools;
 using AGame.Engine.ECSys;
 using AGame.Engine.ECSys.Components;
@@ -56,6 +57,9 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     {
         this.PacketReceived += async (sender, e) =>
         {
+            //Logging.Log(LogLevel.Debug, "Packet Received: " + e.Packet.GetType().Name);
+
+
             this._receivedPackets.LockedAction((rp) =>
             {
                 rp.Enqueue(e.Packet);
@@ -69,6 +73,8 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
         this.PacketSent += async (sender, e) =>
         {
+            //Logging.Log(LogLevel.Debug, "Packet sent: " + e.Packet.GetType().Name);
+
             this._sentPackets.LockedAction((rp) =>
             {
                 rp.Enqueue(e.Packet);
@@ -300,9 +306,6 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                 playerInputComponent.SetKeyUp(key.Item2);
             }
         }
-
-        // MouseInputComponent mouseInputComponent = this._playerEntity.GetComponent<MouseInputComponent>();
-        // mouseInputComponent.MousePosition = Input.GetMousePosition(camera);
     }
 
     public void Render()

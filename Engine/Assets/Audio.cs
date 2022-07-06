@@ -66,20 +66,20 @@ public class Audio : Asset
         ALError error;
         if ((error = AL.GetError()) != ALError.NoError)
         {
-            Console.WriteLine(AL.GetErrorString(error));
+            //Console.WriteLine(AL.GetErrorString(error));
         }
 
         ALContext context = ALC.CreateContext(device, (int*)null);
 
         if ((error = AL.GetError()) != ALError.NoError)
         {
-            Console.WriteLine(AL.GetErrorString(error));
+            //Console.WriteLine(AL.GetErrorString(error));
         }
 
         ALC.MakeContextCurrent(context);
         if ((error = AL.GetError()) != ALError.NoError)
         {
-            Console.WriteLine(AL.GetErrorString(error));
+            //Console.WriteLine(AL.GetErrorString(error));
         }
 
         var version = AL.Get(ALGetString.Version);

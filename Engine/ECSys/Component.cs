@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using AGame.Engine.Networking;
 using GameUDPProtocol;
 
@@ -36,6 +37,10 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
 
     public event PropertyChangedEventHandler PropertyChanged;
 
+    [JsonIgnore]
+    [PacketPropIgnore]
+    private Queue<(float, Component)> _interpolationQueue = new Queue<(float, Component)>();
+
     // This method is called by the Set accessor of each property.  
     // The CallerMemberName attribute that is applied to the optional propertyName  
     // parameter causes the property name of the caller to be substituted as an argument.  
@@ -50,7 +55,9 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
     //public abstract string ToJson(JsonSerializerOptions options);
     public new abstract string ToString();
     public abstract void UpdateComponent(Component newComponent);
-    public abstract void InterpolateProperties();
+    public abstract void InterpolateProperties(Component from, Component to, float amt);
+    public new abstract int GetHashCode();
+    public abstract void ApplyInput(UserCommand command);
 
     public ComponentNetworkingAttribute GetCNAttrib()
     {
@@ -91,14 +98,12 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
 
     public void TriggerComponentEvent<T>(int id, T eventArgs) where T : EventArgs
     {
-        // Find all
         EventInfo[] events = this.GetEvents();
         events[id].GetRaiseMethod().Invoke(this, new object[] { eventArgs });
     }
 
     public void TriggerComponentEvent(Type eventArgsType, int id, object eventArgs)
     {
-        // Find all
         EventInfo[] events = this.GetEvents();
         Type type = this.GetType();
         FieldInfo info = type.GetField(events[id].Name, BindingFlags.Instance | BindingFlags.NonPublic);
@@ -109,6 +114,35 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
             {
                 del.DynamicInvoke(new object[] { this, eventArgs });
             }
+        }
+    }
+
+    public void PushComponentUpdate(Component component)
+    {
+        float currentTime = GameTime.TotalElapsedSeconds;
+        this._interpolationQueue.Enqueue((currentTime, component));
+    }
+
+    public void InterpolateComponent()
+    {
+        float now = GameTime.TotalElapsedSeconds;
+        float renderTimestamp = now - (1f / 15f) * 2f;
+
+        Queue<(float, Component)> queue = this._interpolationQueue;
+
+        while (queue.Count > 2 && queue.ElementAt(1).Item1 <= renderTimestamp)
+        {
+            queue.Dequeue();
+        }
+
+        if (queue.Count >= 2 && queue.ElementAt(0).Item1 <= renderTimestamp && queue.ElementAt(1).Item1 >= renderTimestamp)
+        {
+            (float, Component) first = queue.ElementAt(0);
+            (float, Component) second = queue.ElementAt(1);
+
+            float amt = (renderTimestamp - first.Item1) / (second.Item1 - first.Item1);
+
+            this.InterpolateProperties(first.Item2, second.Item2, Math.Max(amt, 0));
         }
     }
 }

@@ -38,8 +38,9 @@ public class AudioComponent : Component
         };
     }
 
-    public override void InterpolateProperties()
+    public override void InterpolateProperties(Component from, Component to, float amt)
     {
+        // No interpolation really needed
     }
 
     public override int Populate(byte[] data, int offset)
@@ -83,5 +84,15 @@ public class AudioComponent : Component
     public override void UpdateComponent(Component newComponent)
     {
         this._audioQueue = ((AudioComponent)newComponent)._audioQueue;
+    }
+
+    public override int GetHashCode()
+    {
+        return _audioQueue.GetHashCode();
+    }
+
+    public override void ApplyInput(UserCommand command)
+    {
+
     }
 }

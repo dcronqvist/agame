@@ -21,7 +21,8 @@ class LocaleLoader : IAssetLoader
 
             Dictionary<string, string> locale = JsonSerializer.Deserialize<Dictionary<string, string>>(text, new JsonSerializerOptions()
             {
-                ReadCommentHandling = JsonCommentHandling.Skip
+                ReadCommentHandling = JsonCommentHandling.Skip,
+                AllowTrailingCommas = true
             });
 
             return new Locale(locale["locale_name"], locale);

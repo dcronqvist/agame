@@ -29,17 +29,27 @@ public class ModMetaData
 
     public List<ModOverwriteDefinition> Overwrites { get; set; }
 
-    public static ModMetaData FromJson(string json)
+    public static bool TryFromJson(string json, out ModMetaData meta)
     {
         JsonSerializerOptions ops = new JsonSerializerOptions()
         {
             IncludeFields = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
             Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
         };
 
-        return JsonSerializer.Deserialize<ModMetaData>(json, ops);
+        try
+        {
+            meta = JsonSerializer.Deserialize<ModMetaData>(json, ops);
+            return true;
+        }
+        catch (JsonException)
+        {
+            meta = null;
+            return false;
+        }
     }
 }
 

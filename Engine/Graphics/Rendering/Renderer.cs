@@ -20,20 +20,26 @@ namespace AGame.Engine.Graphics.Rendering
         private static Shader renderTextureShader;
         private static RenderTexture renderTarget;
 
-        public static void Init()
+        public static void Init(Shader text = null, Shader texture = null, Shader primitive = null, Shader renderTexture = null)
         {
-            Shader textRendererShader = ModManager.GetAsset<Shader>("default.shader.basictext");
+            Shader textRendererShader = text ?? ModManager.GetAsset<Shader>("default.shader.basictext");
             Text = new TextRenderer(textRendererShader);
-            Shader textureShader = ModManager.GetAsset<Shader>("default.shader.texture");
+            Shader textureShader = texture ?? ModManager.GetAsset<Shader>("default.shader.texture");
             Texture = new TextureRenderer(textureShader);
-            Shader primitiveShader = ModManager.GetAsset<Shader>("default.shader.primitives");
+            Shader primitiveShader = primitive ?? ModManager.GetAsset<Shader>("default.shader.primitives");
             Primitive = new PrimitiveRenderer(primitiveShader);
 
             DefaultCamera = new Camera2D(DisplayManager.GetWindowSizeInPixels() / 2.0f, 1.0f);
+
+            DisplayManager.OnFramebufferResize += (window, size) =>
+            {
+                DefaultCamera = new Camera2D(size / 2.0f, DefaultCamera.Zoom);
+            };
+
             Camera = DefaultCamera;
 
             ClearColor = ColorF.Black;
-            renderTextureShader = ModManager.GetAsset<Shader>("default.shader.render_texture");
+            renderTextureShader = renderTexture ?? ModManager.GetAsset<Shader>("default.shader.render_texture");
         }
 
         public static void SetRenderTarget(RenderTexture renderTexture, Camera2D camera2D)

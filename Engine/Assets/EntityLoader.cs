@@ -19,7 +19,9 @@ public class EntityLoader : IAssetLoader
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             Converters = { new ComponentConverter() },
             IncludeFields = true,
-            AllowTrailingCommas = true
+            AllowTrailingCommas = true,
+            IgnoreReadOnlyFields = true,
+            IgnoreReadOnlyProperties = true,
         };
 
         using (StreamReader sr = new StreamReader(fileStream))

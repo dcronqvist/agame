@@ -56,4 +56,20 @@ public class Entity
     {
         return this.Components.FindAll(c => c.HasCNType(type, direction)).ToArray();
     }
+
+    public void ApplyInput(UserCommand command)
+    {
+        foreach (var c in this.Components)
+        {
+            c.ApplyInput(command);
+        }
+    }
+
+    public void InterpolateComponents()
+    {
+        foreach (var c in this.Components)
+        {
+            c.InterpolateComponent();
+        }
+    }
 }

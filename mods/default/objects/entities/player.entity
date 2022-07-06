@@ -2,10 +2,42 @@
 	"components": [
 		{
 			"componentType": "Sprite",
-			"texture": "default.tex.player"
+			"texture": "default.tex.player",
+			"renderScale": {
+				"x": 1,
+				"y": 1
+			},
+			"origin": {
+				"x": 0,
+				"y": 0
+			},
+			"colorTint": {
+				"r": 1,
+				"g": 1,
+				"b": 1,
+				"a": 1
+			},
+			"sourceRectangle": {
+				"x": 0,
+				"y": 0,
+				"width": 16,
+				"height": 16
+			},
+			"rotation": 0,
+			"collisionRect": {
+				"x": 0,
+				"y": 0,
+				"width": 16,
+				"height": 16
+			}
 		},
 		{
-			"componentType": "Transform"
+			"componentType": "Movement",
+			"movementType": "PlayerMovement"
+		},
+		{
+			"componentType": "Transform",
+			"interpolationFactor": 20
 		},
 		{
 			"componentType": "KeyboardInput"

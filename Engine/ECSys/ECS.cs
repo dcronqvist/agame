@@ -224,6 +224,7 @@ public class ECS
             };
         }
 
+        this.ComponentChanged?.Invoke(this, new EntityComponentChangedEventArgs(entity, c));
         entity.Components.Add(c);
         RecalculateSystemEntities();
     }
@@ -256,7 +257,7 @@ public class ECS
         {
             foreach (Component c in e.Components)
             {
-                c.InterpolateProperties();
+                //c.InterpolateProperties();
             }
         }
     }

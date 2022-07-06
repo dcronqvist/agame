@@ -314,7 +314,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                     {
                         if (pve[conn].Contains(e.Entity))
                         {
-                            this.EnqueuePacket(uep, conn, true, false);
+                            this.EnqueuePacket(uep, conn, e.Attrib.IsReliable, false);
                         }
                     }
                 });

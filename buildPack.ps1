@@ -17,16 +17,11 @@ Copy-Item -r ./libs/win/* ./bin/Release/net6.0/win-x64/publish/ -Force
 New-Item -ItemType Directory -Force ./publish
 
 $filename = $args[0]
-$startUpHelp = $args[1]
-$startUpCommand = $args[2]
-
-# Create new text file with the startup help text in it
-New-Item -ItemType File -Path "./bin/Release/net6.0/win-x64/publish/STARTUP_HELP.txt" -Force
-Set-Content -Path "./bin/Release/net6.0/win-x64/publish/STARTUP_HELP.txt" -Value $startUpHelp
+$startUpCommand = $args[1]
 
 # Create a new batch file with the startup command in it
-New-Item -ItemType File -Path "./bin/Release/net6.0/win-x64/publish/start.bat" -Force
-Set-Content -Path "./bin/Release/net6.0/win-x64/publish/start.bat" -Value $startUpCommand
+New-Item -ItemType File -Path "./bin/Release/net6.0/win-x64/publish/STARTUP.bat" -Force
+Set-Content -Path "./bin/Release/net6.0/win-x64/publish/STARTUP.bat" -Value $startUpCommand
 
 $compress = @{
     Path             = "./bin/Release/net6.0/win-x64/publish/*"

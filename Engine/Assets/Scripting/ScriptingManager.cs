@@ -8,6 +8,7 @@ using Microsoft.CSharp;
 using Microsoft.CodeAnalysis;
 using System.Linq;
 using AGame.Engine.DebugTools;
+using AGame.Engine.Configuration;
 
 namespace AGame.Engine.Assets.Scripting
 {
@@ -55,6 +56,7 @@ namespace AGame.Engine.Assets.Scripting
             {
                 // All went well, just add the script to the dictionary of scripts.
                 AddScript(script.Name, script); // Add script to Scripts dictionary
+                Logging.Log(LogLevel.Info, $"Registered script {script.Name}");
                 PointTypesToScript(script.GetTypes(), script.Name); // Point all types in this script to this script
             }
         }

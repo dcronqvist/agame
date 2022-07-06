@@ -1,3 +1,5 @@
+using System.Threading.Tasks.Dataflow;
+
 namespace AGame.Engine.Configuration;
 
 public enum LogLevel
@@ -43,6 +45,7 @@ public class ConsoleLogger : ILogStream
 public static class Logging
 {
     private static List<ILogStream> _logStreams = new List<ILogStream>();
+    private static BufferBlock<(LogLevel, string)> _logQueue = new BufferBlock<(LogLevel, string)>();
 
     public static void AddLogStream(ILogStream stream)
     {
@@ -51,10 +54,23 @@ public static class Logging
 
     public static void Log(LogLevel level, string message)
     {
-        string logMessage = $"[{DateTime.Now.ToString()}] [{level.ToString().ToUpper()}] {message}";
-        foreach (ILogStream stream in _logStreams)
+        string logMessage = $"[{DateTime.Now.ToString()} - {level.ToString().ToUpper().PadRight(7)}] {message}";
+        _logQueue.SendAsync((level, logMessage));
+    }
+
+    public static void StartLogging()
+    {
+        Task.Run(() =>
         {
-            stream.WriteLine(logMessage);
-        }
+            while (true)
+            {
+                (LogLevel level, string message) = _logQueue.Receive();
+
+                foreach (ILogStream stream in _logStreams)
+                {
+                    stream.WriteLine(message);
+                }
+            }
+        });
     }
 }

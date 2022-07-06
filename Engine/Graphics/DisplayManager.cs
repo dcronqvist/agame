@@ -6,6 +6,7 @@ using AGame.Engine.OpenGL;
 using System.Numerics;
 using AGame.Engine.Assets;
 using static AGame.Engine.OpenGL.GL;
+using AGame.Engine.Configuration;
 
 namespace AGame.Engine.Graphics
 {
@@ -77,9 +78,17 @@ namespace AGame.Engine.Graphics
             WindowHandle = CreateWindow(width, height, title);
             Input.Init();
 
-            Glfw.SetFramebufferSizeCallback(WindowHandle, (Window, width, height) =>
+            Glfw.SetWindowMaximizeCallback(WindowHandle, (window, maximized) =>
             {
-                OnFramebufferResize?.Invoke(null, new Vector2(width, height));
+                Vector2 windowSize = GetWindowSizeInPixels();
+                OnFramebufferResize?.Invoke(null, windowSize);
+                Logging.Log(LogLevel.Info, $"Window size changed to {windowSize.X}x{windowSize.Y} because of {(maximized ? "maximization" : "minimization")}");
+            });
+
+            Glfw.SetFramebufferSizeCallback(WindowHandle, (Window, w, h) =>
+            {
+                OnFramebufferResize?.Invoke(null, new Vector2(w, h));
+                Logging.Log(LogLevel.Info, $"Framebuffer size changed to {w}x{h}");
             });
         }
 

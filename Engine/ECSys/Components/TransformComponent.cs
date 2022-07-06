@@ -1,4 +1,5 @@
 using System.Numerics;
+using AGame.Engine.Configuration;
 using AGame.Engine.Networking;
 using AGame.Engine.World;
 
@@ -7,7 +8,6 @@ namespace AGame.Engine.ECSys.Components;
 [ComponentNetworking(CNType.Update, NDirection.ServerToClient, MaxUpdatesPerSecond = 20, IsReliable = false)]
 public class TransformComponent : Component
 {
-    public CoordinateVector _targetPosition;
     private CoordinateVector _position;
     public CoordinateVector Position
     {
@@ -31,8 +31,7 @@ public class TransformComponent : Component
     {
         return new TransformComponent()
         {
-            Position = Position,
-            _targetPosition = Position,
+            _position = Position
         };
     }
 
@@ -43,7 +42,7 @@ public class TransformComponent : Component
         offset += sizeof(float);
         float y = BitConverter.ToSingle(data, offset);
         offset += sizeof(float);
-        this.Position = new CoordinateVector(x, y);
+        this._position = new CoordinateVector(x, y);
         return offset - initialOffset;
     }
 
@@ -64,13 +63,43 @@ public class TransformComponent : Component
     {
         TransformComponent tc = newComponent as TransformComponent;
 
-        this._targetPosition = tc.Position;
+        this.Position = tc.Position;
     }
 
-    public override void InterpolateProperties()
+    public override void InterpolateProperties(Component from, Component to, float amt)
     {
-        if ((_targetPosition - Position).Length() < 0.01f) return;
+        TransformComponent fromTC = from as TransformComponent;
+        TransformComponent toTC = to as TransformComponent;
 
-        this.Position += (_targetPosition - Position) * GameTime.DeltaTime * 9f;
+        this.Position = CoordinateVector.Lerp(fromTC.Position, toTC.Position, amt);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(this.Position);
+    }
+
+    public override void ApplyInput(UserCommand command)
+    {
+        bool pressingW = command.IsKeyDown(UserCommand.KEY_W);
+        bool pressingA = command.IsKeyDown(UserCommand.KEY_A);
+        bool pressingS = command.IsKeyDown(UserCommand.KEY_S);
+        bool pressingD = command.IsKeyDown(UserCommand.KEY_D);
+
+        CoordinateVector movement = new CoordinateVector(0, 0);
+
+        if (pressingW) movement.Y -= 1;
+        if (pressingA) movement.X -= 1;
+        if (pressingS) movement.Y += 1;
+        if (pressingD) movement.X += 1;
+
+        if (movement.X == 0 && movement.Y == 0)
+        {
+
+        }
+        else
+        {
+            this.Position += command.DeltaTime * movement.Normalize() * 5f;
+        }
     }
 }

@@ -1,4 +1,5 @@
 using AGame.Engine.Assets.Scripting;
+using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
 using System.IO.Compression;
 
@@ -86,11 +87,19 @@ public static class ModManager
         {
             foreach (ModContainer mod in collectedMods)
             {
-                ModContainer modContainer = mod;
-
-                if (TryLoadNonCoreAssetsInMod(ref modContainer, out Asset[] assets, out FailedAsset[] failed))
+                try
                 {
-                    AddAssets(assets);
+
+                    ModContainer modContainer = mod;
+
+                    if (TryLoadNonCoreAssetsInMod(ref modContainer, out Asset[] assets, out FailedAsset[] failed))
+                    {
+                        AddAssets(assets);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log(LogLevel.Error, $"Failed to load assets in mod {mod.Name}, error: {ex.Message}");
                 }
             }
         });
@@ -131,13 +140,18 @@ public static class ModManager
         List<string> loadOrder = new List<string>();
         List<ModContainer> mods = new List<ModContainer>();
 
-        // Load the load order file
-        using (StreamReader sr = new StreamReader(_loadOrderFile))
+        Logging.Log(LogLevel.Info, "Discovering mods...");
+
+        if (File.Exists(_loadOrderFile))
         {
-            string line;
-            while ((line = sr.ReadLine()) != null)
+            // Load the load order file
+            using (StreamReader sr = new StreamReader(_loadOrderFile))
             {
-                loadOrder.Add(line);
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    loadOrder.Add(line);
+                }
             }
         }
 
@@ -145,19 +159,30 @@ public static class ModManager
         string[] folderMods = Directory.GetDirectories(_modsFolder, "*", SearchOption.TopDirectoryOnly);
         foreach (string folderMod in folderMods)
         {
+            string modName = (new DirectoryInfo(folderMod)).Name;
+
             if (!File.Exists($"{folderMod}{Path.DirectorySeparatorChar}meta.json"))
             {
                 // This is an invalid mod, skip it.
+                Logging.Log(LogLevel.Warning, $"Skipping mod {modName} because it is missing a meta.json file.");
                 continue;
             }
 
-            string modName = (new DirectoryInfo(folderMod)).Name;
             ModContainer mod = new ModContainer(modName, ModContainerType.Folder, folderMod);
 
             using (StreamReader sr = new StreamReader($"{folderMod}{Path.DirectorySeparatorChar}meta.json"))
             {
                 string json = sr.ReadToEnd();
-                mod.SetMetaData(ModMetaData.FromJson(json));
+                if (ModMetaData.TryFromJson(json, out ModMetaData meta))
+                {
+                    Logging.Log(LogLevel.Info, $"Found valid mod {modName}");
+                    mod.SetMetaData(meta);
+                }
+                else
+                {
+                    Logging.Log(LogLevel.Warning, $"Skipping mod {modName} because it has an invalid meta.json file.");
+                    continue;
+                }
             }
 
             mods.Add(mod);
@@ -167,29 +192,43 @@ public static class ModManager
         string[] zipMods = Directory.GetFiles(_modsFolder, "*.zip", SearchOption.TopDirectoryOnly);
         foreach (string zipMod in zipMods)
         {
+            string modName = Path.GetFileNameWithoutExtension(zipMod);
             ZipArchive zip = ZipFile.OpenRead(zipMod);
 
             if (!zip.Entries.Any(entry => entry.Name == "meta.json"))
             {
                 // This is an invalid mod, skip it.
                 zip.Dispose();
+                Logging.Log(LogLevel.Warning, $"Skipping mod {modName} because it is missing a meta.json file.");
                 continue;
             }
 
-            string modName = Path.GetFileNameWithoutExtension(zipMod);
             ModContainer mod = new ModContainer(modName, ModContainerType.Zip, zipMod);
 
             using (StreamReader sr = new StreamReader(zip.GetEntry("meta.json").Open()))
             {
                 string json = sr.ReadToEnd();
-                mod.SetMetaData(ModMetaData.FromJson(json));
+                if (ModMetaData.TryFromJson(json, out ModMetaData meta))
+                {
+                    Logging.Log(LogLevel.Info, $"Found valid mod {modName}");
+                    mod.SetMetaData(meta);
+                }
+                else
+                {
+                    Logging.Log(LogLevel.Warning, $"Skipping mod {modName} because it has an invalid meta.json file.");
+                    continue;
+                }
             }
 
             zip.Dispose();
             mods.Add(mod);
         }
 
-        return mods.OrderBy(x => loadOrder.Contains(x.Name) ? loadOrder.IndexOf(x.Name) : int.MaxValue).ToArray();
+        ModContainer[] modOrder = mods.OrderBy(x => loadOrder.Contains(x.Name) ? loadOrder.IndexOf(x.Name) : int.MaxValue).ToArray();
+
+        Logging.Log(LogLevel.Info, $"Found {modOrder.Length} mods, loading them in order: {string.Join(@", ", modOrder.Select(x => x.Name))}");
+
+        return modOrder;
     }
 
     private static bool TryLoadCoreAssetsInMod(ref ModContainer mod, out Asset[] loadedAssets, out FailedAsset[] failedAssets)
@@ -447,6 +486,11 @@ public static class ModManager
     public static T GetAsset<T>(string assetName) where T : Asset
     {
         return (T)_assets[assetName];
+    }
+
+    public static bool AssetExists(string assetName)
+    {
+        return _assets.ContainsKey(assetName);
     }
 
     public static T[] GetAssetsOfType<T>() where T : Asset

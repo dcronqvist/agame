@@ -7,14 +7,24 @@ public static class Localization
 {
     private static Locale _locale;
 
-    public static void Init(string defaultLocale)
+    public static bool Init(string defaultLocale)
     {
+        if (!ModManager.AssetExists(defaultLocale))
+        {
+            Logging.Log(LogLevel.Error, $"Locale {defaultLocale} not found");
+            return false;
+        }
+
         _locale = ModManager.GetAsset<Locale>(defaultLocale);
+        Logging.Log(LogLevel.Info, $"Initialized localization to {_locale.Name}");
+        return true;
     }
 
     public static void SetLocale(string locale)
     {
         _locale = ModManager.GetAsset<Locale>(locale);
+        Logging.Log(LogLevel.Info, $"Set localization to {_locale.Name}");
+
         // Also set settings
         _ = Settings.SetSettingAsync("locale", locale);
     }

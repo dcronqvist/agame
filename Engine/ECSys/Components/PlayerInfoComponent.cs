@@ -16,8 +16,14 @@ public class PlayerInfoComponent : Component
         };
     }
 
-    public override void InterpolateProperties()
+    public override int GetHashCode()
     {
+        return this.Name.GetHashCode();
+    }
+
+    public override void InterpolateProperties(Component from, Component to, float amt)
+    {
+        // No interpolation really needed
     }
 
     public override int Populate(byte[] data, int offset)
@@ -52,5 +58,10 @@ public class PlayerInfoComponent : Component
         PlayerInfoComponent newPlayerInfoComponent = newComponent as PlayerInfoComponent;
 
         this.Name = newPlayerInfoComponent.Name;
+    }
+
+    public override void ApplyInput(UserCommand command)
+    {
+
     }
 }

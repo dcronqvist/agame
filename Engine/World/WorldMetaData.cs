@@ -60,7 +60,9 @@ public class WorldMetaData
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 Converters = { new ComponentConverter() },
                 IncludeFields = true,
-                AllowTrailingCommas = true
+                AllowTrailingCommas = true,
+                IgnoreReadOnlyFields = true,
+                IgnoreReadOnlyProperties = true
             };
 
             string json = JsonSerializer.Serialize(entities, options);

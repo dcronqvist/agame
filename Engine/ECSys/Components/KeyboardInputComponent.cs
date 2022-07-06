@@ -88,7 +88,17 @@ public class KeyboardInputComponent : Component
         this.NewBitmask = ((KeyboardInputComponent)newComponent).KeyBitmask;
     }
 
-    public override void InterpolateProperties()
+    public override void InterpolateProperties(Component from, Component to, float amt)
+    {
+        // No interpolation really needed
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(this.KeyBitmask, this.NewBitmask, this.PreviousKeyBitmask);
+    }
+
+    public override void ApplyInput(UserCommand command)
     {
 
     }

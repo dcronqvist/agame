@@ -23,7 +23,7 @@ public class SpriteSystem : BaseSystem
             var sprite = e.GetComponent<SpriteComponent>();
             var transform = e.GetComponent<TransformComponent>();
 
-            Vector2 spriteSize = sprite.Sprite.MiddleOfSourceRectangle;
+            Vector2 spriteSize = sprite.Sprite.MiddleOfSourceRectangle * sprite.RenderScale;
             sprite.Sprite.Render(transform.Position.ToWorldVector().ToVector2() - spriteSize);
         }
     }

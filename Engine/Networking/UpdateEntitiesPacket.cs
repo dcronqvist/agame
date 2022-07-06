@@ -6,6 +6,7 @@ namespace AGame.Engine.Networking;
 
 public class UpdateEntitiesPacket : Packet
 {
+    public int LastProcessedCommand { get; set; }
     public EntityUpdate[] Updates { get; set; }
 
     public UpdateEntitiesPacket()
@@ -13,9 +14,16 @@ public class UpdateEntitiesPacket : Packet
 
     }
 
+    public UpdateEntitiesPacket(int lastProcessedCommand, params EntityUpdate[] updates)
+    {
+        this.Updates = updates;
+        this.LastProcessedCommand = lastProcessedCommand;
+    }
+
     public UpdateEntitiesPacket(params EntityUpdate[] updates)
     {
         this.Updates = updates;
+        this.LastProcessedCommand = 0;
     }
 }
 
