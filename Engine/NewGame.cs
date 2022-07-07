@@ -28,12 +28,12 @@ namespace AGame.Engine
         public override void Initialize(string[] args)
         {
             ECS.Instance.Value.Initialize(SystemRunner.Client);
-            Logging.AddLogStream(new FileLogger("log.txt"));
+            //Logging.AddLogStream(new FileLogger("log.txt"));
             Logging.AddLogStream(new ConsoleLogger());
 
             Logging.StartLogging();
 
-            DisplayManager.SetTargetFPS(60);
+            DisplayManager.SetTargetFPS(144);
             Utilities.InitRNG();
 
 
@@ -95,18 +95,18 @@ namespace AGame.Engine
 
                 if (args.Length > 0)
                 {
-                    newClient = new NewGameClient(30, args[0], 28000, 1000, 500000);
+                    newClient = new NewGameClient(args[0], 28000, 1000, 500000);
                     await newClient.ConnectAsync();
                 }
                 else
                 {
                     ECS serverECS = new ECS();
                     serverECS.Initialize(SystemRunner.Server);
-                    newServer = new NewGameServer(serverECS, 15, 28000, 300, 500000);
+                    newServer = new NewGameServer(serverECS, 20, 28000, 300, 500000);
                     await newServer.StartAsync();
                     _ = newServer.RunAsync();
 
-                    newClient = new NewGameClient(10, "213.89.14.216", 28000, 300, 500000);
+                    newClient = new NewGameClient("213.89.14.216", 28000, 300, 500000);
                     await newClient.ConnectAsync();
                 }
 
@@ -138,15 +138,26 @@ namespace AGame.Engine
             }
         }
 
+        float fakeLatency = 0f;
+
         public override void Render()
         {
             Renderer.SetRenderTarget(null, null);
             Renderer.Clear(ColorF.Black);
 
+            GUI.Begin();
+
             if (done)
             {
                 newClient.Render();
+                //newServer?.Render();
+
+                GUI.Slider("Client Latency", new Vector2(100, 100), new Vector2(200, 50), ref fakeLatency);
+
+                this.newClient.SetFakelatency((int)(fakeLatency * 2000f));
             }
+
+            GUI.End();
 
             DisplayManager.SwapBuffers();
         }

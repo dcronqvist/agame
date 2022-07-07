@@ -123,10 +123,10 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
         this._interpolationQueue.Enqueue((currentTime, component));
     }
 
-    public void InterpolateComponent()
+    public void InterpolateComponent(float interpolationTime)
     {
         float now = GameTime.TotalElapsedSeconds;
-        float renderTimestamp = now - (1f / 15f) * 2f;
+        float renderTimestamp = now - interpolationTime;
 
         Queue<(float, Component)> queue = this._interpolationQueue;
 

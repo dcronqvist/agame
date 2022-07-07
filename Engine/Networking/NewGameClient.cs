@@ -10,31 +10,40 @@ namespace AGame.Engine.Networking;
 
 public class NewGameClient : Client<ConnectRequest, ConnectResponse>
 {
-    private int _sampleInputRate;
-    private float _lastSampleTime;
     private UserCommand _lastSentCommand;
 
-    private ThreadSafe<ECS> _ecs;
+    private ECS _ecs;
+    private List<UserCommand> _pendingCommands;
+    private Dictionary<int, ECSSnapshot> _pendingSnapshots;
+
     private ThreadSafe<Queue<UpdateEntitiesPacket>> _receivedEntityUpdates;
-    private ThreadSafe<List<UserCommand>> _pendingCommands;
     private ThreadSafe<Queue<Packet>> _receivedPackets;
     private ThreadSafe<Queue<Packet>> _sentPackets;
-    private int _playerId;
 
-    public NewGameClient(int sampleInputRate, string hostname, int port, int reliableMillisBeforeResend, int timeoutMillis) : base(hostname, port, reliableMillisBeforeResend, timeoutMillis)
+    private int _playerId;
+    private float _interpolationTime;
+    private int _fakeLatency;
+
+    public NewGameClient(string hostname, int port, int reliableMillisBeforeResend, int timeoutMillis) : base(hostname, port, reliableMillisBeforeResend, timeoutMillis)
     {
-        this._sampleInputRate = sampleInputRate;
-        ECS ecs = new ECS();
-        ecs.Initialize(SystemRunner.Client);
-        this._ecs = new ThreadSafe<ECS>(ecs);
+        this._ecs = new ECS();
+        this._ecs.Initialize(SystemRunner.Client);
+        this._fakeLatency = 0;
+
         this._receivedEntityUpdates = new ThreadSafe<Queue<UpdateEntitiesPacket>>(new Queue<UpdateEntitiesPacket>());
-        this._pendingCommands = new ThreadSafe<List<UserCommand>>(new List<UserCommand>());
+        this._pendingCommands = new List<UserCommand>();
+        this._pendingSnapshots = new Dictionary<int, ECSSnapshot>();
         this._receivedPackets = new ThreadSafe<Queue<Packet>>(new Queue<Packet>());
         this._sentPackets = new ThreadSafe<Queue<Packet>>(new Queue<Packet>());
         this._playerId = -1;
 
         this.RegisterClientEventHandlers();
         this.RegisterPacketHandlers();
+    }
+
+    public void SetFakelatency(int milliseconds)
+    {
+        this._fakeLatency = milliseconds;
     }
 
     private void RegisterClientEventHandlers()
@@ -80,18 +89,10 @@ public class NewGameClient : Client<ConnectRequest, ConnectResponse>
     {
         base.AddPacketHandler<UpdateEntitiesPacket>((packet) =>
         {
-            //Logging.Log(LogLevel.Debug, $"Client received entity update packet from server");
             this._receivedEntityUpdates.LockedAction((rep) =>
             {
-                //Logging.Log(LogLevel.Debug, $"Client received entity update packet {packet.LastProcessedCommand} from server");
                 rep.Enqueue(packet);
             });
-        });
-
-        base.AddPacketHandler<WelcomePacket>((packet) =>
-        {
-            //Logging.Log(LogLevel.Debug, $"Client received welcome packet from server");
-            this._playerId = packet.ClientId;
         });
     }
 
@@ -101,7 +102,10 @@ public class NewGameClient : Client<ConnectRequest, ConnectResponse>
 
         if (response is not null && response.Accepted)
         {
-            this.EnqueuePacket(new ReadyForDataPacket(), true, true, 0);
+            this._playerId = response.PlayerEntityID;
+            this._interpolationTime = (1f / response.ServerTickSpeed) * 2f;
+
+            this.EnqueuePacket(new ConnectReadyForData(), true, true, 0);
 
             while (this._playerId == -1)
             {
@@ -139,51 +143,58 @@ public class NewGameClient : Client<ConnectRequest, ConnectResponse>
 
                 foreach (EntityUpdate update in packet.Updates)
                 {
-                    this._ecs.LockedAction((ecs) =>
+
+                    if (!this._ecs.EntityExists(update.EntityID))
+                        this._ecs.CreateEntity(update.EntityID);
+
+                    Entity entity = this._ecs.GetEntityFromID(update.EntityID);
+
+                    if (entity.ID == this._playerId)
                     {
-                        if (!ecs.EntityExists(update.EntityID))
-                            ecs.CreateEntity(update.EntityID);
+                        // if (this._pendingSnapshots.ContainsKey(packet.LastProcessedCommand))
+                        // {
+                        //     ECSSnapshot snapshot = this._pendingSnapshots[packet.LastProcessedCommand];
+                        //     this._ecs.RestoreSnapshot(snapshot);
+                        // }
 
-                        Entity entity = ecs.GetEntityFromID(update.EntityID);
-
-                        if (entity.ID == this._playerId)
+                        // This component belongs to me, the client.
+                        // I should perform reconciliation.
+                        foreach (Component component in update.Components)
                         {
-                            // This component belongs to me, the client.
-                            // I should perform reconciliation.
-                            foreach (Component component in update.Components)
-                            {
-                                if (!entity.HasComponent(component.GetType()))
-                                    ecs.AddComponentToEntity(entity, component);
+                            if (!entity.HasComponent(component.GetType()))
+                                this._ecs.AddComponentToEntity(entity, component);
 
-                                entity.GetComponent(component.GetType()).UpdateComponent(component);
-                            }
-
-                            List<UserCommand> commandsAfterLast = this._pendingCommands.LockedAction(pc => pc.Where(c => c.CommandNumber > packet.LastProcessedCommand).ToList());
-
-                            for (int i = 0; i < commandsAfterLast.Count; i++)
-                            {
-                                UserCommand command = commandsAfterLast[i];
-                                entity.ApplyInput(command);
-                            }
-
-                            this._pendingCommands.LockedAction((pc) =>
-                            {
-                                pc.RemoveAll(c => c.CommandNumber <= packet.LastProcessedCommand);
-                            });
+                            entity.GetComponent(component.GetType()).UpdateComponent(component);
                         }
-                        else
+
+                        List<UserCommand> commandsAfterLast = this._pendingCommands.Where(c => c.CommandNumber > packet.LastProcessedCommand).ToList();
+
+                        for (int i = 0; i < commandsAfterLast.Count; i++)
                         {
-                            // This component belongs to an entity which
-                            // is not me, so I should perform interpolation.
-                            foreach (Component component in update.Components)
-                            {
-                                if (!entity.HasComponent(component.GetType()))
-                                    ecs.AddComponentToEntity(entity, component);
-
-                                entity.GetComponent(component.GetType()).PushComponentUpdate(component);
-                            }
+                            UserCommand command = commandsAfterLast[i];
+                            entity.ApplyInput(command);
                         }
-                    });
+
+                        List<UserCommand> toBeDeleted = this._pendingCommands.Where(c => c.CommandNumber <= packet.LastProcessedCommand).ToList();
+                        this._pendingCommands.RemoveAll(c => c.CommandNumber <= packet.LastProcessedCommand);
+
+                        foreach (UserCommand command in toBeDeleted)
+                        {
+                            this._pendingSnapshots.Remove(command.CommandNumber);
+                        }
+                    }
+                    else
+                    {
+                        // This component belongs to an entity which
+                        // is not me, so I should perform interpolation.
+                        foreach (Component component in update.Components)
+                        {
+                            if (!entity.HasComponent(component.GetType()))
+                                this._ecs.AddComponentToEntity(entity, component);
+
+                            entity.GetComponent(component.GetType()).PushComponentUpdate(component);
+                        }
+                    }
                 }
 
                 return false;
@@ -196,7 +207,7 @@ public class NewGameClient : Client<ConnectRequest, ConnectResponse>
         }
     }
 
-    private void ProcessInputs(float delta)
+    private void ProcessInputs()
     {
         List<(GLFW.Keys, int)> inputs = new List<(GLFW.Keys, int)>()
         {
@@ -207,39 +218,37 @@ public class NewGameClient : Client<ConnectRequest, ConnectResponse>
             (GLFW.Keys.Space, UserCommand.KEY_SPACE),
         };
 
-        UserCommand sendCommand = new UserCommand();
-        sendCommand.DeltaTime = delta;
+        UserCommand command = new UserCommand();
+        command.DeltaTime = GameTime.DeltaTime;
 
         foreach ((GLFW.Keys, byte) input in inputs)
         {
             if (Input.IsKeyDown(input.Item1))
             {
-                sendCommand.SetKeyDown(input.Item2);
+                command.SetKeyDown(input.Item2);
             }
         }
 
-        if (sendCommand.Buttons == 0)
-        {
-            return;
-        }
+        // if (command.Buttons == 0)
+        // {
+        //     return;
+        // }
 
-        sendCommand.CommandNumber = this._lastSentCommand != null ? this._lastSentCommand.CommandNumber + 1 : 0;
+        command.CommandNumber = this._lastSentCommand != null ? this._lastSentCommand.CommandNumber + 1 : 0;
 
-        base.EnqueuePacket(sendCommand, false, false);
-        this._lastSentCommand = sendCommand;
+        base.EnqueuePacket(command, false, false, this._fakeLatency);
+        this._lastSentCommand = command;
 
         //Client side prediction
-        this._ecs.LockedAction((ecs) =>
+        Entity playerEntity = this._ecs.GetEntityFromID(this._playerId);
+        if (playerEntity != null)
         {
-            Entity playerEntity = ecs.GetEntityFromID(this._playerId);
-            playerEntity.ApplyInput(sendCommand);
-        });
 
-        this._pendingCommands.LockedAction((pc) =>
-        {
-            pc.Add(sendCommand);
-        });
+            playerEntity.ApplyInput(command);
 
+            this._pendingCommands.Add(command);
+            this._pendingSnapshots.Add(command.CommandNumber, this._ecs.GetSnapshot());
+        }
     }
 
     public void Update()
@@ -249,39 +258,35 @@ public class NewGameClient : Client<ConnectRequest, ConnectResponse>
             return;
         }
 
-        this.ProcessInputs(GameTime.DeltaTime);
-
         this.ProcessServerPackets();
+
+        this.ProcessInputs();
 
         this.InterpolateEntities();
 
-        DisplayManager.SetWindowTitle($"RX: {this.GetRX()} TX: {this.GetTX()} PENDING: {this._pendingCommands.Value.Count} LAST: {this._lastSentCommand?.CommandNumber}");
+        this._ecs.Update(null, GameTime.DeltaTime);
+
+        DisplayManager.SetWindowTitle($"RX: {this.GetRX()} TX: {this.GetTX()} PENDING: {this._pendingCommands.Count} LAST: {this._lastSentCommand?.CommandNumber} PENDING ECS: {this._pendingSnapshots.Count} FAKE_LATENCY: {this._fakeLatency}");
     }
 
     private void InterpolateEntities()
     {
-        this._ecs.LockedAction((ecs) =>
+        foreach (Entity entity in this._ecs.GetAllEntities())
         {
-            foreach (Entity entity in ecs.GetAllEntities())
-            {
-                if (entity.ID != this._playerId)
-                    entity.InterpolateComponents();
-            }
-        });
+            if (entity.ID != this._playerId)
+                entity.InterpolateComponents(this._interpolationTime);
+        }
     }
 
     public void Render()
     {
-        this._ecs.LockedAction((ecs) =>
-        {
-            List<Entity> entities = ecs.GetAllEntities();
+        List<Entity> entities = this._ecs.GetAllEntities();
 
-            foreach (Entity entity in entities)
-            {
-                TransformComponent transform = entity.GetComponent<TransformComponent>();
-                ColorComponent cc = entity.GetComponent<ColorComponent>();
-                Renderer.Primitive.RenderCircle(transform.Position.ToWorldVector().ToVector2(), 50f, cc.Color, false);
-            }
-        });
+        foreach (Entity entity in entities)
+        {
+            PlayerPositionComponent transform = entity.GetComponent<PlayerPositionComponent>();
+            ColorComponent cc = entity.GetComponent<ColorComponent>();
+            Renderer.Primitive.RenderCircle(transform.Position.ToWorldVector().ToVector2(), 50f, cc.Color, false);
+        }
     }
 }

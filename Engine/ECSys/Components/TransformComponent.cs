@@ -81,25 +81,6 @@ public class TransformComponent : Component
 
     public override void ApplyInput(UserCommand command)
     {
-        bool pressingW = command.IsKeyDown(UserCommand.KEY_W);
-        bool pressingA = command.IsKeyDown(UserCommand.KEY_A);
-        bool pressingS = command.IsKeyDown(UserCommand.KEY_S);
-        bool pressingD = command.IsKeyDown(UserCommand.KEY_D);
 
-        CoordinateVector movement = new CoordinateVector(0, 0);
-
-        if (pressingW) movement.Y -= 1;
-        if (pressingA) movement.X -= 1;
-        if (pressingS) movement.Y += 1;
-        if (pressingD) movement.X += 1;
-
-        if (movement.X == 0 && movement.Y == 0)
-        {
-
-        }
-        else
-        {
-            this.Position += command.DeltaTime * movement.Normalize() * 5f;
-        }
     }
 }

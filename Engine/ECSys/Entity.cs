@@ -57,6 +57,14 @@ public class Entity
         return this.Components.FindAll(c => c.HasCNType(type, direction)).ToArray();
     }
 
+    public Entity Clone()
+    {
+        return new Entity(this.ID)
+        {
+            Components = this.Components.Select(c => c.Clone()).ToList()
+        };
+    }
+
     public void ApplyInput(UserCommand command)
     {
         foreach (var c in this.Components)
@@ -65,11 +73,11 @@ public class Entity
         }
     }
 
-    public void InterpolateComponents()
+    public void InterpolateComponents(float interpolationTime)
     {
         foreach (var c in this.Components)
         {
-            c.InterpolateComponent();
+            c.InterpolateComponent(interpolationTime);
         }
     }
 }

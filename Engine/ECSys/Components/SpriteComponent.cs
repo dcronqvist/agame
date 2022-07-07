@@ -234,6 +234,7 @@ public class SpriteComponent : Component
     public override void InterpolateProperties(Component from, Component to, float amt)
     {
         // No interpolation really needed
+        this.UpdateComponent(to);
     }
 
     public override int GetHashCode()

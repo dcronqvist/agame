@@ -27,9 +27,4 @@ public class SpriteSystem : BaseSystem
             sprite.Sprite.Render(transform.Position.ToWorldVector().ToVector2() - spriteSize);
         }
     }
-
-    public override void Update(List<Entity> entities, WorldContainer gameWorld)
-    {
-
-    }
 }

@@ -125,7 +125,7 @@ public static class GUI
         {
             if (!_playedHotSound)
             {
-                Audio.Play("default.audio.click");
+                //Audio.Play("default.audio.click");
                 _playedHotSound = true;
             }
 
@@ -141,7 +141,7 @@ public static class GUI
         {
             if (!_playedActiveSound)
             {
-                Audio.Play("default.audio.click", 1.2f);
+                //Audio.Play("default.audio.click", 1.2f);
                 _playedActiveSound = true;
             }
 

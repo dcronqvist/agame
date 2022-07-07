@@ -4,25 +4,24 @@ using AGame.Engine.World;
 
 namespace AGame.Engine.ECSys.Systems;
 
-[SystemRunsOn(SystemRunner.Server)]
-public class MovementSystem : BaseSystem
-{
-    public override void Initialize()
-    {
-        this.RegisterComponentType<TransformComponent>();
-        this.RegisterComponentType<MovementComponent>();
-    }
+// [SystemRunsOn(SystemRunner.Server | SystemRunner.Client)]
+// public class MovementSystem : BaseSystem
+// {
+//     public override void Initialize()
+//     {
+//         this.RegisterComponentType<PlayerPositionComponent>();
+//     }
 
-    public override void Update(List<Entity> entities, WorldContainer gameWorld)
-    {
-        ECS parent = this.ParentECS;
+//     public override void Update(List<Entity> entities, WorldContainer gameWorld, float deltaTime)
+//     {
+//         ECS parent = this.ParentECS;
 
-        foreach (Entity entity in entities)
-        {
-            TransformComponent transform = entity.GetComponent<TransformComponent>();
-            MovementComponent movement = entity.GetComponent<MovementComponent>();
+//         foreach (Entity entity in entities)
+//         {
+//             PlayerPositionComponent ppc = entity.GetComponent<PlayerPositionComponent>();
 
-            transform.Position += movement.Movement.GetVelocity(entity) * GameTime.DeltaTime;
-        }
-    }
-}
+//             ppc.Velocity += (ppc.TargetVelocity - ppc.Velocity) * deltaTime * 4f;
+//             ppc.Position += ppc.Velocity * deltaTime;
+//         }
+//     }
+// }

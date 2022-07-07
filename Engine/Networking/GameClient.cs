@@ -264,7 +264,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         this._ecs.LockedAction((ecs) =>
         {
             ecs.InterpolateProperties();
-            ecs.Update(this._world);
+            //ecs.Update(this._world);
         });
 
         if (updateInput)
@@ -283,29 +283,29 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
     public void UpdatePlayerInput(Camera2D camera)
     {
-        List<(GLFW.Keys, int)> keysToCheck = new List<(GLFW.Keys, int)>()
-        {
-            (GLFW.Keys.W, KeyboardInputComponent.KEY_W),
-            (GLFW.Keys.A, KeyboardInputComponent.KEY_A),
-            (GLFW.Keys.S, KeyboardInputComponent.KEY_S),
-            (GLFW.Keys.D, KeyboardInputComponent.KEY_D),
-            (GLFW.Keys.Space, KeyboardInputComponent.KEY_SPACE),
-            (GLFW.Keys.LeftShift, KeyboardInputComponent.KEY_SHIFT),
-        };
+        // List<(GLFW.Keys, int)> keysToCheck = new List<(GLFW.Keys, int)>()
+        // {
+        //     (GLFW.Keys.W, KeyboardInputComponent.KEY_W),
+        //     (GLFW.Keys.A, KeyboardInputComponent.KEY_A),
+        //     (GLFW.Keys.S, KeyboardInputComponent.KEY_S),
+        //     (GLFW.Keys.D, KeyboardInputComponent.KEY_D),
+        //     (GLFW.Keys.Space, KeyboardInputComponent.KEY_SPACE),
+        //     (GLFW.Keys.LeftShift, KeyboardInputComponent.KEY_SHIFT),
+        // };
 
-        KeyboardInputComponent playerInputComponent = this._playerEntity.GetComponent<KeyboardInputComponent>();
+        // KeyboardInputComponent playerInputComponent = this._playerEntity.GetComponent<KeyboardInputComponent>();
 
-        foreach ((GLFW.Keys, int) key in keysToCheck)
-        {
-            if (Input.IsKeyDown(key.Item1))
-            {
-                playerInputComponent.SetKeyDown(key.Item2);
-            }
-            else
-            {
-                playerInputComponent.SetKeyUp(key.Item2);
-            }
-        }
+        // foreach ((GLFW.Keys, int) key in keysToCheck)
+        // {
+        //     if (Input.IsKeyDown(key.Item1))
+        //     {
+        //         playerInputComponent.SetKeyDown(key.Item2);
+        //     }
+        //     else
+        //     {
+        //         playerInputComponent.SetKeyUp(key.Item2);
+        //     }
+        // }
     }
 
     public void Render()

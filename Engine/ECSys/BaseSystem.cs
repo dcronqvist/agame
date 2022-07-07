@@ -28,7 +28,7 @@ public abstract class BaseSystem
 
     }
 
-    public virtual void Update(List<Entity> entities, WorldContainer gameWorld)
+    public virtual void Update(List<Entity> entities, WorldContainer gameWorld, float deltaTime)
     {
 
     }

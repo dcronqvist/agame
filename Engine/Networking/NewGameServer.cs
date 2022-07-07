@@ -51,21 +51,6 @@ public class UserCommand : Packet
     }
 }
 
-public class WelcomePacket : Packet
-{
-    public int ClientId { get; set; }
-
-    public WelcomePacket()
-    {
-
-    }
-}
-
-public class ReadyForDataPacket : Packet
-{
-
-}
-
 public class NewGameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 {
     private int _tickRate;
@@ -92,37 +77,52 @@ public class NewGameServer : Server<ConnectRequest, ConnectResponse, QueryRespon
     {
         base.ConnectionRequested += (sender, e) =>
         {
-            Logging.Log(LogLevel.Debug, $"Server: Connection request from {e.Requester}");
-
-            e.Accept(new ConnectResponse());
-        };
-
-        base.ConnectionAccepted += (sender, e) =>
-        {
-            Logging.Log(LogLevel.Debug, $"Server: Connection accepted from {e.Connection.RemoteEndPoint}");
+            Logging.Log(LogLevel.Debug, $"Server: Connection request from {e.RequestConnection.RemoteEndPoint}");
 
             Entity entity = this._ecs.LockedAction((ecs) =>
             {
                 Entity entity = ecs.CreateEntity();
-                var transform = new TransformComponent();
-                transform.Position = new CoordinateVector(5f, 5f);
+                var ppc = new PlayerPositionComponent();
+                ppc.Position = new CoordinateVector(5f, 5f);
 
                 var color = new ColorComponent();
                 color.Color = Utilities.ChooseUniform(ColorF.Red, ColorF.Blue, ColorF.Green, ColorF.Orange, ColorF.DarkGoldenRod);
 
-                ecs.AddComponentToEntity(entity, transform);
+                ecs.AddComponentToEntity(entity, ppc);
                 ecs.AddComponentToEntity(entity, color);
                 return entity;
             });
 
             this._connectionToPlayerId.LockedAction((connectionToPlayerId) =>
             {
-                connectionToPlayerId[e.Connection] = entity.ID;
+                connectionToPlayerId[e.RequestConnection] = entity.ID;
             });
 
             this._lastProcessedCommand.LockedAction((lastProcessedCommand) =>
             {
-                lastProcessedCommand[e.Connection] = -1;
+                lastProcessedCommand[e.RequestConnection] = -1;
+            });
+
+            e.Accept(new ConnectResponse() { PlayerEntityID = entity.ID, ServerTickSpeed = this._tickRate });
+        };
+
+        base.ConnectionAccepted += (sender, e) =>
+        {
+            Logging.Log(LogLevel.Debug, $"Server: Connection accepted from {e.Connection.RemoteEndPoint}");
+        };
+
+        base.ConnectionRejected += (sender, e) =>
+        {
+            Logging.Log(LogLevel.Debug, $"Server: Connection rejected from {e.Requester}");
+
+            this._connectionToPlayerId.LockedAction((connectionToPlayerId) =>
+            {
+                connectionToPlayerId.Remove(this._connections.LockedAction((c) => c.Find(conn => conn.RemoteEndPoint == e.Requester)));
+            });
+
+            this._lastProcessedCommand.LockedAction((lastProcessedCommand) =>
+            {
+                lastProcessedCommand.Remove(this._connections.LockedAction((c) => c.Find(conn => conn.RemoteEndPoint == e.Requester)));
             });
         };
 
@@ -147,19 +147,9 @@ public class NewGameServer : Server<ConnectRequest, ConnectResponse, QueryRespon
             });
         });
 
-        base.AddPacketHandler<ReadyForDataPacket>((packet, connection) =>
+        base.AddPacketHandler<ConnectReadyForData>((packet, connection) =>
         {
-            WelcomePacket wp = new WelcomePacket()
-            {
-                ClientId = this._connectionToPlayerId.LockedAction((connectionToPlayerId) =>
-                {
-                    return connectionToPlayerId[connection];
-                })
-            };
-
             this.BroadcastEntireECS(connection);
-
-            base.EnqueuePacket(wp, connection, true, true);
         });
     }
 
@@ -175,8 +165,6 @@ public class NewGameServer : Server<ConnectRequest, ConnectResponse, QueryRespon
                 }
 
                 (Connection connection, UserCommand command) = queue.Dequeue();
-
-                Logging.Log(LogLevel.Debug, $"Server: Processing command {command.CommandNumber} from {connection.RemoteEndPoint}");
 
                 int entityID = this._connectionToPlayerId.Value.GetValueOrDefault(connection, -1);
 
@@ -223,10 +211,8 @@ public class NewGameServer : Server<ConnectRequest, ConnectResponse, QueryRespon
             return lastProcessedCommand[connection];
         });
 
-        Logging.Log(LogLevel.Debug, $"Server: Broadcasting world state to {connection.RemoteEndPoint}, which has last processed command {lastProcessedCommand}");
-
         UpdateEntitiesPacket uep = new UpdateEntitiesPacket(lastProcessedCommand, entityUpdates.ToArray());
-        base.EnqueuePacket(uep, connection, false, false);
+        base.EnqueuePacket(uep, connection, false, false, 20);
     }
 
     private void BroadcastWorldState()
@@ -265,7 +251,7 @@ public class NewGameServer : Server<ConnectRequest, ConnectResponse, QueryRespon
         }
     }
 
-    private void Tick()
+    private void Tick(float deltaTime)
     {
         this.ProcessInputs();
         //this.BroadcastWorldState();
@@ -277,6 +263,11 @@ public class NewGameServer : Server<ConnectRequest, ConnectResponse, QueryRespon
                 this.BroadcastEntireECS(conn);
             }
         });
+
+        this._ecs.LockedAction((ecs) =>
+        {
+            ecs.Update(null, deltaTime);
+        });
     }
 
     public async Task RunAsync()
@@ -285,25 +276,33 @@ public class NewGameServer : Server<ConnectRequest, ConnectResponse, QueryRespon
         {
             Stopwatch watch = new Stopwatch();
             watch.Start();
+            double delta = 0;
+
+            float currentTickTime = 0f;
+            float lastTickTime = 0f;
+            float tickDelta = 0f;
 
             while (true)
             {
                 double start = watch.Elapsed.TotalMilliseconds;
-                Logging.Log(LogLevel.Warning, $"Server: Tick Start {start}");
-                this.Tick();
+                currentTickTime = (float)start;
+                tickDelta = (currentTickTime - lastTickTime) / 1000f;
+
+                this.Tick(tickDelta);
                 double end = watch.Elapsed.TotalMilliseconds;
-                Logging.Log(LogLevel.Warning, $"Server: Tick End {end}");
-                double delta = end - start;
+                delta = end - start;
+
 
                 if (delta < (1000L / this._tickRate))
                 {
-                    Logging.Log(LogLevel.Debug, $"Server: Sleeping for {(1000L / this._tickRate) - delta}ms");
                     await Task.Delay(TimeSpan.FromMilliseconds((1000L / this._tickRate) - delta));
                 }
                 else
                 {
                     Logging.Log(LogLevel.Debug, $"Server: Took {delta}ms to tick, which is too long");
                 }
+
+                lastTickTime = currentTickTime;
             }
         });
     }
@@ -316,7 +315,7 @@ public class NewGameServer : Server<ConnectRequest, ConnectResponse, QueryRespon
 
             foreach (Entity entity in entities)
             {
-                TransformComponent transform = entity.GetComponent<TransformComponent>();
+                PlayerPositionComponent transform = entity.GetComponent<PlayerPositionComponent>();
                 Renderer.Primitive.RenderCircle(transform.Position.ToWorldVector().ToVector2(), 30f, ColorF.LightGray, false);
             }
         });

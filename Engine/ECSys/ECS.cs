@@ -26,6 +26,7 @@ public class ECS
     private Dictionary<string, Type> _componentTypes = new Dictionary<string, Type>();
     private Dictionary<Type, int> _componentTypeIDs = new Dictionary<Type, int>();
     public event EventHandler<EntityComponentChangedEventArgs> ComponentChanged;
+    public float InterpolationTime { get; private set; }
 
     // Events
     public event EventHandler<EntityAddedEventArgs> EntityAdded;
@@ -51,12 +52,31 @@ public class ECS
         this._runner = runner;
         this._entities = entities ?? new List<Entity>();
         this._nextEntityID = this._entities.Count > 0 ? this._entities.Max(x => x.ID) + 1 : 0;
+        this.InterpolationTime = 0f;
 
         // Register all component types
         this.RegisterComponentTypes();
 
         // Register system
         this.RegisterAllSystems();
+    }
+
+    public void SetInterpolationTime(float time)
+    {
+        this.InterpolationTime = time;
+    }
+
+    public ECSSnapshot GetSnapshot()
+    {
+        ECSSnapshot snapshot = new ECSSnapshot();
+        snapshot.Entities = this._entities.Select(x => x.Clone()).ToList();
+        return snapshot;
+    }
+
+    public void RestoreSnapshot(ECSSnapshot snapshot)
+    {
+        this._entities = snapshot.Entities;
+        this._nextEntityID = this._entities.Count > 0 ? this._entities.Max(x => x.ID) + 1 : 0;
     }
 
     public void RegisterAllSystems()
@@ -262,7 +282,7 @@ public class ECS
         }
     }
 
-    public void Update(WorldContainer gameWorld)
+    public void Update(WorldContainer gameWorld, float deltaTime)
     {
         bool destroying = this._entitiesToDestroy.Count > 0;
         foreach (Entity e in this._entitiesToDestroy)
@@ -283,7 +303,7 @@ public class ECS
 
         foreach (var system in _systemsToUpdate)
         {
-            system.Update(_systemEntities[system], gameWorld);
+            system.Update(_systemEntities[system], gameWorld, deltaTime);
         }
 
         foreach (var system in _systemsToUpdate)

@@ -90,7 +90,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         // Server Events
         this.ConnectionRequested += (sender, e) =>
         {
-            if (this.IsRequesterAllowedToConnect(e.RequestPacket, e.Requester))
+            if (this.IsRequesterAllowedToConnect(e.RequestPacket, e.RequestConnection.RemoteEndPoint))
             {
                 e.Accept(new ConnectResponse());
             }
@@ -206,7 +206,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         // Assign the player's position from the world's meta data
         newPlayer.GetComponent<TransformComponent>().Position = this._worldMetaData.GetPlayerInfo(playerName, new CoordinateVector(0, 0)).Position;
         // Assign the player's name to the new entity
-        newPlayer.GetComponent<PlayerInfoComponent>().Name = playerName;
+        //newPlayer.GetComponent<PlayerInfoComponent>().Name = playerName;
 
         this._playersVisibleEntities.LockedAction((pve) =>
         {
@@ -532,7 +532,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     {
         this._ecs.LockedAction((ecs) =>
         {
-            ecs.Update(this._world);
+            //ecs.Update(this._world);
         });
     }
 
@@ -577,9 +577,9 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                     }
                 }
 
-                List<Entity> entities = ecs.GetAllEntities(x => !x.HasComponent(typeof(PlayerInfoComponent)));
+                //List<Entity> entities = ecs.GetAllEntities(x => !x.HasComponent(typeof(PlayerInfoComponent)));
 
-                this._worldMetaData.SaveEntities(entities);
+                //this._worldMetaData.SaveEntities(entities);
             });
         });
     }
