@@ -237,10 +237,7 @@ public class ECS
         {
             c.PropertyChanged += (sender, e) =>
             {
-                Task.Run(() =>
-                {
-                    this.ComponentChanged?.Invoke(this, new EntityComponentChangedEventArgs(entity, c));
-                });
+                this.ComponentChanged?.Invoke(this, new EntityComponentChangedEventArgs(entity, c));
             };
         }
 

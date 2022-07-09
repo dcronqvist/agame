@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Numerics;
+using AGame.Engine.Assets;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
 using AGame.Engine.ECSys.Components;
@@ -11,6 +13,7 @@ namespace AGame.Engine.Networking;
 public class NewGameClient : Client<ConnectRequest, ConnectResponse>
 {
     private UserCommand _lastSentCommand;
+    private int _serverLastProcessedCommand;
 
     private ECS _ecs;
     private List<UserCommand> _pendingCommands;
@@ -123,9 +126,19 @@ public class NewGameClient : Client<ConnectRequest, ConnectResponse>
         return this._receivedPackets.LockedAction<int>((rp) => rp.Sum((p) => p.ToBytes().Length));
     }
 
+    public int GetRXAVG()
+    {
+        return this._receivedPackets.LockedAction<int>((rp) => (int)rp.Average((p) => p.ToBytes().Length));
+    }
+
     public int GetTX()
     {
         return this._sentPackets.LockedAction<int>((rp) => rp.Sum((p) => p.ToBytes().Length));
+    }
+
+    public int GetTXAVG()
+    {
+        return this._sentPackets.LockedAction<int>((rp) => (int)rp.Average((p) => p.ToBytes().Length));
     }
 
     private void ProcessServerPackets()
@@ -140,6 +153,7 @@ public class NewGameClient : Client<ConnectRequest, ConnectResponse>
                 }
 
                 UpdateEntitiesPacket packet = rep.Dequeue();
+                this._serverLastProcessedCommand = packet.LastProcessedCommand;
 
                 foreach (EntityUpdate update in packet.Updates)
                 {
@@ -151,12 +165,6 @@ public class NewGameClient : Client<ConnectRequest, ConnectResponse>
 
                     if (entity.ID == this._playerId)
                     {
-                        // if (this._pendingSnapshots.ContainsKey(packet.LastProcessedCommand))
-                        // {
-                        //     ECSSnapshot snapshot = this._pendingSnapshots[packet.LastProcessedCommand];
-                        //     this._ecs.RestoreSnapshot(snapshot);
-                        // }
-
                         // This component belongs to me, the client.
                         // I should perform reconciliation.
                         foreach (Component component in update.Components)
@@ -167,20 +175,13 @@ public class NewGameClient : Client<ConnectRequest, ConnectResponse>
                             entity.GetComponent(component.GetType()).UpdateComponent(component);
                         }
 
-                        List<UserCommand> commandsAfterLast = this._pendingCommands.Where(c => c.CommandNumber > packet.LastProcessedCommand).ToList();
+                        List<UserCommand> commandsAfterLast = this._pendingCommands.Where(c => c.CommandNumber > this._serverLastProcessedCommand).ToList();
+                        Entity player = this._ecs.GetEntityFromID(this._playerId);
 
                         for (int i = 0; i < commandsAfterLast.Count; i++)
                         {
                             UserCommand command = commandsAfterLast[i];
-                            entity.ApplyInput(command);
-                        }
-
-                        List<UserCommand> toBeDeleted = this._pendingCommands.Where(c => c.CommandNumber <= packet.LastProcessedCommand).ToList();
-                        this._pendingCommands.RemoveAll(c => c.CommandNumber <= packet.LastProcessedCommand);
-
-                        foreach (UserCommand command in toBeDeleted)
-                        {
-                            this._pendingSnapshots.Remove(command.CommandNumber);
+                            player.ApplyInput(command);
                         }
                     }
                     else
@@ -205,6 +206,8 @@ public class NewGameClient : Client<ConnectRequest, ConnectResponse>
                 break;
             }
         }
+
+        this._pendingCommands.RemoveAll(c => c.CommandNumber <= this._serverLastProcessedCommand);
     }
 
     private void ProcessInputs()
@@ -216,10 +219,12 @@ public class NewGameClient : Client<ConnectRequest, ConnectResponse>
             (GLFW.Keys.S, UserCommand.KEY_S),
             (GLFW.Keys.D, UserCommand.KEY_D),
             (GLFW.Keys.Space, UserCommand.KEY_SPACE),
+            (GLFW.Keys.LeftShift, UserCommand.KEY_SHIFT),
         };
 
         UserCommand command = new UserCommand();
         command.DeltaTime = GameTime.DeltaTime;
+        command.PreviousButtons = this._lastSentCommand == null ? (byte)0 : this._lastSentCommand.Buttons;
 
         foreach ((GLFW.Keys, byte) input in inputs)
         {
@@ -243,11 +248,8 @@ public class NewGameClient : Client<ConnectRequest, ConnectResponse>
         Entity playerEntity = this._ecs.GetEntityFromID(this._playerId);
         if (playerEntity != null)
         {
-
             playerEntity.ApplyInput(command);
-
             this._pendingCommands.Add(command);
-            this._pendingSnapshots.Add(command.CommandNumber, this._ecs.GetSnapshot());
         }
     }
 
@@ -266,7 +268,7 @@ public class NewGameClient : Client<ConnectRequest, ConnectResponse>
 
         this._ecs.Update(null, GameTime.DeltaTime);
 
-        DisplayManager.SetWindowTitle($"RX: {this.GetRX()} TX: {this.GetTX()} PENDING: {this._pendingCommands.Count} LAST: {this._lastSentCommand?.CommandNumber} PENDING ECS: {this._pendingSnapshots.Count} FAKE_LATENCY: {this._fakeLatency}");
+        DisplayManager.SetWindowTitle($"RX: {Utilities.GetBytesPerSecondAsString(this.GetRX())} TX: {Utilities.GetBytesPerSecondAsString(this.GetTX())} PENDING: {this._pendingCommands.Count}");
     }
 
     private void InterpolateEntities()
@@ -287,6 +289,16 @@ public class NewGameClient : Client<ConnectRequest, ConnectResponse>
             PlayerPositionComponent transform = entity.GetComponent<PlayerPositionComponent>();
             ColorComponent cc = entity.GetComponent<ColorComponent>();
             Renderer.Primitive.RenderCircle(transform.Position.ToWorldVector().ToVector2(), 50f, cc.Color, false);
+
+            if (entity.ID == this._playerId)
+            {
+                string text = "You";
+                float scale = 2f;
+                Vector2 measure = ModManager.GetAsset<Font>("default.font.rainyhearts").MeasureString(text, scale);
+                Renderer.Text.RenderText(ModManager.GetAsset<Font>("default.font.rainyhearts"), text, transform.Position.ToWorldVector().ToVector2() - measure / 2f, scale, ColorF.White, Renderer.Camera);
+            }
         }
+
+        this._ecs.Render(null);
     }
 }

@@ -1,27 +1,32 @@
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys.Components;
+using AGame.Engine.Graphics;
+using AGame.Engine.Graphics.Rendering;
 using AGame.Engine.World;
 
 namespace AGame.Engine.ECSys.Systems;
 
-// [SystemRunsOn(SystemRunner.Server | SystemRunner.Client)]
-// public class MovementSystem : BaseSystem
-// {
-//     public override void Initialize()
-//     {
-//         this.RegisterComponentType<PlayerPositionComponent>();
-//     }
+[SystemRunsOn(SystemRunner.Client)]
+public class MovementSystem : BaseSystem
+{
+    public override void Initialize()
+    {
+        this.RegisterComponentType<PlayerPositionComponent>();
+    }
 
-//     public override void Update(List<Entity> entities, WorldContainer gameWorld, float deltaTime)
-//     {
-//         ECS parent = this.ParentECS;
+    public override void Render(List<Entity> entities, WorldContainer gameWorld)
+    {
+        foreach (Entity entity in entities)
+        {
+            PlayerPositionComponent ppc = entity.GetComponent<PlayerPositionComponent>();
+            CoordinateVector velocity = ppc.Velocity;
 
-//         foreach (Entity entity in entities)
-//         {
-//             PlayerPositionComponent ppc = entity.GetComponent<PlayerPositionComponent>();
+            CoordinateVector start = ppc.Position;
+            CoordinateVector end = ppc.Position + velocity * 0.5f;
 
-//             ppc.Velocity += (ppc.TargetVelocity - ppc.Velocity) * deltaTime * 4f;
-//             ppc.Position += ppc.Velocity * deltaTime;
-//         }
-//     }
-// }
+            Renderer.Primitive.RenderLine(start.ToWorldVector().ToVector2(), end.ToWorldVector().ToVector2(), 2, ColorF.White);
+
+        }
+
+    }
+}

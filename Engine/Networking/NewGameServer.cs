@@ -13,6 +13,10 @@ public class UserCommand : Packet
 {
     public int CommandNumber { get; set; }
     public float DeltaTime { get; set; }
+
+    [PacketPropIgnore]
+    public byte PreviousButtons { get; set; }
+
     public byte Buttons { get; set; }
 
     public UserCommand()
@@ -20,14 +24,16 @@ public class UserCommand : Packet
 
     }
 
-    public UserCommand(float delta, int commandNumber)
+    public UserCommand(byte previousButtons, float delta, int commandNumber)
     {
+        this.PreviousButtons = previousButtons;
         this.DeltaTime = delta;
         this.CommandNumber = commandNumber;
     }
 
-    public UserCommand(float delta, byte buttons, int commandNumber)
+    public UserCommand(byte previousButtons, float delta, byte buttons, int commandNumber)
     {
+        this.PreviousButtons = previousButtons;
         this.Buttons = buttons;
         this.DeltaTime = delta;
         this.CommandNumber = commandNumber;
@@ -49,6 +55,11 @@ public class UserCommand : Packet
     {
         return (this.Buttons & key) != 0;
     }
+
+    public bool IsKeyPressed(int key)
+    {
+        return (this.Buttons & key) != 0 && (this.PreviousButtons & key) == 0;
+    }
 }
 
 public class NewGameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
@@ -57,7 +68,7 @@ public class NewGameServer : Server<ConnectRequest, ConnectResponse, QueryRespon
     private ThreadSafe<ECS> _ecs;
     private ThreadSafe<Dictionary<Connection, int>> _connectionToPlayerId;
     private ThreadSafe<Queue<(Connection, UserCommand)>> _receivedCommands;
-    private ThreadSafe<Dictionary<Connection, int>> _lastProcessedCommand;
+    private ThreadSafe<Dictionary<Connection, UserCommand>> _lastProcessedCommand;
     private List<(Entity, Component)> _updatedComponents;
 
     public NewGameServer(ECS ecs, int tickRate, int port, int reliableMillisBeforeResend, int clientTimeoutMillis) : base(port, reliableMillisBeforeResend, clientTimeoutMillis)
@@ -65,7 +76,7 @@ public class NewGameServer : Server<ConnectRequest, ConnectResponse, QueryRespon
         this._tickRate = tickRate;
         this._connectionToPlayerId = new ThreadSafe<Dictionary<Connection, int>>(new Dictionary<Connection, int>());
         this._receivedCommands = new ThreadSafe<Queue<(Connection, UserCommand)>>(new Queue<(Connection, UserCommand)>());
-        this._lastProcessedCommand = new ThreadSafe<Dictionary<Connection, int>>(new Dictionary<Connection, int>());
+        this._lastProcessedCommand = new ThreadSafe<Dictionary<Connection, UserCommand>>(new Dictionary<Connection, UserCommand>());
         this._ecs = new ThreadSafe<ECS>(ecs);
         this._updatedComponents = new List<(Entity, Component)>();
 
@@ -100,7 +111,7 @@ public class NewGameServer : Server<ConnectRequest, ConnectResponse, QueryRespon
 
             this._lastProcessedCommand.LockedAction((lastProcessedCommand) =>
             {
-                lastProcessedCommand[e.RequestConnection] = -1;
+                lastProcessedCommand[e.RequestConnection] = null;
             });
 
             e.Accept(new ConnectResponse() { PlayerEntityID = entity.ID, ServerTickSpeed = this._tickRate });
@@ -165,6 +176,11 @@ public class NewGameServer : Server<ConnectRequest, ConnectResponse, QueryRespon
                 }
 
                 (Connection connection, UserCommand command) = queue.Dequeue();
+                UserCommand commandBefore = this._lastProcessedCommand.LockedAction((lastProcessedCommand) =>
+                {
+                    return lastProcessedCommand[connection];
+                });
+                command.PreviousButtons = commandBefore?.Buttons ?? 0;
 
                 int entityID = this._connectionToPlayerId.Value.GetValueOrDefault(connection, -1);
 
@@ -182,7 +198,7 @@ public class NewGameServer : Server<ConnectRequest, ConnectResponse, QueryRespon
 
                 this._lastProcessedCommand.LockedAction((lastProcessedCommand) =>
                 {
-                    lastProcessedCommand[connection] = command.CommandNumber;
+                    lastProcessedCommand[connection] = command;
                 });
 
                 return false;
@@ -193,6 +209,17 @@ public class NewGameServer : Server<ConnectRequest, ConnectResponse, QueryRespon
                 break;
             }
         }
+    }
+
+    private void SendECSUpdate(Connection connection, List<EntityUpdate> updates)
+    {
+        int lastProcessedCommand = this._lastProcessedCommand.LockedAction((lastProcessedCommand) =>
+        {
+            return lastProcessedCommand[connection].CommandNumber;
+        });
+
+        UpdateEntitiesPacket uep = new UpdateEntitiesPacket(lastProcessedCommand, updates.ToArray());
+        base.EnqueuePacket(uep, connection, false, true);
     }
 
     private void BroadcastEntireECS(Connection connection)
@@ -208,66 +235,37 @@ public class NewGameServer : Server<ConnectRequest, ConnectResponse, QueryRespon
 
         int lastProcessedCommand = this._lastProcessedCommand.LockedAction((lastProcessedCommand) =>
         {
-            return lastProcessedCommand[connection];
+            return lastProcessedCommand[connection].CommandNumber;
         });
 
         UpdateEntitiesPacket uep = new UpdateEntitiesPacket(lastProcessedCommand, entityUpdates.ToArray());
-        base.EnqueuePacket(uep, connection, false, false, 20);
-    }
-
-    private void BroadcastWorldState()
-    {
-        while (true)
-        {
-            List<(Entity, Component)> updatedComponents = this._updatedComponents.ToList();
-
-            if (this._updatedComponents.Count < 1)
-            {
-                break;
-            }
-
-            //Collect into entity updates
-            List<EntityUpdate> entityUpdates = new List<EntityUpdate>();
-            foreach ((Entity entity, Component component) in this._updatedComponents)
-            {
-                entityUpdates.Add(new EntityUpdate(entity.ID, component));
-            }
-            this._updatedComponents.Clear();
-
-            List<EntityUpdate[]> updates = Utilities.DivideIPacketables(entityUpdates.ToArray(), 200);
-            Dictionary<Connection, int> lastProcessedCommand = this._lastProcessedCommand.Value.ToDictionary(x => x.Key, x => x.Value);
-
-            base._connections.LockedAction((conns) =>
-            {
-                foreach (Connection connection in conns)
-                {
-                    foreach (EntityUpdate[] update in updates)
-                    {
-                        UpdateEntitiesPacket uep = new UpdateEntitiesPacket(lastProcessedCommand[connection], update);
-                        base.EnqueuePacket(uep, connection, false, false);
-                    }
-                }
-            });
-        }
+        base.EnqueuePacket(uep, connection, true, false);
     }
 
     private void Tick(float deltaTime)
     {
         this.ProcessInputs();
-        //this.BroadcastWorldState();
-
-        this._connections.LockedAction((conns) =>
-        {
-            foreach (Connection conn in conns)
-            {
-                this.BroadcastEntireECS(conn);
-            }
-        });
 
         this._ecs.LockedAction((ecs) =>
         {
             ecs.Update(null, deltaTime);
         });
+
+        List<EntityUpdate> updatesToSend = Utilities.GetPackedEntityUpdatesMaxByteSize(this._updatedComponents, 1024, out List<(Entity, Component)> usedUpdates);
+
+        this._connections.LockedAction((conns) =>
+        {
+            foreach (Connection conn in conns)
+            {
+                //this.BroadcastEntireECS(conn);
+                this.SendECSUpdate(conn, updatesToSend);
+            }
+        });
+
+        foreach ((Entity, Component) update in usedUpdates)
+        {
+            this._updatedComponents.Remove(update);
+        }
     }
 
     public async Task RunAsync()

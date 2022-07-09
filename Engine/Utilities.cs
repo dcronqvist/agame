@@ -334,6 +334,48 @@ namespace AGame.Engine
             return packets;
         }
 
+        public static List<EntityUpdate> GetPackedEntityUpdatesMaxByteSize(List<(Entity, Component)> updates, int maxByteSize, out List<(Entity, Component)> usedUpdates)
+        {
+            List<EntityUpdate> entityUpdates = new List<EntityUpdate>();
+
+            List<(Entity, List<Component>)> updatedComponents = new List<(Entity, List<Component>)>();
+
+            foreach ((Entity e, Component c) in updates)
+            {
+                if (!updatedComponents.Any(tuple => tuple.Item1 == e))
+                {
+                    updatedComponents.Add((e, new List<Component>()));
+                }
+
+                updatedComponents.Find(tuple => tuple.Item1 == e).Item2.Add(c);
+            }
+
+            int cumulativeSum = 0;
+
+            usedUpdates = new List<(Entity, Component)>();
+
+            foreach ((Entity e, List<Component> components) in updatedComponents)
+            {
+                EntityUpdate eu = new EntityUpdate(e.ID, components.ToArray());
+                cumulativeSum += eu.ToBytes().Length;
+
+                if (cumulativeSum <= maxByteSize)
+                {
+                    entityUpdates.Add(eu);
+                    foreach (Component c in components)
+                    {
+                        usedUpdates.Add((e, c));
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return entityUpdates;
+        }
+
         public static byte[] RunLengthEncode(byte[] buffer)
         {
             List<byte> output = new List<byte>();
@@ -378,6 +420,23 @@ namespace AGame.Engine
                 }
             }
             return output.ToArray();
+        }
+
+        public static string GetBytesPerSecondAsString(int bytesPerSecond)
+        {
+            // Convert bytes per second to appropriate units, lowest unit should be KB/s
+            if (bytesPerSecond < 1024 * 1024)
+            {
+                return MathF.Round((float)bytesPerSecond / 1024, 1) + " KB/s";
+            }
+            else if (bytesPerSecond < 1024 * 1024 * 1024)
+            {
+                return MathF.Round((float)bytesPerSecond / (1024 * 1024), 2) + " MB/s";
+            }
+            else
+            {
+                return MathF.Round((float)bytesPerSecond / (1024 * 1024 * 1024), 3) + " GB/s";
+            }
         }
     }
 

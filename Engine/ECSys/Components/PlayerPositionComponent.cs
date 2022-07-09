@@ -153,6 +153,11 @@ public class PlayerPositionComponent : Component
             this.TargetVelocity = movement.Normalize() * 10f;
         }
 
+        if ((TargetVelocity - Velocity).Length() < 0.01f)
+        {
+            Velocity = TargetVelocity;
+        }
+
         this.Velocity += (this.TargetVelocity - this.Velocity) * command.DeltaTime * 7f;
         this.Position += this.Velocity * command.DeltaTime;
     }

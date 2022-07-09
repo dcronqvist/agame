@@ -33,9 +33,8 @@ namespace AGame.Engine
 
             Logging.StartLogging();
 
-            DisplayManager.SetTargetFPS(144);
+            DisplayManager.SetTargetFPS(0);
             Utilities.InitRNG();
-
 
             Logging.Log(LogLevel.Info, "Starting game...");
         }
@@ -102,7 +101,7 @@ namespace AGame.Engine
                 {
                     ECS serverECS = new ECS();
                     serverECS.Initialize(SystemRunner.Server);
-                    newServer = new NewGameServer(serverECS, 20, 28000, 300, 500000);
+                    newServer = new NewGameServer(serverECS, 5, 28000, 300, 500000);
                     await newServer.StartAsync();
                     _ = newServer.RunAsync();
 
@@ -152,9 +151,9 @@ namespace AGame.Engine
                 newClient.Render();
                 //newServer?.Render();
 
-                GUI.Slider("Client Latency", new Vector2(100, 100), new Vector2(200, 50), ref fakeLatency);
+                GUI.Slider($"Latency: {(int)(fakeLatency * 100f)}ms", new Vector2(100, 100), new Vector2(200, 50), ref fakeLatency);
 
-                this.newClient.SetFakelatency((int)(fakeLatency * 2000f));
+                this.newClient.SetFakelatency((int)(fakeLatency * 100f));
             }
 
             GUI.End();
