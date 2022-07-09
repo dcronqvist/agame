@@ -52,11 +52,6 @@ public class Entity
         return true;
     }
 
-    public Component[] GetComponentsWithCNType(CNType type, NDirection direction)
-    {
-        return this.Components.FindAll(c => c.HasCNType(type, direction)).ToArray();
-    }
-
     public Entity Clone()
     {
         return new Entity(this.ID)

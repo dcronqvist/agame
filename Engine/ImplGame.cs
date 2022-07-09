@@ -32,7 +32,7 @@ namespace AGame.Engine
 
             Logging.StartLogging();
 
-            DisplayManager.SetTargetFPS(144);
+            DisplayManager.SetTargetFPS(0);
 
             Logging.Log(LogLevel.Info, "Starting game...");
         }

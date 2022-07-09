@@ -7,11 +7,12 @@ using AGame.Engine.World;
 namespace AGame.Engine.ECSys.Systems;
 
 [SystemRunsOn(SystemRunner.Client)]
-public class MovementSystem : BaseSystem
+public class PlayerRenderSystem : BaseSystem
 {
     public override void Initialize()
     {
         this.RegisterComponentType<PlayerPositionComponent>();
+        this.RegisterComponentType<ColorComponent>();
     }
 
     public override void Render(List<Entity> entities, WorldContainer gameWorld)
@@ -19,12 +20,10 @@ public class MovementSystem : BaseSystem
         foreach (Entity entity in entities)
         {
             PlayerPositionComponent ppc = entity.GetComponent<PlayerPositionComponent>();
-            CoordinateVector velocity = ppc.Velocity;
+            CoordinateVector pos = ppc.Position;
 
-            CoordinateVector start = ppc.Position;
-            CoordinateVector end = ppc.Position + velocity * 0.5f;
-
-            Renderer.Primitive.RenderLine(start.ToWorldVector().ToVector2(), end.ToWorldVector().ToVector2(), 2, ColorF.White);
+            ColorComponent cc = entity.GetComponent<ColorComponent>();
+            Renderer.Primitive.RenderCircle(pos.ToWorldVector().ToVector2(), 50f, cc.Color, false);
         }
     }
 }

@@ -233,7 +233,7 @@ public class ECS
 
     public void AddComponentToEntity(Entity entity, Component c)
     {
-        if (c.HasCNType(CNType.Update))
+        if (c.GetCNAttrib().UpdateTriggersNetworkUpdate)
         {
             c.PropertyChanged += (sender, e) =>
             {
@@ -241,7 +241,10 @@ public class ECS
             };
         }
 
-        this.ComponentChanged?.Invoke(this, new EntityComponentChangedEventArgs(entity, c));
+        if (c.GetCNAttrib().CreateTriggersNetworkUpdate)
+        {
+            this.ComponentChanged?.Invoke(this, new EntityComponentChangedEventArgs(entity, c));
+        }
         entity.Components.Add(c);
         RecalculateSystemEntities();
     }

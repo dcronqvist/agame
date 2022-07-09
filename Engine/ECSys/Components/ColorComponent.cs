@@ -6,7 +6,7 @@ using AGame.Engine.World;
 
 namespace AGame.Engine.ECSys.Components;
 
-[ComponentNetworking(CNType.Update, NDirection.ServerToClient, MaxUpdatesPerSecond = 20, IsReliable = false)]
+[ComponentNetworking(UpdateTriggersNetworkUpdate = true, CreateTriggersNetworkUpdate = true)]
 public class ColorComponent : Component
 {
     private ColorF _color;

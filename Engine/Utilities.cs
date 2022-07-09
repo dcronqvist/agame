@@ -305,35 +305,6 @@ namespace AGame.Engine
             return null;
         }
 
-        public static List<UpdateEntitiesPacket> CreateEntityUpdatePackets(CNType cnType, NDirection direction, params Entity[] entities)
-        {
-            List<EntityUpdate> updates = new List<EntityUpdate>();
-
-            foreach (Entity e in entities)
-            {
-                // Send snapshottable components
-                Component[] snapshottedComponents = e.GetComponentsWithCNType(cnType, direction);
-
-                // With divisions at most 200, every packet should be able to fit at least 2 entities
-                List<Component[]> divisions = Utilities.DivideIPacketables(snapshottedComponents, 200);
-
-                foreach (Component[] division in divisions)
-                {
-                    updates.Add(new EntityUpdate(e.ID, division));
-                }
-            }
-
-            List<EntityUpdate[]> entityUpdateDivisions = Utilities.DivideIPacketables(updates.ToArray(), 200);
-            List<UpdateEntitiesPacket> packets = new List<UpdateEntitiesPacket>();
-            foreach (EntityUpdate[] entityUpdateDivision in entityUpdateDivisions)
-            {
-                UpdateEntitiesPacket eup = new UpdateEntitiesPacket(entityUpdateDivision);
-                packets.Add(eup);
-            }
-
-            return packets;
-        }
-
         public static List<EntityUpdate> GetPackedEntityUpdatesMaxByteSize(List<(Entity, Component)> updates, int maxByteSize, out List<(Entity, Component)> usedUpdates)
         {
             List<EntityUpdate> entityUpdates = new List<EntityUpdate>();

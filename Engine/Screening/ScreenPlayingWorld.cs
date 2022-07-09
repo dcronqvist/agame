@@ -37,19 +37,9 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
     public override void OnEnter(EnterPlayingWorldArgs args)
     {
         _paused = false;
-        Camera = new Camera2D(Vector2.Zero, 2f);
+        Camera = new Camera2D(Vector2.Zero, 1f);
         _server = args.Server;
         _client = args.Client;
-
-        _client.PacketReceived += (sender, e) =>
-        {
-            _receivedPackets.Add(e.Packet);
-
-            if (_receivedPackets.Count > 40)
-            {
-                _receivedPackets.RemoveAt(0);
-            }
-        };
 
         _client.ServerDisconnectedClient += (sender, e) =>
         {
@@ -57,7 +47,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             {
                 ScreenManager.GoToScreen<ScreenTemporaryLoading, EnterTemporaryLoading>(new EnterTemporaryLoading() { Text = "Disconnected from server..." });
                 await Task.Delay(1000);
-                ScreenManager.GoToScreen<ScreenJoinWorld, EnterJoinWorldArgs>(new EnterJoinWorldArgs());
+                ScreenManager.GoToScreen<ScreenMainMenu, EnterMainMenuArgs>(new EnterMainMenuArgs());
             });
         };
 
@@ -81,7 +71,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
 
     public override void Render()
     {
-        this.Camera.FocusPosition = this._client.GetPlayerEntity().GetComponent<TransformComponent>().Position.ToWorldVector().ToVector2();
+        //this.Camera.FocusPosition = this._client.GetPlayerEntity().GetComponent<TransformComponent>().Position.ToWorldVector().ToVector2();
 
         Renderer.SetRenderTarget(null, this.Camera);
         Renderer.Clear(ColorF.Black);
@@ -105,27 +95,36 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             {
                 _ = this.ExitWorld();
             }
+
             GUI.End();
+        }
+
+        Renderer.SetRenderTarget(null, null);
+        TRXStats stats = this._client.GetTRXStats();
+
+        Font f = ModManager.GetAsset<Font>("default.font.rainyhearts");
+        Renderer.Text.RenderText(f, $"RX: {stats.GetRXBytesString()}", new Vector2(20, 20), 1f, ColorF.White, Renderer.Camera);
+        Renderer.Text.RenderText(f, $"TX: {stats.GetTXBytesString()}", new Vector2(20, 40), 1f, ColorF.White, Renderer.Camera);
+        Renderer.Text.RenderText(f, $"Ping: {this._client.GetPing()}ms", new Vector2(20, 60), 1f, ColorF.White, Renderer.Camera);
+
+        foreach ((Type t, int b) in stats.ComponentUpdatesReceivedBytesByType)
+        {
+            Renderer.Text.RenderText(f, $"{t.Name}: {b}", new Vector2(20, 80 + 20 * stats.ComponentUpdatesReceivedBytesByType.IndexOf((t, b))), 1f, ColorF.White, Renderer.Camera);
         }
     }
 
     public override void Update()
     {
         // Set audio's listener's position to player's position
-        Audio.SetListenerPosition(this._client.GetPlayerEntity().GetComponent<TransformComponent>().Position);
+        //Audio.SetListenerPosition(this._client.GetPlayerEntity().GetComponent<TransformComponent>().Position);
 
-        this._server?.Update();
-        this._client.Update(this.Camera, !this._paused);
+        //this._server?.Update();
+        this._client.Update();
 
         if (Input.IsKeyPressed(GLFW.Keys.Escape))
         {
             this._paused = !this._paused;
         }
-
-        int rx = this._client.GetRX();
-        int tx = this._client.GetTX();
-
-        DisplayManager.SetWindowTitle($"RX: {rx} TX: {tx}");
     }
 
     public async Task ExitWorld()
@@ -142,7 +141,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
                 await this._server.StopAsync(1000);
 
                 // Save the world
-                this._server.SaveServer();
+                //this._server.SaveServer();
             }
 
             ScreenManager.GoToScreen<ScreenMainMenu, EnterMainMenuArgs>(new EnterMainMenuArgs());

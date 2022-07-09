@@ -64,16 +64,6 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
         return this.GetType().GetCustomAttribute<ComponentNetworkingAttribute>(true);
     }
 
-    public bool HasCNType(CNType type)
-    {
-        return this.GetType().GetCustomAttribute<ComponentNetworkingAttribute>()?.Type == type;
-    }
-
-    public bool HasCNType(CNType type, NDirection direction)
-    {
-        return this.GetType().GetCustomAttribute<ComponentNetworkingAttribute>()?.Has(type, direction) ?? false;
-    }
-
     public int GetPacketSize()
     {
         return this.ToBytes().Length;

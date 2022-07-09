@@ -94,18 +94,22 @@ namespace AGame.Engine
 
                 if (args.Length > 0)
                 {
-                    newClient = new NewGameClient(args[0], 28000, 1000, 500000);
+                    newClient = new GameClient(args[0], 28000, 1000, 500000);
                     await newClient.ConnectAsync();
                 }
                 else
                 {
                     ECS serverECS = new ECS();
                     serverECS.Initialize(SystemRunner.Server);
-                    newServer = new NewGameServer(serverECS, 5, 28000, 300, 500000);
+
+                    GameServerConfiguration gsc = new GameServerConfiguration();
+                    gsc.SetPort(28000).SetMaxConnections(20).SetOnlyAllowLocalConnections(true);
+
+                    newServer = new GameServer(serverECS, gsc, 300, 500000);
                     await newServer.StartAsync();
                     _ = newServer.RunAsync();
 
-                    newClient = new NewGameClient("213.89.14.216", 28000, 300, 500000);
+                    newClient = new GameClient("213.89.14.216", 28000, 300, 500000);
                     await newClient.ConnectAsync();
                 }
 
@@ -126,8 +130,8 @@ namespace AGame.Engine
         }
 
         bool done = false;
-        NewGameServer newServer = null;
-        NewGameClient newClient = null;
+        GameServer newServer = null;
+        GameClient newClient = null;
 
         public override void Update()
         {

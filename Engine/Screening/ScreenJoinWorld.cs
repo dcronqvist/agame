@@ -50,15 +50,9 @@ public class ScreenJoinWorld : Screen<EnterJoinWorldArgs>
                 // Go to a loading screen, will do later
                 ScreenManager.GoToScreen<ScreenTemporaryLoading, EnterTemporaryLoading>(new EnterTemporaryLoading() { Text = "Loading world..." });
 
-                ECS clientECS = new ECS();
-                clientECS.Initialize(SystemRunner.Client, null);
+                GameClient gameClient = new GameClient(Utilities.ResolveIPOrDomain(this._ip), int.Parse(this._port), 500, 10000);
 
-                GameClient gameClient = new GameClient(Utilities.ResolveIPOrDomain(this._ip), int.Parse(this._port));
-                ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);
-
-                gameClient.Initialize(clientECS, new WorldContainer(swg, true));
-
-                bool connected = await gameClient.ConnectAsync(ScreenManager.Args[0]);
+                bool connected = await gameClient.ConnectAsync();
 
                 if (connected) // Cannot fail, as we are connecting to our own host.
                 {

@@ -38,41 +38,41 @@ public class ScreenMultiplayerMenu : Screen<EnterMultiplayerMenuArgs>
         {
             ScreenManager.GoToScreen<ScreenSelectWorld, EnterSelectWorldArgs>(new EnterSelectWorldArgs(async (world) =>
             {
-                await Task.Run(async () =>
-                {
-                    // Go to a loading screen, will do later
-                    ScreenManager.GoToScreen<ScreenTemporaryLoading, EnterTemporaryLoading>(new EnterTemporaryLoading() { Text = "Starting world..." });
+                // await Task.Run(async () =>
+                // {
+                //     // Go to a loading screen, will do later
+                //     ScreenManager.GoToScreen<ScreenTemporaryLoading, EnterTemporaryLoading>(new EnterTemporaryLoading() { Text = "Starting world..." });
 
-                    WorldContainer container = await world.GetAsContainerAsync();
-                    List<Entity> entities = await world.GetEntitiesAsync();
+                //     WorldContainer container = await world.GetAsContainerAsync();
+                //     List<Entity> entities = await world.GetEntitiesAsync();
 
-                    ECS serverECS = new ECS();
-                    serverECS.Initialize(SystemRunner.Server, entities);
+                //     ECS serverECS = new ECS();
+                //     serverECS.Initialize(SystemRunner.Server, entities);
 
-                    GameServerConfiguration config = new GameServerConfiguration()
-                    {
-                        MaxClients = 20,
-                        OnlyAllowLocalConnections = false,
-                        Port = 28000,
-                        EntityViewDistance = 20
-                    };
+                //     GameServerConfiguration config = new GameServerConfiguration()
+                //     {
+                //         MaxClients = 20,
+                //         OnlyAllowLocalConnections = false,
+                //         Port = 28000,
+                //         EntityViewDistance = 20
+                //     };
 
-                    GameServer gameServer = new GameServer(serverECS, container, world, config);
+                //     GameServer gameServer = new GameServer(serverECS, container, world, config);
 
-                    ECS clientECS = new ECS();
-                    clientECS.Initialize(SystemRunner.Client, null);
+                //     ECS clientECS = new ECS();
+                //     clientECS.Initialize(SystemRunner.Client, null);
 
-                    GameClient gameClient = new GameClient("127.0.0.1", config.Port);
-                    ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);
+                //     GameClient gameClient = new GameClient("127.0.0.1", config.Port);
+                //     ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);
 
-                    gameClient.Initialize(clientECS, new WorldContainer(swg, true));
+                //     gameClient.Initialize(clientECS, new WorldContainer(swg, true));
 
-                    await gameServer.StartAsync();
+                //     await gameServer.StartAsync();
 
-                    await gameClient.ConnectAsync(ScreenManager.Args[0]); // Cannot fail, as we are connecting to our own host.
+                //     await gameClient.ConnectAsync(ScreenManager.Args[0]); // Cannot fail, as we are connecting to our own host.
 
-                    ScreenManager.GoToScreen<ScreenPlayingWorld, EnterPlayingWorldArgs>(new EnterPlayingWorldArgs() { Server = gameServer, Client = gameClient });
-                });
+                //     ScreenManager.GoToScreen<ScreenPlayingWorld, EnterPlayingWorldArgs>(new EnterPlayingWorldArgs() { Server = gameServer, Client = gameClient });
+                // });
             }));
         }
         if (GUI.Button("Join Game", new Vector2(middleOfScreen.X - 200f, middleOfScreen.Y + 50f), new Vector2(400f, 40f)))

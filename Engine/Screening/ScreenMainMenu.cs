@@ -57,33 +57,22 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
                     // Go to a loading screen, will do later
                     ScreenManager.GoToScreen<ScreenTemporaryLoading, EnterTemporaryLoading>(new EnterTemporaryLoading() { Text = "Loading world..." });
 
-                    WorldContainer container = await world.GetAsContainerAsync();
-                    List<Entity> entities = await world.GetEntitiesAsync();
-
                     ECS serverECS = new ECS();
-                    serverECS.Initialize(SystemRunner.Server, entities);
+                    serverECS.Initialize(SystemRunner.Server);
 
-                    GameServerConfiguration config = new GameServerConfiguration()
-                    {
-                        MaxClients = 1,
-                        OnlyAllowLocalConnections = true,
-                        Port = 28000,
-                        EntityViewDistance = 20
-                    };
+                    GameServerConfiguration config = new GameServerConfiguration();
+                    config.SetPort(28000).SetMaxConnections(1).SetOnlyAllowLocalConnections(true).SetTickRate(20);
 
-                    GameServer gameServer = new GameServer(serverECS, container, world, config);
+                    GameServer gameServer = new GameServer(serverECS, config, 500, 10000);
 
                     ECS clientECS = new ECS();
-                    clientECS.Initialize(SystemRunner.Client, null);
+                    clientECS.Initialize(SystemRunner.Client);
 
-                    GameClient gameClient = new GameClient("127.0.0.1", config.Port);
-                    ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);
-
-                    gameClient.Initialize(clientECS, new WorldContainer(swg, true));
+                    GameClient gameClient = new GameClient("127.0.0.1", 28000, 500, 10000);
 
                     await gameServer.StartAsync();
-
-                    await gameClient.ConnectAsync(ScreenManager.Args[0]); // Cannot fail, as we are connecting to our own host.
+                    _ = gameServer.RunAsync();
+                    await gameClient.ConnectAsync(); // Cannot fail, as we are connecting to our own host.
 
                     ScreenManager.GoToScreen<ScreenPlayingWorld, EnterPlayingWorldArgs>(new EnterPlayingWorldArgs() { Server = gameServer, Client = gameClient });
                 });

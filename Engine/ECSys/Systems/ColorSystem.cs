@@ -5,7 +5,7 @@ using AGame.Engine.World;
 
 namespace AGame.Engine.ECSys.Systems;
 
-[SystemRunsOn(SystemRunner.Server | SystemRunner.Client)]
+[SystemRunsOn(SystemRunner.Server)]
 public class ColorSystem : BaseSystem
 {
     public override void Initialize()
@@ -15,13 +15,13 @@ public class ColorSystem : BaseSystem
 
     public override void Update(List<Entity> entities, WorldContainer gameWorld, float deltaTime)
     {
-        // ECS parent = this.ParentECS;
+        ECS parent = this.ParentECS;
 
-        // foreach (Entity entity in entities)
-        // {
-        //     ColorComponent cc = entity.GetComponent<ColorComponent>();
+        foreach (Entity entity in entities)
+        {
+            ColorComponent cc = entity.GetComponent<ColorComponent>();
 
-        //     cc.Color = ColorF.Lerp(cc.Color, ColorF.DarkGoldenRod, deltaTime * 1f);
-        // }
+            cc.Color = ColorF.Lerp(cc.Color, ColorF.DarkGoldenRod, deltaTime * 1f);
+        }
     }
 }
