@@ -51,7 +51,6 @@ public class ScreenJoinWorld : Screen<EnterJoinWorldArgs>
                 ScreenManager.GoToScreen<ScreenTemporaryLoading, EnterTemporaryLoading>(new EnterTemporaryLoading() { Text = "Loading world..." });
 
                 GameClient gameClient = new GameClient(Utilities.ResolveIPOrDomain(this._ip), int.Parse(this._port), 500, 5000);
-                gameClient.SetFakelatency(100);
 
                 bool connected = await gameClient.ConnectAsync();
 

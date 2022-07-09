@@ -21,7 +21,7 @@ public class ColorSystem : BaseSystem
         {
             ColorComponent cc = entity.GetComponent<ColorComponent>();
 
-            cc.Color = ColorF.Lerp(cc.Color, ColorF.DarkGoldenRod, deltaTime * 1f);
+            cc.Color = ColorF.Lerp(cc.Color, ColorF.White, deltaTime * 0.1f);
         }
     }
 }
