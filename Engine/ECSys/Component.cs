@@ -52,7 +52,6 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
     public abstract Component Clone();
     public abstract int Populate(byte[] data, int offset);
     public abstract byte[] ToBytes();
-    //public abstract string ToJson(JsonSerializerOptions options);
     public new abstract string ToString();
     public abstract void UpdateComponent(Component newComponent);
     public abstract void InterpolateProperties(Component from, Component to, float amt);
@@ -67,44 +66,6 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
     public int GetPacketSize()
     {
         return this.ToBytes().Length;
-    }
-
-    private EventInfo[] GetEvents()
-    {
-        return this.GetType().GetEvents().Where(e => e.Name != "PropertyChanged").OrderBy(e => e.Name).ToArray();
-    }
-
-    private int GetEventID(EventInfo eventInfo)
-    {
-        EventInfo[] events = this.GetEvents();
-        return Array.IndexOf(events, eventInfo);
-    }
-
-    public Type GetEventArgsType(int id)
-    {
-        EventInfo[] events = this.GetEvents();
-        return events[id].EventHandlerType.GetGenericArguments()[0];
-    }
-
-    public void TriggerComponentEvent<T>(int id, T eventArgs) where T : EventArgs
-    {
-        EventInfo[] events = this.GetEvents();
-        events[id].GetRaiseMethod().Invoke(this, new object[] { eventArgs });
-    }
-
-    public void TriggerComponentEvent(Type eventArgsType, int id, object eventArgs)
-    {
-        EventInfo[] events = this.GetEvents();
-        Type type = this.GetType();
-        FieldInfo info = type.GetField(events[id].Name, BindingFlags.Instance | BindingFlags.NonPublic);
-        var deleg = (MulticastDelegate)info.GetValue(this);
-        if (deleg != null)
-        {
-            foreach (Delegate del in deleg.GetInvocationList())
-            {
-                del.DynamicInvoke(new object[] { this, eventArgs });
-            }
-        }
     }
 
     public void PushComponentUpdate(Component component)

@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Numerics;
 using AGame.Engine.Assets;
+using AGame.Engine.ECSys;
 using AGame.Engine.ECSys.Components;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Cameras;
@@ -21,6 +22,7 @@ public class EnterPlayingWorldArgs : ScreenEnterArgs
 
 public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
 {
+    private bool _disconnected = false;
     private GameServer _server;
     private GameClient _client;
     public Camera2D Camera { get; set; }
@@ -64,9 +66,12 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
         };
     }
 
-    public override void OnLeave()
+    public override async void OnLeave()
     {
-
+        if (!this._disconnected)
+        {
+            await this.ExitWorld();
+        }
     }
 
     public override void Render()
@@ -107,9 +112,16 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
         Renderer.Text.RenderText(f, $"TX: {stats.GetTXBytesString()}", new Vector2(20, 40), 1f, ColorF.White, Renderer.Camera);
         Renderer.Text.RenderText(f, $"Ping: {this._client.GetPing()}ms", new Vector2(20, 60), 1f, ColorF.White, Renderer.Camera);
 
+        if (this._client.GetPlayerEntity() != null)
+        {
+            Entity localPlayer = this._client.GetPlayerEntity();
+            int remotePlayerID = this._client.GetRemoteIDForEntity(localPlayer.ID);
+            Renderer.Text.RenderText(f, $"RemotePlayerID: {remotePlayerID}", new Vector2(20, 80), 1f, ColorF.White, Renderer.Camera);
+        }
+
         foreach ((Type t, int b) in stats.ComponentUpdatesReceivedBytesByType)
         {
-            Renderer.Text.RenderText(f, $"{t.Name}: {b}", new Vector2(20, 80 + 20 * stats.ComponentUpdatesReceivedBytesByType.IndexOf((t, b))), 1f, ColorF.White, Renderer.Camera);
+            Renderer.Text.RenderText(f, $"{t.Name}: {b}", new Vector2(20, 100 + 20 * stats.ComponentUpdatesReceivedBytesByType.IndexOf((t, b))), 1f, ColorF.White, Renderer.Camera);
         }
     }
 
@@ -133,6 +145,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
         {
             ScreenManager.GoToScreen<ScreenTemporaryLoading, EnterTemporaryLoading>(new EnterTemporaryLoading() { Text = "Closing world..." });
             await this._client.DisconnectAsync(1000);
+            this._disconnected = true;
 
             await Task.Delay(1000);
 

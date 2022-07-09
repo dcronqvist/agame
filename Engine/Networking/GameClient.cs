@@ -22,6 +22,8 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     private ThreadSafe<Queue<Packet>> _sentPackets;
     private ThreadSafe<int> _latency;
 
+    private Dictionary<int, Entity> _serverEntityIDToClientEntity;
+
     private int _playerId;
     private float _interpolationTime;
     private int _fakeLatency;
@@ -39,6 +41,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         this._latency = new ThreadSafe<int>(0);
         this._receivedEntityUpdates = new ThreadSafe<Queue<UpdateEntitiesPacket>>(new Queue<UpdateEntitiesPacket>());
         this._pendingCommands = new List<UserCommand>();
+        this._serverEntityIDToClientEntity = new Dictionary<int, Entity>();
         this._receivedPackets = new ThreadSafe<Queue<Packet>>(new Queue<Packet>());
         this._sentPackets = new ThreadSafe<Queue<Packet>>(new Queue<Packet>());
         this._playerId = -1;
@@ -63,6 +66,11 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     public void SetFakelatency(int milliseconds)
     {
         this._fakeLatency = milliseconds;
+    }
+
+    public int GetRemoteIDForEntity(int localEntityID)
+    {
+        return this._serverEntityIDToClientEntity.First(x => x.Value.ID == localEntityID).Key;
     }
 
     private void RegisterClientEventHandlers()
@@ -113,6 +121,11 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                 rep.Enqueue(packet);
             });
         });
+
+        this.AddPacketHandler<DestroyEntityPacket>((packet) =>
+        {
+            this.DestroyClientSideEntity(packet.EntityID);
+        });
     }
 
     public async Task<bool> ConnectAsync()
@@ -147,9 +160,28 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         return this._latency.Value;
     }
 
-    private void ProcessServerOtherPackets()
+    private bool TryGetClientSideEntity(int serverEntityID, out Entity clientEntity)
     {
+        return this._serverEntityIDToClientEntity.TryGetValue(serverEntityID, out clientEntity);
+    }
 
+    public Entity GetPlayerEntity()
+    {
+        if (TryGetClientSideEntity(this._playerId, out Entity playerEntity))
+        {
+            return playerEntity;
+        }
+
+        return null;
+    }
+
+    private void DestroyClientSideEntity(int serverEntityID)
+    {
+        if (TryGetClientSideEntity(serverEntityID, out Entity clientEntity))
+        {
+            this._ecs.DestroyEntity(clientEntity.ID);
+            this._serverEntityIDToClientEntity.Remove(serverEntityID);
+        }
     }
 
     private void ProcessServerECSUpdates()
@@ -168,31 +200,31 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
                 foreach (EntityUpdate update in packet.Updates)
                 {
+                    if (!TryGetClientSideEntity(update.EntityID, out Entity clientEntity))
+                    {
+                        clientEntity = this._ecs.CreateEntity();
+                        this._serverEntityIDToClientEntity.Add(update.EntityID, clientEntity);
+                    }
 
-                    if (!this._ecs.EntityExists(update.EntityID))
-                        this._ecs.CreateEntity(update.EntityID);
-
-                    Entity entity = this._ecs.GetEntityFromID(update.EntityID);
-
-                    if (entity.ID == this._playerId)
+                    // If the update is of the remote player
+                    if (update.EntityID == this._playerId)
                     {
                         // This component belongs to me, the client.
                         // I should perform reconciliation.
                         foreach (Component component in update.Components)
                         {
-                            if (!entity.HasComponent(component.GetType()))
-                                this._ecs.AddComponentToEntity(entity, component);
+                            if (!clientEntity.HasComponent(component.GetType()))
+                                this._ecs.AddComponentToEntity(clientEntity, component);
 
-                            entity.GetComponent(component.GetType()).UpdateComponent(component);
+                            clientEntity.GetComponent(component.GetType()).UpdateComponent(component);
                         }
 
                         List<UserCommand> commandsAfterLast = this._pendingCommands.Where(c => c.CommandNumber > this._serverLastProcessedCommand).ToList();
-                        Entity player = this._ecs.GetEntityFromID(this._playerId);
 
                         for (int i = 0; i < commandsAfterLast.Count; i++)
                         {
                             UserCommand command = commandsAfterLast[i];
-                            player.ApplyInput(command);
+                            clientEntity.ApplyInput(command);
                         }
                     }
                     else
@@ -201,10 +233,10 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                         // is not me, so I should perform interpolation.
                         foreach (Component component in update.Components)
                         {
-                            if (!entity.HasComponent(component.GetType()))
-                                this._ecs.AddComponentToEntity(entity, component);
+                            if (!clientEntity.HasComponent(component.GetType()))
+                                this._ecs.AddComponentToEntity(clientEntity, component);
 
-                            entity.GetComponent(component.GetType()).PushComponentUpdate(component);
+                            clientEntity.GetComponent(component.GetType()).PushComponentUpdate(component);
                         }
                     }
                 }
@@ -245,18 +277,13 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             }
         }
 
-        // if (command.Buttons == 0)
-        // {
-        //     return;
-        // }
-
         command.CommandNumber = this._lastSentCommand != null ? this._lastSentCommand.CommandNumber + 1 : 0;
 
         base.EnqueuePacket(command, false, false, this._fakeLatency);
         this._lastSentCommand = command;
 
         //Client side prediction
-        Entity playerEntity = this._ecs.GetEntityFromID(this._playerId);
+        Entity playerEntity = this.GetPlayerEntity();
         if (playerEntity != null)
         {
             playerEntity.ApplyInput(command);
@@ -284,7 +311,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     {
         foreach (Entity entity in this._ecs.GetAllEntities())
         {
-            if (entity.ID != this._playerId)
+            if (entity.ID != this.GetPlayerEntity().ID)
                 entity.InterpolateComponents(this._interpolationTime);
         }
     }

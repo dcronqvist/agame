@@ -17,25 +17,6 @@ public class ConnectResponse : PacketConnectionResponse
 
 public class ConnectReadyForData : Packet { }
 
-public class ConnectReadyForMap : Packet { }
-
-public class ConnectReadyForECS : Packet { }
-
-public class ConnectFinished : Packet
-{
-    public int PlayerEntityId { get; set; }
-
-    public ConnectFinished()
-    {
-
-    }
-}
-
-public class ClientAlive : Packet
-{
-
-}
-
 public class QueryResponse : PacketQueryResponse
 {
 

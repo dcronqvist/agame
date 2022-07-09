@@ -71,11 +71,15 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     private List<(Entity, Component)> _updatedComponents;
     private GameServerConfiguration _configuration;
 
+    private ThreadSafe<Queue<IServerTickAction>> _nextTickActions;
+
     public GameServer(ECS ecs, GameServerConfiguration config, int reliableMillisBeforeResend, int clientTimeoutMillis) : base(config.Port, reliableMillisBeforeResend, clientTimeoutMillis)
     {
+        this._configuration = config;
         this._connectionToPlayerId = new ThreadSafe<Dictionary<Connection, int>>(new Dictionary<Connection, int>());
         this._receivedCommands = new ThreadSafe<Queue<(Connection, UserCommand)>>(new Queue<(Connection, UserCommand)>());
         this._lastProcessedCommand = new ThreadSafe<Dictionary<Connection, UserCommand>>(new Dictionary<Connection, UserCommand>());
+        this._nextTickActions = new ThreadSafe<Queue<IServerTickAction>>(new Queue<IServerTickAction>());
         this._ecs = new ThreadSafe<ECS>(ecs);
         this._updatedComponents = new List<(Entity, Component)>();
 
@@ -148,6 +152,9 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
             this._connectionToPlayerId.LockedAction((connectionToPlayerId) =>
             {
+                int id = connectionToPlayerId[this._connections.LockedAction((c) => c.Find(conn => conn.RemoteEndPoint == e.Requester))];
+                this.DestroyEntity(id);
+
                 connectionToPlayerId.Remove(this._connections.LockedAction((c) => c.Find(conn => conn.RemoteEndPoint == e.Requester)));
             });
 
@@ -155,6 +162,25 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             {
                 lastProcessedCommand.Remove(this._connections.LockedAction((c) => c.Find(conn => conn.RemoteEndPoint == e.Requester)));
             });
+        };
+
+        base.ClientDisconnected += (sender, e) =>
+        {
+            Logging.Log(LogLevel.Debug, $"Server: Client disconnected from {e.Connection.RemoteEndPoint}");
+
+            int playerEntityId = this._connectionToPlayerId.LockedAction((connectionToPlayerId) =>
+            {
+                int id = connectionToPlayerId[e.Connection];
+                connectionToPlayerId.Remove(e.Connection);
+                return id;
+            });
+
+            this._lastProcessedCommand.LockedAction((lastProcessedCommand) =>
+            {
+                lastProcessedCommand.Remove(e.Connection);
+            });
+
+            this.PerformActionNextTick(new DestroyEntityAction(playerEntityId));
         };
 
         this.ServerQueryReceived += (sender, e) => e.RespondWith(new QueryResponse());
@@ -168,6 +194,14 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
             this._updatedComponents.Add((e.Entity, e.Component));
         };
+    }
+
+    private void PerformActionNextTick(IServerTickAction action)
+    {
+        this._nextTickActions.LockedAction((actions) =>
+        {
+            actions.Enqueue(action);
+        });
     }
 
     private void RegisterPacketHandlers()
@@ -252,7 +286,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
         foreach (Entity entity in entities)
         {
-            entityUpdates.Add(new EntityUpdate(entity.ID, entity.Components.ToArray()));
+            entityUpdates.Add(new EntityUpdate(entity.ID, entity.Components.Where(c => c.GetCNAttrib().CreateTriggersNetworkUpdate).ToArray()));
         }
 
         int lastProcessedCommand = this._lastProcessedCommand.LockedAction((lastProcessedCommand) =>
@@ -262,6 +296,14 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
         UpdateEntitiesPacket uep = new UpdateEntitiesPacket(lastProcessedCommand, entityUpdates.ToArray());
         base.EnqueuePacket(uep, connection, true, false);
+    }
+
+    public void DestroyEntity(int entityId)
+    {
+        this._ecs.LockedAction((ecs) =>
+        {
+            ecs.DestroyEntity(entityId);
+        });
     }
 
     private void Tick(float deltaTime)
@@ -281,6 +323,15 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             {
                 //this.BroadcastEntireECS(conn);
                 this.SendECSUpdate(conn, updatesToSend);
+            }
+        });
+
+        this._nextTickActions.LockedAction((actions) =>
+        {
+            while (actions.Count > 0)
+            {
+                IServerTickAction action = actions.Dequeue();
+                action.Tick(this);
             }
         });
 
@@ -323,20 +374,6 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 }
 
                 lastTickTime = currentTickTime;
-            }
-        });
-    }
-
-    public void Render()
-    {
-        this._ecs.LockedAction((ecs) =>
-        {
-            List<Entity> entities = ecs.GetAllEntities();
-
-            foreach (Entity entity in entities)
-            {
-                PlayerPositionComponent transform = entity.GetComponent<PlayerPositionComponent>();
-                Renderer.Primitive.RenderCircle(transform.Position.ToWorldVector().ToVector2(), 30f, ColorF.LightGray, false);
             }
         });
     }

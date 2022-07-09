@@ -9,7 +9,7 @@ public class GameServerConfiguration
 
     public bool Validate()
     {
-        return Port > 1024 && Port < 65535 && MaxConnections > 0 && TickRate > 0;
+        return MaxConnections > 0 && TickRate > 0;
     }
 
     public GameServerConfiguration SetPort(int port)

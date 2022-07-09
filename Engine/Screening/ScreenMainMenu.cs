@@ -61,17 +61,19 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
                     serverECS.Initialize(SystemRunner.Server);
 
                     GameServerConfiguration config = new GameServerConfiguration();
-                    config.SetPort(28000).SetMaxConnections(1).SetOnlyAllowLocalConnections(true).SetTickRate(20);
+                    config.SetPort(0).SetMaxConnections(1).SetOnlyAllowLocalConnections(true).SetTickRate(20);
 
-                    GameServer gameServer = new GameServer(serverECS, config, 500, 10000);
+                    GameServer gameServer = new GameServer(serverECS, config, 500, 5000);
+                    await gameServer.StartAsync();
+                    _ = gameServer.RunAsync();
+
+                    int serverPort = gameServer.Port;
 
                     ECS clientECS = new ECS();
                     clientECS.Initialize(SystemRunner.Client);
 
-                    GameClient gameClient = new GameClient("127.0.0.1", 28000, 500, 10000);
+                    GameClient gameClient = new GameClient("127.0.0.1", serverPort, 500, 5000);
 
-                    await gameServer.StartAsync();
-                    _ = gameServer.RunAsync();
                     await gameClient.ConnectAsync(); // Cannot fail, as we are connecting to our own host.
 
                     ScreenManager.GoToScreen<ScreenPlayingWorld, EnterPlayingWorldArgs>(new EnterPlayingWorldArgs() { Server = gameServer, Client = gameClient });
@@ -91,12 +93,12 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
 
         if (GUI.Button("Play Test Sound", new Vector2(middleOfScreen.X - width / 2f, middleOfScreen.Y + height * 3 + distance * 3), new Vector2(width, height)))
         {
-            Audio.Play("audio_click", Utilities.GetRandomFloat(0.8f, 1.2f));
+            Audio.Play("default.audio.click", Utilities.GetRandomFloat(0.8f, 1.2f));
         }
 
         if (GUI.Button("Play Test Sound 2", new Vector2(middleOfScreen.X - width / 2f, middleOfScreen.Y + height * 4 + distance * 4), new Vector2(width, height)))
         {
-            Audio.Play("audio_click_2", Utilities.GetRandomFloat(0.8f, 1.2f));
+            Audio.Play("default.audio.click_2", Utilities.GetRandomFloat(0.8f, 1.2f));
         }
 
         float volume = Settings.GetSetting<float>("volume_master");
