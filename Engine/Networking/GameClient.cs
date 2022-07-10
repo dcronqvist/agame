@@ -22,7 +22,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     private ThreadSafe<Queue<UpdateEntitiesPacket>> _receivedEntityUpdates;
     private ThreadSafe<Queue<Packet>> _receivedPackets;
     private ThreadSafe<Queue<Packet>> _sentPackets;
-    private ThreadSafe<int> _latency;
+    private ThreadSafe<Queue<int>> _latency;
 
     private Dictionary<int, Entity> _serverEntityIDToClientEntity;
 
@@ -33,6 +33,8 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     private string _hostname;
     private int _port;
 
+    private int _renderDistance = 4;
+
     public GameClient(string hostname, int port, int reliableMillisBeforeResend, int timeoutMillis) : base(hostname, port, reliableMillisBeforeResend, timeoutMillis)
     {
         this._ecs = new ECS();
@@ -41,7 +43,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         this._hostname = hostname;
         this._port = port;
 
-        this._latency = new ThreadSafe<int>(0);
+        this._latency = new ThreadSafe<Queue<int>>(new Queue<int>());
         this._receivedEntityUpdates = new ThreadSafe<Queue<UpdateEntitiesPacket>>(new Queue<UpdateEntitiesPacket>());
         this._pendingCommands = new List<UserCommand>();
         this._serverEntityIDToClientEntity = new Dictionary<int, Entity>();
@@ -66,7 +68,19 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             {
                 QueryResponse response = await Client.QueryServerAsync<QueryResponse>(this._hostname, this._port, 5000);
                 await Task.Delay(1000);
-                this._latency.Value = response.GetPing();
+
+                _ = Task.Run(async () =>
+                {
+                    this._latency.LockedAction(q =>
+                    {
+                        q.Enqueue(response.GetPing());
+                    });
+                    await Task.Delay(5000);
+                    this._latency.LockedAction(q =>
+                    {
+                        q.Dequeue();
+                    });
+                });
             }
         });
     }
@@ -139,6 +153,18 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         {
             this._world.UpdateChunk(packet.X, packet.Y, packet.Chunk);
         });
+
+        this.AddPacketHandler<UnloadChunkPacket>((packet) =>
+        {
+            this._world.DiscardChunk(packet.X, packet.Y);
+        });
+
+        this.AddPacketHandler<WholeChunkPacket>((packet) =>
+        {
+            this._world.UpdateChunk(packet.X, packet.Y, packet.Chunk);
+
+            this.EnqueuePacket(new ReceivedChunkPacket(packet.X, packet.Y), true, false);
+        });
     }
 
     public async Task<bool> ConnectAsync()
@@ -158,7 +184,9 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             }
 
 
-            this._world.MaintainChunkArea(2, 1, response.PlayerChunkX, response.PlayerChunkY);
+            //this._world.MaintainChunkArea(this._renderDistance, this._renderDistance, response.PlayerChunkX, response.PlayerChunkY);
+
+            this.StartLatencyChecking();
             return true;
         }
 
@@ -172,7 +200,15 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
     public int GetPing()
     {
-        return this._latency.Value;
+        return (int)this._latency.LockedAction((queue) =>
+        {
+            if (queue.Count > 0)
+            {
+                return queue.Average();
+            }
+
+            return 0;
+        });
     }
 
     private bool TryGetClientSideEntity(int serverEntityID, out Entity clientEntity)
@@ -321,16 +357,16 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
         this._ecs.Update(null, GameTime.DeltaTime);
 
-        Entity playerEntity = this.GetPlayerEntity();
-        PlayerPositionComponent ppc = playerEntity.GetComponent<PlayerPositionComponent>();
-        CoordinateVector position = ppc.Position;
-        ChunkAddress chunkPos = position.ToChunkAddress();
+        // Entity playerEntity = this.GetPlayerEntity();
+        // PlayerPositionComponent ppc = playerEntity.GetComponent<PlayerPositionComponent>();
+        // CoordinateVector position = ppc.Position;
+        // ChunkAddress chunkPos = position.ToChunkAddress();
 
-        if (!chunkPos.Equals(this._previousChunkAddress))
-        {
-            this._previousChunkAddress = chunkPos;
-            _ = this._world.MaintainChunkAreaAsync(2, 1, chunkPos.X, chunkPos.Y);
-        }
+        // if (!chunkPos.Equals(this._previousChunkAddress))
+        // {
+        //     this._previousChunkAddress = chunkPos;
+        //     _ = this._world.MaintainChunkAreaAsync(this._renderDistance, this._renderDistance, chunkPos.X, chunkPos.Y);
+        // }
     }
 
     private void InterpolateEntities()

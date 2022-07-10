@@ -54,3 +54,30 @@ public class SendChunkToClientAction : IServerTickAction
         server.EnqueuePacket(wcp, this.Connection, true, false);
     }
 }
+
+public class TellClientToUnloadChunkAction : IServerTickAction
+{
+    public Connection Connection { get; set; }
+    public int X { get; set; }
+    public int Y { get; set; }
+
+    public TellClientToUnloadChunkAction(Connection conn, int x, int y)
+    {
+        this.Connection = conn;
+        this.X = x;
+        this.Y = y;
+    }
+
+    public void Tick(GameServer server)
+    {
+        Logging.Log(LogLevel.Debug, $"Server: Telling client {this.Connection.RemoteEndPoint} to unload chunk {this.X}, {this.Y}");
+
+        UnloadChunkPacket wcp = new UnloadChunkPacket()
+        {
+            X = this.X,
+            Y = this.Y,
+        };
+
+        server.EnqueuePacket(wcp, this.Connection, true, false);
+    }
+}

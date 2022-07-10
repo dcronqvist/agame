@@ -26,6 +26,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
     private GameServer _server;
     private GameClient _client;
     public Camera2D Camera { get; set; }
+    private Vector2 _cameraTargetPosition;
 
     List<Packet> _receivedPackets = new List<Packet>();
 
@@ -74,9 +75,22 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
         }
     }
 
+    public void SetCameraPosition(CoordinateVector position, bool snap = false)
+    {
+        if (snap)
+        {
+            this.Camera.FocusPosition = position.ToWorldVector().ToVector2();
+            this._cameraTargetPosition = position.ToWorldVector().ToVector2();
+        }
+        else
+        {
+            this._cameraTargetPosition = position.ToWorldVector().ToVector2();
+        }
+    }
+
     public override void Render()
     {
-        //this.Camera.FocusPosition = this._client.GetPlayerEntity().GetComponent<TransformComponent>().Position.ToWorldVector().ToVector2();
+        this.Camera.FocusPosition += (this._cameraTargetPosition - this.Camera.FocusPosition) * GameTime.DeltaTime * 7f;
 
         Renderer.SetRenderTarget(null, this.Camera);
         Renderer.Clear(ColorF.Black);
@@ -117,6 +131,8 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             Entity localPlayer = this._client.GetPlayerEntity();
             int remotePlayerID = this._client.GetRemoteIDForEntity(localPlayer.ID);
             Renderer.Text.RenderText(f, $"RemotePlayerID: {remotePlayerID}", new Vector2(20, 80), 1f, ColorF.White, Renderer.Camera);
+
+            this.SetCameraPosition(localPlayer.GetComponent<PlayerPositionComponent>().Position, false);
         }
 
         foreach ((Type t, int b) in stats.ComponentUpdatesReceivedBytesByType)

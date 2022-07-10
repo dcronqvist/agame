@@ -68,6 +68,40 @@ public class WholeChunkPacket : Packet
     }
 }
 
+public class ReceivedChunkPacket : Packet
+{
+    public int X { get; set; }
+    public int Y { get; set; }
+
+    public ReceivedChunkPacket()
+    {
+
+    }
+
+    public ReceivedChunkPacket(int x, int y)
+    {
+        this.X = x;
+        this.Y = y;
+    }
+}
+
+public class UnloadChunkPacket : Packet
+{
+    public int X { get; set; }
+    public int Y { get; set; }
+
+    public UnloadChunkPacket()
+    {
+
+    }
+
+    public UnloadChunkPacket(int x, int y)
+    {
+        this.X = x;
+        this.Y = y;
+    }
+}
+
 public class ChunkUpdatePacket : Packet
 {
     public int X { get; set; }
@@ -88,19 +122,21 @@ public class ServerWorldGenerator : IWorldGenerator
     public ServerWorldGenerator(GameClient client)
     {
         this._gameClient = client;
-        _gameClient.AddPacketHandler<WholeChunkPacket>((packet) =>
-        {
-            Logging.Log(LogLevel.Debug, $"Client: Received chunk {packet.X}, {packet.Y}");
-            _requestedChunks.LockedAction((rc) =>
-            {
-                rc[new ChunkAddress(packet.X, packet.Y)] = packet.Chunk;
-            });
-        });
+        // _gameClient.AddPacketHandler<WholeChunkPacket>((packet) =>
+        // {
+        //     Logging.Log(LogLevel.Debug, $"Client: Received chunk {packet.X}, {packet.Y}");
+        //     _requestedChunks.LockedAction((rc) =>
+        //     {
+        //         rc[new ChunkAddress(packet.X, packet.Y)] = packet.Chunk;
+        //     });
+
+        //     _gameClient.EnqueuePacket(new ReceivedChunkPacket(packet.X, packet.Y), true, false);
+        // });
     }
 
     public Chunk GenerateChunk(int x, int y)
     {
-        this.RequestChunk(x, y);
+        //this.RequestChunk(x, y);
         ChunkAddress chunkAddress = new ChunkAddress(x, y);
 
         while (_requestedChunks.LockedAction((rc) => { return rc[chunkAddress] == null; }))
@@ -120,7 +156,7 @@ public class ServerWorldGenerator : IWorldGenerator
     {
         return await Task.Run(() =>
         {
-            this.RequestChunk(x, y);
+            //this.RequestChunk(x, y);
             ChunkAddress chunkAddress = new ChunkAddress(x, y);
 
             while (_requestedChunks.LockedAction((rc) => { return rc[chunkAddress] == null; }))
@@ -139,14 +175,14 @@ public class ServerWorldGenerator : IWorldGenerator
 
     private void RequestChunk(int x, int y)
     {
-        ChunkAddress address = new ChunkAddress(x, y);
-        _requestedChunks.LockedAction((rc) =>
-        {
-            if (!rc.ContainsKey(address))
-            {
-                _gameClient.EnqueuePacket(new RequestChunkPacket() { X = x, Y = y }, true, false);
-                rc.Add(address, null);
-            }
-        });
+        // ChunkAddress address = new ChunkAddress(x, y);
+        // _requestedChunks.LockedAction((rc) =>
+        // {
+        //     if (!rc.ContainsKey(address))
+        //     {
+        //         _gameClient.EnqueuePacket(new RequestChunkPacket() { X = x, Y = y }, true, false);
+        //         rc.Add(address, null);
+        //     }
+        // });
     }
 }

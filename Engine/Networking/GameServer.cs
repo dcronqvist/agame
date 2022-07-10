@@ -72,8 +72,11 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     private ThreadSafe<Dictionary<Connection, UserCommand>> _lastProcessedCommand;
     private List<(Entity, Component)> _updatedComponents;
     private GameServerConfiguration _configuration;
-
     private ThreadSafe<Queue<IServerTickAction>> _nextTickActions;
+    private ThreadSafe<Dictionary<Connection, List<ChunkAddress>>> _connectionsLoadedChunks;
+
+    // Sends chunks of this distance around the player to clients.
+    private int _chunkDistance = 4;
 
     public GameServer(ECS ecs, WorldContainer world, WorldMetaData worldMeta, GameServerConfiguration config, int reliableMillisBeforeResend, int clientTimeoutMillis) : base(config.Port, reliableMillisBeforeResend, clientTimeoutMillis)
     {
@@ -84,6 +87,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         this._receivedCommands = new ThreadSafe<Queue<(Connection, UserCommand)>>(new Queue<(Connection, UserCommand)>());
         this._lastProcessedCommand = new ThreadSafe<Dictionary<Connection, UserCommand>>(new Dictionary<Connection, UserCommand>());
         this._nextTickActions = new ThreadSafe<Queue<IServerTickAction>>(new Queue<IServerTickAction>());
+        this._connectionsLoadedChunks = new ThreadSafe<Dictionary<Connection, List<ChunkAddress>>>(new Dictionary<Connection, List<ChunkAddress>>());
         this._ecs = new ThreadSafe<ECS>(ecs);
         this._updatedComponents = new List<(Entity, Component)>();
 
@@ -215,11 +219,77 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             this.BroadcastEntireECS(connection);
         });
 
+        base.AddPacketHandler<ReceivedChunkPacket>((packet, connection) =>
+        {
+            this._connectionsLoadedChunks.LockedAction((dic) =>
+            {
+                if (!dic.ContainsKey(connection))
+                {
+                    dic.Add(connection, new List<ChunkAddress>());
+                }
+
+                dic[connection].Add(new ChunkAddress(packet.X, packet.Y));
+            });
+        });
+
         base.AddPacketHandler<RequestChunkPacket>((packet, connection) =>
         {
             Logging.Log(LogLevel.Debug, $"Server: Received chunk request from {connection.RemoteEndPoint} for {packet.X}, {packet.Y}");
-            new SendChunkToClientAction(connection, packet.X, packet.Y).Tick(this);
+            Task.Run(() => new SendChunkToClientAction(connection, packet.X, packet.Y).Tick(this));
         });
+    }
+
+    private void SendChunksToClient(Connection connection)
+    {
+        int playerEntityID = this._connectionToPlayerId.LockedAction((ctp) => ctp[connection]);
+        Entity playerEntity = this._ecs.LockedAction((ecs) => ecs.GetEntityFromID(playerEntityID));
+        ChunkAddress chunkAddress = playerEntity.GetComponent<PlayerPositionComponent>().Position.ToChunkAddress();
+        int x = chunkAddress.X;
+        int y = chunkAddress.Y;
+
+        List<ChunkAddress> currentLoaded = this._connectionsLoadedChunks.LockedAction((clc) => clc.ContainsKey(connection) ? clc[connection].ToList() : new List<ChunkAddress>());
+
+        List<ChunkAddress> chunksToSend = new List<ChunkAddress>();
+        int fromX = x - this._chunkDistance;
+        int toX = x + this._chunkDistance;
+        int fromY = y - this._chunkDistance;
+        int toY = y + this._chunkDistance;
+
+        for (int i = fromX; i <= toX; i++)
+        {
+            for (int j = fromY; j <= toY; j++)
+            {
+                if (currentLoaded.Contains(new ChunkAddress(i, j)))
+                {
+                    continue;
+                }
+
+                chunksToSend.Add(new ChunkAddress(i, j));
+            }
+        }
+
+        foreach (ChunkAddress chunk in chunksToSend)
+        {
+            Task.Run(() => new SendChunkToClientAction(connection, chunk.X, chunk.Y).Tick(this));
+        }
+
+        List<ChunkAddress> chunksToUnload = new List<ChunkAddress>();
+        foreach (ChunkAddress chunk in currentLoaded)
+        {
+            if (chunk.X < fromX || chunk.X > toX || chunk.Y < fromY || chunk.Y > toY)
+            {
+                chunksToUnload.Add(chunk);
+            }
+        }
+
+        foreach (ChunkAddress chunk in chunksToUnload)
+        {
+            this._connectionsLoadedChunks.LockedAction((clc) =>
+            {
+                clc[connection].Remove(chunk);
+                Task.Run(() => new TellClientToUnloadChunkAction(connection, chunk.X, chunk.Y).Tick(this));
+            });
+        }
     }
 
     public WorldContainer GetWorld()
@@ -329,6 +399,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             foreach (Connection conn in conns)
             {
                 //this.BroadcastEntireECS(conn);
+                this.SendChunksToClient(conn);
                 this.SendECSUpdate(conn, updatesToSend);
             }
         });

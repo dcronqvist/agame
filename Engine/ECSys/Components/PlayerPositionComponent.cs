@@ -50,6 +50,20 @@ public class PlayerPositionComponent : Component
         }
     }
 
+    private float _speed;
+    public float Speed
+    {
+        get => _speed;
+        set
+        {
+            if (_speed != value)
+            {
+                _speed = value;
+                this.NotifyPropertyChanged();
+            }
+        }
+    }
+
     public PlayerPositionComponent()
     {
 
@@ -61,7 +75,8 @@ public class PlayerPositionComponent : Component
         {
             _position = Position,
             _velocity = Velocity,
-            _targetVelocity = TargetVelocity
+            _targetVelocity = TargetVelocity,
+            _speed = Speed
         };
     }
 
@@ -86,6 +101,9 @@ public class PlayerPositionComponent : Component
         offset += sizeof(float);
         this._targetVelocity = new CoordinateVector(tvx, tvy);
 
+        this._speed = BitConverter.ToSingle(data, offset);
+        offset += sizeof(float);
+
         return offset - initialOffset;
     }
 
@@ -98,6 +116,7 @@ public class PlayerPositionComponent : Component
         bytes.AddRange(BitConverter.GetBytes(Velocity.Y));
         bytes.AddRange(BitConverter.GetBytes(TargetVelocity.X));
         bytes.AddRange(BitConverter.GetBytes(TargetVelocity.Y));
+        bytes.AddRange(BitConverter.GetBytes(Speed));
         return bytes.ToArray();
     }
 
@@ -150,7 +169,7 @@ public class PlayerPositionComponent : Component
         }
         else
         {
-            this.TargetVelocity = movement.Normalize() * 10f;
+            this.TargetVelocity = movement.Normalize() * Speed;
         }
 
         if ((TargetVelocity - Velocity).Length() < 0.01f)

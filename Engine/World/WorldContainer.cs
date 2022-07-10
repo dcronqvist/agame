@@ -198,6 +198,17 @@ public class WorldContainer
         int fromY = y - height;
         int toY = y + height;
 
+        Chunks.LockedAction((chunks) =>
+        {
+            foreach (KeyValuePair<ChunkAddress, Chunk> chunk in chunks)
+            {
+                if (chunk.Key.X < fromX || chunk.Key.X > toX || chunk.Key.Y < fromY || chunk.Key.Y > toY)
+                {
+                    _ = this.DiscardChunkAsync(chunk.Key.X, chunk.Key.Y);
+                }
+            }
+        });
+
         for (int _x = fromX; _x <= toX; _x++)
         {
             for (int _y = fromY; _y <= toY; _y++)
@@ -211,21 +222,10 @@ public class WorldContainer
                 if (!contains)
                 {
                     _ = this.GetChunkAsync(_x, _y);
-                    Logging.Log(LogLevel.Debug, $"Client: Generating chunk {_x}, {_y}");
+                    //Logging.Log(LogLevel.Debug, $"Client: Generating chunk {_x}, {_y}");
                 }
             }
         }
-
-        Chunks.LockedAction((chunks) =>
-        {
-            foreach (KeyValuePair<ChunkAddress, Chunk> chunk in chunks)
-            {
-                if (chunk.Key.X < fromX || chunk.Key.X > toX || chunk.Key.Y < fromY || chunk.Key.Y > toY)
-                {
-                    //_ = this.DiscardChunkAsync(chunk.Key.X, chunk.Key.Y);
-                }
-            }
-        });
     }
 
     public void Render()
