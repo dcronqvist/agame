@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
+using AGame.Engine.Configuration;
 using AGame.Engine.Graphics.Rendering;
 using GameUDPProtocol;
 
@@ -14,15 +15,10 @@ public class WorldContainer
     // Events
     public event EventHandler<ChunkUpdatedEventArgs> ChunkUpdated;
 
-    // Private fields
-    private bool _asynchronous;
-    private BufferBlock<ChunkEvent> _chunkEvents = new BufferBlock<ChunkEvent>();
-
-    public WorldContainer(IWorldGenerator generator, bool useAsync = false)
+    public WorldContainer(IWorldGenerator generator)
     {
         this.Chunks = new ThreadSafe<Dictionary<ChunkAddress, Chunk>>(new Dictionary<ChunkAddress, Chunk>());
         this.WorldGenerator = generator;
-        this._asynchronous = useAsync;
     }
 
     public void AddChunk(int x, int y, Chunk chunk)
@@ -129,7 +125,21 @@ public class WorldContainer
 
     public void DiscardChunk(int x, int y)
     {
-        //Chunks.Remove(new ChunkAddress(x, y));
+        Chunks.LockedAction((chunks) =>
+        {
+            chunks.Remove(new ChunkAddress(x, y));
+        });
+    }
+
+    public async Task DiscardChunkAsync(int x, int y)
+    {
+        await Task.Run(() =>
+        {
+            Chunks.LockedAction((chunks) =>
+            {
+                chunks.Remove(new ChunkAddress(x, y));
+            });
+        });
     }
 
     public void GenerateChunkArea(int fromX, int toX, int fromY, int toY)
@@ -156,43 +166,64 @@ public class WorldContainer
             for (int _y = fromY; _y <= toY; _y++)
             {
                 ChunkAddress ca = new ChunkAddress(_x, _y);
-                bool contains = Chunks.LockedAction<bool>((chunks) =>
+                bool contains = Chunks.LockedAction((chunks) =>
                 {
                     return chunks.ContainsKey(ca);
                 });
 
                 if (!contains)
                 {
-                    EnqueueChunkEvent(new ChunkEvent(new ChunkAddress(_x, _y), new ChunkEventGenerate()));
+                    this.GetChunk(_x, _y);
                 }
             }
         }
 
-        this.Chunks.LockedAction((chunks) =>
+        Chunks.LockedAction((chunks) =>
         {
             foreach (KeyValuePair<ChunkAddress, Chunk> chunk in chunks)
             {
                 if (chunk.Key.X < fromX || chunk.Key.X > toX || chunk.Key.Y < fromY || chunk.Key.Y > toY)
                 {
-                    EnqueueChunkEvent(new ChunkEvent(chunk.Key, new ChunkEventRemove()));
+                    this.DiscardChunk(chunk.Key.X, chunk.Key.Y);
                 }
             }
         });
     }
 
-    private void EnqueueChunkEvent(ChunkEvent ce)
+    public async Task MaintainChunkAreaAsync(int width, int height, int x, int y)
     {
-        _chunkEvents.SendAsync(ce);
-    }
+        // Get/generate chunks in this area and discard chunks that aren't in this area
+        int fromX = x - width;
+        int toX = x + width;
+        int fromY = y - height;
+        int toY = y + height;
 
-    public void Start()
-    {
-        _ = Task.Run(async () =>
+        for (int _x = fromX; _x <= toX; _x++)
         {
-            while (true)
+            for (int _y = fromY; _y <= toY; _y++)
             {
-                ChunkEvent ce = await _chunkEvents.ReceiveAsync(TimeSpan.FromMilliseconds(-1));
-                await ce.ExecuteAsync(this);
+                ChunkAddress ca = new ChunkAddress(_x, _y);
+                bool contains = Chunks.LockedAction((chunks) =>
+                {
+                    return chunks.ContainsKey(ca);
+                });
+
+                if (!contains)
+                {
+                    _ = this.GetChunkAsync(_x, _y);
+                    Logging.Log(LogLevel.Debug, $"Client: Generating chunk {_x}, {_y}");
+                }
+            }
+        }
+
+        Chunks.LockedAction((chunks) =>
+        {
+            foreach (KeyValuePair<ChunkAddress, Chunk> chunk in chunks)
+            {
+                if (chunk.Key.X < fromX || chunk.Key.X > toX || chunk.Key.Y < fromY || chunk.Key.Y > toY)
+                {
+                    //_ = this.DiscardChunkAsync(chunk.Key.X, chunk.Key.Y);
+                }
             }
         });
     }
@@ -210,30 +241,27 @@ public class WorldContainer
 
     public string Serialize()
     {
-        return Chunks.LockedAction((chunks) =>
+        var options = new JsonSerializerOptions()
         {
-            var options = new JsonSerializerOptions()
-            {
-                IncludeFields = true
-            };
+            IncludeFields = true
+        };
 
-            string json = JsonSerializer.Serialize(chunks.Values, options);
-            return json;
-        });
+        string json = JsonSerializer.Serialize(Chunks.Value.Values, options);
+        return json;
     }
 
     public void Deserialize(string json)
     {
+        var options = new JsonSerializerOptions()
+        {
+            IncludeFields = true
+        };
+
+        var deserialized = JsonSerializer.Deserialize<List<Chunk>>(json, options);
+        Chunks.Value.Clear();
+
         Chunks.LockedAction((chunks) =>
         {
-            var options = new JsonSerializerOptions()
-            {
-                IncludeFields = true
-            };
-
-            var deserialized = JsonSerializer.Deserialize<List<Chunk>>(json, options);
-            chunks.Clear();
-
             foreach (Chunk c in deserialized)
             {
                 chunks.Add(new ChunkAddress(c.X, c.Y), c);
@@ -241,50 +269,6 @@ public class WorldContainer
         });
     }
 }
-
-public class ChunkEvent
-{
-    public ChunkAddress Address { get; set; }
-    public IChunkEventExecutor Executor { get; set; }
-
-    public ChunkEvent(ChunkAddress address, IChunkEventExecutor executor)
-    {
-        this.Address = address;
-        this.Executor = executor;
-    }
-
-    public async Task ExecuteAsync(WorldContainer container)
-    {
-        await this.Executor.ExecuteAsync(container, this.Address);
-    }
-}
-
-public interface IChunkEventExecutor
-{
-    Task ExecuteAsync(WorldContainer container, ChunkAddress address);
-}
-
-public class ChunkEventRemove : IChunkEventExecutor
-{
-    public async Task ExecuteAsync(WorldContainer container, ChunkAddress address)
-    {
-        container.Chunks.LockedAction((chunks) =>
-        {
-            chunks.Remove(address);
-        });
-
-        await Task.CompletedTask;
-    }
-}
-
-public class ChunkEventGenerate : IChunkEventExecutor
-{
-    public async Task ExecuteAsync(WorldContainer container, ChunkAddress address)
-    {
-        await container.GenerateChunkAsync(address.X, address.Y);
-    }
-}
-
 public class ChunkUpdatedEventArgs : EventArgs
 {
     public Chunk Chunk { get; set; }

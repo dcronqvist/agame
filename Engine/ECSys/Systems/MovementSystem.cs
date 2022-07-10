@@ -22,7 +22,7 @@ public class MovementSystem : BaseSystem
             CoordinateVector velocity = ppc.Velocity;
 
             CoordinateVector start = ppc.Position;
-            CoordinateVector end = ppc.Position + velocity * 0.5f;
+            CoordinateVector end = ppc.Position + velocity * 0.2f;
 
             Renderer.Primitive.RenderLine(start.ToWorldVector().ToVector2(), end.ToWorldVector().ToVector2(), 2, ColorF.White);
         }

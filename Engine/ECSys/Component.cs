@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using AGame.Engine.Networking;
+using AGame.Engine.World;
 using GameUDPProtocol;
 
 namespace AGame.Engine.ECSys;
@@ -56,7 +57,7 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
     public abstract void UpdateComponent(Component newComponent);
     public abstract void InterpolateProperties(Component from, Component to, float amt);
     public new abstract int GetHashCode();
-    public abstract void ApplyInput(UserCommand command);
+    public abstract void ApplyInput(UserCommand command, WorldContainer world);
 
     public ComponentNetworkingAttribute GetCNAttrib()
     {

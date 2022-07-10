@@ -130,7 +130,7 @@ public class PlayerPositionComponent : Component
         return HashCode.Combine(this.Position);
     }
 
-    public override void ApplyInput(UserCommand command)
+    public override void ApplyInput(UserCommand command, WorldContainer world)
     {
         bool w = command.IsKeyDown(UserCommand.KEY_W);
         bool a = command.IsKeyDown(UserCommand.KEY_A);

@@ -68,7 +68,6 @@ public class ScreenSelectWorld : Screen<EnterSelectWorldArgs>
         {
             if (GUI.Button(worlds[i].Name + " " + worlds[i].LastPlayedAt.ToShortDateString(), new Vector2(middleOfScreen.X - 200f, middleOfScreen.Y + i * 50f), new Vector2(400f, 40f)))
             {
-                //_ = this.PlaySinglePlayerWorldAsync(worlds[i], "TestPlayer");
                 this._onWorldSelected?.Invoke(worlds[i]);
             }
         }

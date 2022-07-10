@@ -86,7 +86,7 @@ public class ColorComponent : Component
         return _color.GetHashCode();
     }
 
-    public override void ApplyInput(UserCommand command)
+    public override void ApplyInput(UserCommand command, WorldContainer world)
     {
 
     }

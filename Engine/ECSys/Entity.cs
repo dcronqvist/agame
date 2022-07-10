@@ -1,4 +1,5 @@
 using AGame.Engine.Networking;
+using AGame.Engine.World;
 
 namespace AGame.Engine.ECSys;
 
@@ -60,11 +61,11 @@ public class Entity
         };
     }
 
-    public void ApplyInput(UserCommand command)
+    public void ApplyInput(UserCommand command, WorldContainer world)
     {
         foreach (var c in this.Components)
         {
-            c.ApplyInput(command);
+            c.ApplyInput(command, world);
         }
     }
 

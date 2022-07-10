@@ -1,3 +1,4 @@
+using System.Numerics;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys.Components;
 using AGame.Engine.Graphics;
@@ -12,7 +13,7 @@ public class PlayerRenderSystem : BaseSystem
     public override void Initialize()
     {
         this.RegisterComponentType<PlayerPositionComponent>();
-        this.RegisterComponentType<ColorComponent>();
+        this.RegisterComponentType<SpriteComponent>();
     }
 
     public override void Render(List<Entity> entities, WorldContainer gameWorld)
@@ -22,8 +23,10 @@ public class PlayerRenderSystem : BaseSystem
             PlayerPositionComponent ppc = entity.GetComponent<PlayerPositionComponent>();
             CoordinateVector pos = ppc.Position;
 
-            ColorComponent cc = entity.GetComponent<ColorComponent>();
-            Renderer.Primitive.RenderCircle(pos.ToWorldVector().ToVector2(), 50f, cc.Color, false);
+            SpriteComponent cc = entity.GetComponent<SpriteComponent>();
+            Vector2 middleOfRec = cc.GetSprite().MiddleOfSourceRectangle;
+
+            cc.GetSprite().Render(pos.ToWorldVector().ToVector2() - middleOfRec * cc.RenderScale);
         }
     }
 }

@@ -13,6 +13,8 @@ public class ConnectResponse : PacketConnectionResponse
 {
     public int ServerTickSpeed { get; set; }
     public int PlayerEntityID { get; set; }
+    public int PlayerChunkX { get; set; }
+    public int PlayerChunkY { get; set; }
 }
 
 public class ConnectReadyForData : Packet { }

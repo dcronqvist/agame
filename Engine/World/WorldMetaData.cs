@@ -17,7 +17,7 @@ public class WorldMetaData
 
     public async Task<WorldContainer> GetAsContainerAsync()
     {
-        WorldContainer wc = new WorldContainer(Utilities.GetGeneratorFromTypeName(Generator), false);
+        WorldContainer wc = new WorldContainer(Utilities.GetGeneratorFromTypeName(Generator));
 
         using (StreamReader sr = new StreamReader(Directory + "/world.json"))
         {
@@ -214,7 +214,7 @@ public class WorldMetaData
                 AllowTrailingCommas = true
             };
 
-            string json = JsonSerializer.Serialize(new WorldContainer(Utilities.GetGeneratorFromTypeName(Generator), false), options);
+            string json = JsonSerializer.Serialize(new WorldContainer(Utilities.GetGeneratorFromTypeName(Generator)), options);
             sw.Write(json);
         }
 

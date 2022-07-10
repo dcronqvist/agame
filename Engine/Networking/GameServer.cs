@@ -65,6 +65,8 @@ public class UserCommand : Packet
 public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 {
     private ThreadSafe<ECS> _ecs;
+    private WorldContainer _world;
+    private WorldMetaData _worldMeta;
     private ThreadSafe<Dictionary<Connection, int>> _connectionToPlayerId;
     private ThreadSafe<Queue<(Connection, UserCommand)>> _receivedCommands;
     private ThreadSafe<Dictionary<Connection, UserCommand>> _lastProcessedCommand;
@@ -73,9 +75,11 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
     private ThreadSafe<Queue<IServerTickAction>> _nextTickActions;
 
-    public GameServer(ECS ecs, GameServerConfiguration config, int reliableMillisBeforeResend, int clientTimeoutMillis) : base(config.Port, reliableMillisBeforeResend, clientTimeoutMillis)
+    public GameServer(ECS ecs, WorldContainer world, WorldMetaData worldMeta, GameServerConfiguration config, int reliableMillisBeforeResend, int clientTimeoutMillis) : base(config.Port, reliableMillisBeforeResend, clientTimeoutMillis)
     {
         this._configuration = config;
+        this._world = world;
+        this._worldMeta = worldMeta;
         this._connectionToPlayerId = new ThreadSafe<Dictionary<Connection, int>>(new Dictionary<Connection, int>());
         this._receivedCommands = new ThreadSafe<Queue<(Connection, UserCommand)>>(new Queue<(Connection, UserCommand)>());
         this._lastProcessedCommand = new ThreadSafe<Dictionary<Connection, UserCommand>>(new Dictionary<Connection, UserCommand>());
@@ -111,15 +115,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             {
                 Entity entity = this._ecs.LockedAction((ecs) =>
                 {
-                    Entity entity = ecs.CreateEntity();
-                    var ppc = new PlayerPositionComponent();
-                    ppc.Position = new CoordinateVector(5f, 5f);
-
-                    var color = new ColorComponent();
-                    color.Color = Utilities.ChooseUniform(ColorF.Red, ColorF.Blue, ColorF.Green, ColorF.Orange, ColorF.DarkGoldenRod);
-
-                    ecs.AddComponentToEntity(entity, ppc);
-                    ecs.AddComponentToEntity(entity, color);
+                    Entity entity = ecs.CreateEntityFromAsset("default.entity.player");
                     return entity;
                 });
 
@@ -133,7 +129,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                     lastProcessedCommand.Add(e.RequestConnection, new UserCommand());
                 });
 
-                e.Accept(new ConnectResponse() { PlayerEntityID = entity.ID, ServerTickSpeed = this._configuration.TickRate });
+                e.Accept(new ConnectResponse() { PlayerEntityID = entity.ID, ServerTickSpeed = this._configuration.TickRate, PlayerChunkX = 0, PlayerChunkY = 0 });
             }
             else
             {
@@ -218,6 +214,17 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         {
             this.BroadcastEntireECS(connection);
         });
+
+        base.AddPacketHandler<RequestChunkPacket>((packet, connection) =>
+        {
+            Logging.Log(LogLevel.Debug, $"Server: Received chunk request from {connection.RemoteEndPoint} for {packet.X}, {packet.Y}");
+            new SendChunkToClientAction(connection, packet.X, packet.Y).Tick(this);
+        });
+    }
+
+    public WorldContainer GetWorld()
+    {
+        return this._world;
     }
 
     private void ProcessInputs()
@@ -249,7 +256,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 this._ecs.LockedAction((ecs) =>
                 {
                     Entity entity = ecs.GetEntityFromID(entityID);
-                    entity.ApplyInput(command);
+                    entity.ApplyInput(command, this._world);
                 });
 
                 this._lastProcessedCommand.LockedAction((lastProcessedCommand) =>
@@ -376,5 +383,10 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 lastTickTime = currentTickTime;
             }
         });
+    }
+
+    public void SaveServer()
+    {
+
     }
 }

@@ -154,7 +154,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
                 await this._server.StopAsync(1000);
 
                 // Save the world
-                //this._server.SaveServer();
+                this._server.SaveServer();
             }
 
             ScreenManager.GoToScreen<ScreenMainMenu, EnterMainMenuArgs>(new EnterMainMenuArgs());

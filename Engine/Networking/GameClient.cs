@@ -6,6 +6,7 @@ using AGame.Engine.ECSys;
 using AGame.Engine.ECSys.Components;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
+using AGame.Engine.World;
 using GameUDPProtocol;
 
 namespace AGame.Engine.Networking;
@@ -16,6 +17,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     private int _serverLastProcessedCommand;
 
     private ECS _ecs;
+    private WorldContainer _world;
     private List<UserCommand> _pendingCommands;
     private ThreadSafe<Queue<UpdateEntitiesPacket>> _receivedEntityUpdates;
     private ThreadSafe<Queue<Packet>> _receivedPackets;
@@ -25,6 +27,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     private Dictionary<int, Entity> _serverEntityIDToClientEntity;
 
     private int _playerId;
+    private ChunkAddress _previousChunkAddress;
     private float _interpolationTime;
     private int _fakeLatency;
     private string _hostname;
@@ -48,6 +51,11 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
         this.RegisterClientEventHandlers();
         this.RegisterPacketHandlers();
+    }
+
+    public void SetWorld(WorldContainer world)
+    {
+        this._world = world;
     }
 
     private void StartLatencyChecking()
@@ -126,6 +134,11 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         {
             this.DestroyClientSideEntity(packet.EntityID);
         });
+
+        this.AddPacketHandler<ChunkUpdatePacket>((packet) =>
+        {
+            this._world.UpdateChunk(packet.X, packet.Y, packet.Chunk);
+        });
     }
 
     public async Task<bool> ConnectAsync()
@@ -144,6 +157,8 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                 await Task.Delay(1);
             }
 
+
+            this._world.MaintainChunkArea(2, 1, response.PlayerChunkX, response.PlayerChunkY);
             return true;
         }
 
@@ -224,7 +239,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                         for (int i = 0; i < commandsAfterLast.Count; i++)
                         {
                             UserCommand command = commandsAfterLast[i];
-                            clientEntity.ApplyInput(command);
+                            clientEntity.ApplyInput(command, this._world);
                         }
                     }
                     else
@@ -286,25 +301,36 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         Entity playerEntity = this.GetPlayerEntity();
         if (playerEntity != null)
         {
-            playerEntity.ApplyInput(command);
+            playerEntity.ApplyInput(command, this._world);
             this._pendingCommands.Add(command);
         }
     }
 
     public void Update()
     {
-        if (this._playerId == -1)
+        this.ProcessServerECSUpdates();
+
+        if (this._playerId == -1 || this.GetPlayerEntity() == null)
         {
             return;
         }
-
-        this.ProcessServerECSUpdates();
 
         this.ProcessInputs();
 
         this.InterpolateEntities();
 
         this._ecs.Update(null, GameTime.DeltaTime);
+
+        Entity playerEntity = this.GetPlayerEntity();
+        PlayerPositionComponent ppc = playerEntity.GetComponent<PlayerPositionComponent>();
+        CoordinateVector position = ppc.Position;
+        ChunkAddress chunkPos = position.ToChunkAddress();
+
+        if (!chunkPos.Equals(this._previousChunkAddress))
+        {
+            this._previousChunkAddress = chunkPos;
+            _ = this._world.MaintainChunkAreaAsync(2, 1, chunkPos.X, chunkPos.Y);
+        }
     }
 
     private void InterpolateEntities()
@@ -318,6 +344,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
     public void Render()
     {
-        this._ecs.Render(null);
+        this._world.Render();
+        this._ecs.Render(this._world);
     }
 }

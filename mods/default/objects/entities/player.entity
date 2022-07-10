@@ -1,0 +1,38 @@
+{
+    "components": [
+        {
+            "componentType": "Sprite",
+            "texture": "default.tex.player",
+            "renderScale": {
+                "x": 2,
+                "y": 2
+            },
+            "origin": {
+                "x": 8,
+                "y": 8
+            },
+            "colorTint": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+            },
+            "sourceRectangle": {
+                "x": 0,
+                "y": 0,
+                "width": 16,
+                "height": 16
+            },
+            "rotation": 0,
+            "collisionBox": {
+                "x": 0,
+                "y": 0,
+                "width": 16,
+                "height": 16
+            },
+        },
+        {
+            "componentType": "PlayerPosition"
+        }
+    ]
+}
