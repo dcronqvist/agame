@@ -1,0 +1,23 @@
+{
+    "initialState": "idle",
+    "states": [
+        {
+            "name": "idle",
+            "animation": "default.anim.player_idle",
+            "mustFinish": false,
+            "defaultNextState": "idle"
+        },
+        {
+            "name": "walk",
+            "animation": "default.anim.player_walk",
+            "mustFinish": false,
+            "defaultNextState": "walk"
+        },
+        {
+            "name": "green",
+            "animation": "default.anim.player_greenball",
+            "mustFinish": true,
+            "defaultNextState": "idle"
+        }
+    ]
+}

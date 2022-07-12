@@ -45,7 +45,7 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
     // This method is called by the Set accessor of each property.  
     // The CallerMemberName attribute that is applied to the optional propertyName  
     // parameter causes the property name of the caller to be substituted as an argument.  
-    protected void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
+    public void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }

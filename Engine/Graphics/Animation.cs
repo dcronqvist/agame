@@ -1,81 +1,92 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Numerics;
+using System.Text;
+using System.Text.Json.Serialization;
 using AGame.Engine.Assets;
+using AGame.Engine.Graphics;
+using AGame.Engine.Graphics.Rendering;
+using GameUDPProtocol;
 
-namespace AGame.Engine.Graphics
+namespace AGame.Engine.Graphics;
+
+public class Animation
 {
-    public class Animation : Sprite
+    private Texture2D _texture;
+    public string Texture { get; set; }
+    public Vector2 RenderScale { get; set; }
+    public Vector2 Origin { get; set; }
+    public ColorF ColorTint { get; set; }
+    public RectangleF[] Frames { get; set; }
+    public float Rotation { get; set; }
+    public int FramesPerSecond { get; set; }
+    private int _currentFrame;
+
+    private float _currentFrameTime;
+
+    public Animation(string texture, Vector2 renderScale, Vector2 origin, ColorF colorTint, RectangleF[] frames, float rotation, int framesPerSecond)
     {
-        private RectangleF[] frames;
-        private float currentFrameTime;
-        private int amountOfFrames;
-        private int currentFrame;
-        private int framesPerSecond;
+        Texture = texture;
+        RenderScale = renderScale;
+        Origin = origin;
+        ColorTint = colorTint;
+        Frames = frames;
+        Rotation = rotation;
+        FramesPerSecond = framesPerSecond;
+        this._currentFrame = 0;
+    }
 
-        public Animation(Texture2D texture, Vector2 renderScale, Vector2 origin, ColorF colorTint, RectangleF animationFrames, float rotation, int framesPerSecond, int amountOfFrames, RectangleF collisionBox) : base(texture, renderScale, origin, colorTint, new RectangleF(0, 0, 0, 0), rotation, collisionBox)
+    public RectangleF GetFrame(int frame)
+    {
+        return this.Frames[frame];
+    }
+
+    private float GetFrameTime(int fps)
+    {
+        return 1f / fps;
+    }
+
+    public void Reset()
+    {
+        this._currentFrame = 0;
+    }
+
+    private Texture2D GetTexture()
+    {
+        if (_texture == null)
         {
-            this.framesPerSecond = framesPerSecond;
-            this.amountOfFrames = amountOfFrames;
-            this.frames = CreateFrames(texture, animationFrames, amountOfFrames);
-            this.currentFrame = 0;
-            this.SourceRectangle = this.frames[this.currentFrame];
+            _texture = ModManager.GetAsset<Texture2D>(Texture);
         }
+        return _texture;
+    }
 
-        public override int GetWidth()
+    /// <summary>
+    /// Updates the animation with the supplied time delta.
+    /// if the animation is finished, it will return true, otherwise false.
+    /// </summary>
+    public bool Update(float deltaTime)
+    {
+        _currentFrameTime += deltaTime;
+        if (_currentFrameTime >= GetFrameTime(FramesPerSecond))
         {
-            return (int)(this.frames[currentFrame].Width * this.RenderScale.X);
-        }
-
-        public override int GetHeight()
-        {
-            return (int)(this.frames[currentFrame].Height * this.RenderScale.Y);
-        }
-
-        private float GetFrameTime()
-        {
-            return 1f / (float)framesPerSecond;
-        }
-
-        public void ResetAnimation()
-        {
-            this.currentFrame = 0;
-        }
-
-        private RectangleF[] CreateFrames(Texture2D atlas, RectangleF animationFrames, int amountOfFrames)
-        {
-            RectangleF[] frames = new RectangleF[amountOfFrames];
-
-            int frameWidth = (int)animationFrames.Width / amountOfFrames;
-            int frameHeight = (int)animationFrames.Height;
-
-            for (int i = 0; i < amountOfFrames; i++)
+            _currentFrameTime = 0;
+            _currentFrame++;
+            if (_currentFrame >= Frames.Length)
             {
-                int x = i * frameWidth;
-                RectangleF frame = new RectangleF(animationFrames.X + x, animationFrames.Y, frameWidth, frameHeight);
-                frames[i] = frame;
+                _currentFrame = 0;
+                return true;
             }
-
-            return frames;
         }
+        return false;
+    }
 
-        public override void Update()
-        {
-            this.currentFrameTime += GameTime.DeltaTime;
+    public void Render(Vector2 position)
+    {
+        Renderer.Texture.Render(this.GetTexture(), position, this.RenderScale, this.Rotation, this.ColorTint, this.Origin, this.GetFrame(_currentFrame));
+    }
 
-            if (currentFrameTime > GetFrameTime())
-            {
-                currentFrame = (currentFrame + 1) % amountOfFrames;
-                currentFrameTime = 0f;
-                this.SourceRectangle = this.frames[currentFrame];
-            }
-
-            base.Update();
-        }
-
-        public override void Render(Vector2 position)
-        {
-            base.Render(position);
-        }
+    public Animation Clone()
+    {
+        return new Animation(this.Texture, this.RenderScale, this.Origin, this.ColorTint, this.Frames, this.Rotation, this.FramesPerSecond);
     }
 }

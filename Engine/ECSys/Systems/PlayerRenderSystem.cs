@@ -13,20 +13,20 @@ public class PlayerRenderSystem : BaseSystem
     public override void Initialize()
     {
         this.RegisterComponentType<PlayerPositionComponent>();
-        this.RegisterComponentType<SpriteComponent>();
+        this.RegisterComponentType<AnimatorComponent>();
     }
 
     public override void Render(List<Entity> entities, WorldContainer gameWorld)
     {
-        foreach (Entity entity in entities)
+        foreach (Entity entity in entities.OrderBy(e => e.GetComponent<PlayerPositionComponent>().Position.Y))
         {
             PlayerPositionComponent ppc = entity.GetComponent<PlayerPositionComponent>();
             CoordinateVector pos = ppc.Position;
 
-            SpriteComponent cc = entity.GetComponent<SpriteComponent>();
-            Vector2 middleOfRec = cc.GetSprite().MiddleOfSourceRectangle;
+            AnimatorComponent pac = entity.GetComponent<AnimatorComponent>();
+            //Vector2 middleOfRec = pac.GetAnimator().GetCurrentAnimation();
 
-            cc.GetSprite().Render(pos.ToWorldVector().ToVector2() - middleOfRec * cc.RenderScale);
+            pac.GetAnimator().Render(pos.ToWorldVector().ToVector2());
         }
     }
 }

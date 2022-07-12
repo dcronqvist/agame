@@ -1,3 +1,4 @@
+using AGame.Engine.Networking;
 using AGame.Engine.World;
 
 namespace AGame.Engine.ECSys;
@@ -6,6 +7,9 @@ public abstract class BaseSystem
 {
     public List<Type> ComponentTypes { get; set; }
     public ECS ParentECS { get; set; }
+    public GameClient GameClient { get; set; }
+    public GameServer GameServer { get; set; }
+    public SystemRunner Runner { get; set; }
 
     public BaseSystem()
     {

@@ -14,6 +14,8 @@ public class ECS
     // Helper stuff
     private int _nextEntityID = 0;
     private SystemRunner _runner;
+    private GameClient _client;
+    private GameServer _server;
 
     // All entities & systems
     private List<Entity> _entities = new List<Entity>();
@@ -47,10 +49,12 @@ public class ECS
         }
     }
 
-    public void Initialize(SystemRunner runner, List<Entity> entities = null)
+    public void Initialize(SystemRunner runner, GameClient gameClient = null, GameServer gameServer = null, List<Entity> entities = null)
     {
         this._runner = runner;
         this._entities = entities ?? new List<Entity>();
+        this._client = gameClient;
+        this._server = gameServer;
         this._nextEntityID = this._entities.Count > 0 ? this._entities.Max(x => x.ID) + 1 : 0;
         this.InterpolationTime = 0f;
 
@@ -138,6 +142,9 @@ public class ECS
 
         BaseSystem system = (BaseSystem)Activator.CreateInstance(type);
         system.ParentECS = this;
+        system.GameClient = this._client;
+        system.GameServer = this._server;
+        system.Runner = this._runner;
         system.Initialize();
         _systems.Add(system);
 
@@ -163,6 +170,9 @@ public class ECS
 
         T system = new T();
         system.ParentECS = this;
+        system.GameClient = this._client;
+        system.GameServer = this._server;
+        system.Runner = this._runner;
         system.Initialize();
         _systems.Add(system);
 

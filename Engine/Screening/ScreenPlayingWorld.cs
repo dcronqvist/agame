@@ -40,7 +40,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
     public override void OnEnter(EnterPlayingWorldArgs args)
     {
         _paused = false;
-        Camera = new Camera2D(Vector2.Zero, 1f);
+        Camera = new Camera2D(Vector2.Zero, 2f);
         _server = args.Server;
         _client = args.Client;
 
@@ -64,6 +64,8 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             {
                 Camera.Zoom *= 1 / 1.05f;
             }
+
+            Camera.Zoom = Utilities.Clamp(1f, 3f, Camera.Zoom);
         };
     }
 

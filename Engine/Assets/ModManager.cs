@@ -61,7 +61,9 @@ public static class ModManager
             { ".entity", new EntityLoader() },
             { ".tile", new TileLoader() },
             { ".locale", new LocaleLoader() },
-            { ".wav", new AudioLoader() }
+            { ".wav", new AudioLoader() },
+            { ".anim", new AnimationLoader() },
+            { ".animator", new AnimatorLoader() }
         };
     }
 

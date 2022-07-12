@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Numerics;
+using System.Text.Json.Serialization;
 using AGame.Engine.Assets;
 using AGame.Engine.Graphics.Rendering;
 
@@ -21,6 +22,12 @@ namespace AGame.Engine.Graphics
         }
         public float Rotation { get; set; }
         public RectangleF CollisionBox { get; set; }
+
+        [JsonConstructor]
+        public Sprite()
+        {
+
+        }
 
         public Sprite(Texture2D texture, Vector2 renderScale, Vector2 origin, ColorF colorTint, RectangleF sourceRectangle, float rotation, RectangleF collisionBox)
         {

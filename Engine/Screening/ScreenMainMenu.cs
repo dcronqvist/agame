@@ -29,7 +29,8 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
 
     public override void OnEnter(EnterMainMenuArgs args)
     {
-
+        AnimatorDescription ad = ModManager.GetAsset<AnimatorDescription>("default.animator.player");
+        Animator a = ad.GetAnimator();
     }
 
     public override void OnLeave()
@@ -61,20 +62,18 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
                     List<Entity> entities = await world.GetEntitiesAsync();
 
 
-                    ECS serverECS = new ECS();
-                    serverECS.Initialize(SystemRunner.Server, entities);
 
                     GameServerConfiguration config = new GameServerConfiguration();
                     config.SetPort(0).SetMaxConnections(1).SetOnlyAllowLocalConnections(true).SetTickRate(20);
 
+                    ECS serverECS = new ECS();
                     GameServer gameServer = new GameServer(serverECS, wc, world, config, 500, 5000);
+                    serverECS.Initialize(SystemRunner.Server, gameServer: gameServer, entities: entities);
+
                     await gameServer.StartAsync();
                     _ = gameServer.RunAsync();
 
                     int serverPort = gameServer.Port;
-
-                    ECS clientECS = new ECS();
-                    clientECS.Initialize(SystemRunner.Client);
 
                     GameClient gameClient = new GameClient("127.0.0.1", serverPort, 500, 5000);
                     ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);

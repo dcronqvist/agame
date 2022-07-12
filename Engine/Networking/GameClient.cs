@@ -4,6 +4,7 @@ using AGame.Engine.Assets;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
 using AGame.Engine.ECSys.Components;
+using AGame.Engine.ECSys.Systems;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
 using AGame.Engine.World;
@@ -38,7 +39,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     public GameClient(string hostname, int port, int reliableMillisBeforeResend, int timeoutMillis) : base(hostname, port, reliableMillisBeforeResend, timeoutMillis)
     {
         this._ecs = new ECS();
-        this._ecs.Initialize(SystemRunner.Client);
+        this._ecs.Initialize(SystemRunner.Client, gameClient: this);
         this._fakeLatency = 0;
         this._hostname = hostname;
         this._port = port;
@@ -165,6 +166,16 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
             this.EnqueuePacket(new ReceivedChunkPacket(packet.X, packet.Y), true, false);
         });
+
+        this.AddPacketHandler<AnimationStateChangePacket>((packet) =>
+        {
+            if (this.TryGetClientSideEntity(packet.EntityID, out Entity clientEntity))
+            {
+                AnimatorComponent ac = clientEntity.GetComponent<AnimatorComponent>();
+                ac.GetAnimator().SetNextState(packet.NewState);
+                Logging.Log(LogLevel.Debug, $"Client: Server changed animation state of entity {packet.EntityID} to {packet.NewState}");
+            }
+        });
     }
 
     public async Task<bool> ConnectAsync()
@@ -182,9 +193,6 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             {
                 await Task.Delay(1);
             }
-
-
-            //this._world.MaintainChunkArea(this._renderDistance, this._renderDistance, response.PlayerChunkX, response.PlayerChunkY);
 
             this.StartLatencyChecking();
             return true;
