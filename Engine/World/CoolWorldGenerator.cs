@@ -58,14 +58,26 @@ public class CoolWorldGenerator : IWorldGenerator
 
                 warpNoise.DomainWarp(ref xf, ref yf);
 
-                float noise = genNoise.GetNoise(xf, yf);
+                float noise = MathF.Round(genNoise.GetNoise(xf, yf));
 
-                string tile = GetTileFromNoise(noise);
-                tileGrid[_x, _y] = TileManager.GetTileIDFromName(tile);
+                tileGrid[_x, _y] = (int)noise;
             }
         }
 
-        return new Chunk(x, y, tileGrid);
+        int[,] darker = new int[width, height];
+
+        for (int _y = 0; _y < height; _y++)
+        {
+            for (int _x = 0; _x < width; _x++)
+            {
+                darker[_x, _y] = 1;
+            }
+        }
+
+        List<ChunkLayer> layers = new List<ChunkLayer>();
+        layers.Add(new ChunkLayer("default.tileset.tileset_1_darker", 2, darker, false));
+        layers.Add(new ChunkLayer("default.tileset.tileset_1", 1, tileGrid, true));
+        return new Chunk(x, y, layers);
     }
 
     public Task<Chunk> GenerateChunkAsync(int x, int y)

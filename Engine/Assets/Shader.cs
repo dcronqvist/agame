@@ -40,8 +40,7 @@ namespace AGame.Engine.Assets
                 string error = glGetShaderInfoLog(vs, 1024);
                 // TODO: This shouldn't be debug.writeline
 
-                GameConsole.WriteLine("ERROR", "ERROR COMPILING VERTEX SHADER: " + error);
-                return;
+                throw new Exception("ERROR COMPILING VERTEX SHADER: " + error);
             }
 
             // Create and compile fragment shader
@@ -54,9 +53,7 @@ namespace AGame.Engine.Assets
             {
                 // Compile failed
                 string error = glGetShaderInfoLog(fs, 1024);
-                System.Console.WriteLine("ERROR COMPILING FRAGMENT SHADER: " + error);
-                GameConsole.WriteLine("Error", "ERROR COMPILING FRAGMENT SHADER: " + error);
-                return;
+                throw new Exception("ERROR COMPILING FRAGMENT SHADER: " + error);
             }
 
             // Link the shaders together into a single shader program
@@ -70,9 +67,7 @@ namespace AGame.Engine.Assets
             {
                 // link failed failed
                 string error = glGetProgramInfoLog(ProgramID, 1024);
-                System.Console.WriteLine("ERROR LINKING SHADER PROGRAM: " + error);
-                GameConsole.WriteLine("Error", "ERROR LINKING SHADER PROGRAM: " + error);
-                return;
+                throw new Exception("ERROR LINKING SHADER PROGRAM: " + error);
             }
 
             // Delete unnecessary shader objects after linking
@@ -129,6 +124,11 @@ namespace AGame.Engine.Assets
         public void SetVec4(string uniformName, float f1, float f2, float f3, float f4)
         {
             glUniform4f(glGetUniformLocation(ProgramID, uniformName), f1, f2, f3, f4);
+        }
+
+        public void SetFloatArray(string uniformName, float[] values)
+        {
+            glUniform1fv(glGetUniformLocation(ProgramID, uniformName), values.Length, values);
         }
 
         public void SetBool(string uniformName, bool val)

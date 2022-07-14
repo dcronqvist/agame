@@ -29,8 +29,7 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
 
     public override void OnEnter(EnterMainMenuArgs args)
     {
-        AnimatorDescription ad = ModManager.GetAsset<AnimatorDescription>("default.animator.player");
-        Animator a = ad.GetAnimator();
+
     }
 
     public override void OnLeave()
@@ -58,9 +57,8 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
                     // Go to a loading screen, will do later
                     ScreenManager.GoToScreen<ScreenTemporaryLoading, EnterTemporaryLoading>(new EnterTemporaryLoading() { Text = "Loading world..." });
 
-                    WorldContainer wc = await world.GetAsContainerAsync();
+                    WorldContainer wc = await world.GetAsContainerAsync(false);
                     List<Entity> entities = await world.GetEntitiesAsync();
-
 
 
                     GameServerConfiguration config = new GameServerConfiguration();
@@ -76,9 +74,7 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
                     int serverPort = gameServer.Port;
 
                     GameClient gameClient = new GameClient("127.0.0.1", serverPort, 500, 5000);
-                    ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);
-
-                    gameClient.SetWorld(new WorldContainer(swg));
+                    //ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);
 
                     await gameClient.ConnectAsync(); // Cannot fail, as we are connecting to our own host.
 

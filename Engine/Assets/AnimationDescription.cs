@@ -12,7 +12,6 @@ public class AnimationDescription : Asset
     public ColorF ColorTint { get; set; }
     public RectangleF[] Frames { get; set; }
     public float Rotation { get; set; }
-    public int FramesPerSecond { get; set; }
 
     public override bool InitOpenGL()
     {
@@ -28,7 +27,6 @@ public class AnimationDescription : Asset
             Origin,
             ColorTint,
             Frames,
-            Rotation,
-            FramesPerSecond);
+            Rotation);
     }
 }

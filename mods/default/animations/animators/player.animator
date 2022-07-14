@@ -1,5 +1,6 @@
 {
     "initialState": "idle",
+    "initialFramesPerSecond": 10,
     "states": [
         {
             "name": "idle",

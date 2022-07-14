@@ -21,10 +21,7 @@ public class AnimatorSystem : BaseSystem
         foreach (Entity entity in entities)
         {
             AnimatorComponent ac = entity.GetComponent<AnimatorComponent>();
-            if (ac.GetAnimator().Update(deltaTime) && base.Runner == SystemRunner.Server)
-            {
-                base.GameServer.EnqueueBroadcastPacket(new AnimationStateChangePacket() { EntityID = entity.ID, NewState = ac.GetAnimator().CurrentState }, true, false);
-            }
+            ac.GetAnimator().Update(deltaTime);
         }
     }
 }

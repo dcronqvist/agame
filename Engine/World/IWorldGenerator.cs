@@ -19,18 +19,30 @@ public class TestWorldGenerator : IWorldGenerator
         int width = Chunk.CHUNK_SIZE;
         int height = Chunk.CHUNK_SIZE;
 
-        int[,] tileGrid = new int[width, height];
+        int[,] darker = new int[width, height];
 
         for (int _y = 0; _y < height; _y++)
         {
             for (int _x = 0; _x < width; _x++)
             {
-                string tile = Utilities.ChooseUniform<string>("game:dirt");
-                tileGrid[_x, _y] = TileManager.GetTileIDFromName(tile);
+                darker[_x, _y] = 1;
             }
         }
 
-        return new Chunk(x, y, tileGrid);
+        int[,] lighter = new int[width, height];
+
+        for (int _y = 0; _y < height; _y++)
+        {
+            for (int _x = 0; _x < width; _x++)
+            {
+                lighter[_x, _y] = Utilities.GetRandomInt(0, 2);
+            }
+        }
+
+        List<ChunkLayer> layers = new List<ChunkLayer>();
+        layers.Add(new ChunkLayer("default.tileset.tileset_1_darker", 2, darker, false));
+        layers.Add(new ChunkLayer("default.tileset.tileset_1", 1, lighter, true));
+        return new Chunk(x, y, layers);
     }
 
     public Task<Chunk> GenerateChunkAsync(int x, int y)

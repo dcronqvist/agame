@@ -21,6 +21,16 @@ namespace AGame.Engine
 
         }
 
+        public static List<T> NValues<T>(T value, int n)
+        {
+            List<T> values = new List<T>();
+            for (int i = 0; i < n; i++)
+            {
+                values.Add(value);
+            }
+            return values;
+        }
+
         public static void InitRNG()
         {
             RNG = new Random();
@@ -149,9 +159,14 @@ namespace AGame.Engine
             return grid;
         }
 
-        public static Matrix4x4 CreateModelMatrixFromPosition(Vector2 position, Vector2 scale)
+        public static Matrix4x4 CreateModelMatrixFromPosition(Vector2 position, float rotation, Vector2 origin, Vector2 scale)
         {
-            return Matrix4x4.CreateScale(new Vector3(scale, 1f)) * Matrix4x4.CreateTranslation(new Vector3(position, 1f));
+            // Rotate around origin in original scale
+            Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation(new Vector3(-origin, 0)) * Matrix4x4.CreateRotationZ(rotation) * Matrix4x4.CreateScale(new Vector3(scale, 0)) * Matrix4x4.CreateTranslation(new Vector3(origin, 0));
+            // Translate to position
+            modelMatrix *= Matrix4x4.CreateTranslation(new Vector3(position, 0));
+
+            return Matrix4x4.CreateScale(new Vector3(scale, 0)) * Matrix4x4.CreateRotationZ(rotation) * Matrix4x4.CreateTranslation(new Vector3(position, 0));
         }
 
         public static IEnumerable<Type> FindDerivedTypesInAssembly(Assembly assembly, Type baseType)
@@ -228,6 +243,19 @@ namespace AGame.Engine
                 for (int y = 0; y < height; y++)
                 {
                     tileGrid[x, y] = TileManager.GetTileIDFromName(tileName);
+                }
+            }
+            return tileGrid;
+        }
+
+        public static int[,] CreateTileGridWith(int num, int width, int height)
+        {
+            int[,] tileGrid = new int[width, height];
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    tileGrid[x, y] = num;
                 }
             }
             return tileGrid;

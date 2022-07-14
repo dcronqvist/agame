@@ -12,52 +12,99 @@ namespace AGame.Engine.World;
 
 public class StaticTileGrid : TileGrid
 {
-    private Dictionary<int, List<Vector2>> TileIDAndPositions { get; set; }
-    private Dictionary<int, float[]> TileIDAndModelMatrices { get; set; }
-    private Dictionary<int, StaticInstancedTextureRenderer> TileIDToRenderer { get; set; }
+    private TileSet _tileSet;
+    private int[,] grid;
 
-    public StaticTileGrid(int[,] grid, Vector2 globalOffset) : base(grid.GetLength(0), grid.GetLength(1), globalOffset)
+    private StaticInstancedTextureRenderer sitr;
+    private List<InstancingInfo> siis;
+
+    public StaticTileGrid(TileSet tileSet, int[,] grid, Vector2 globalOffset, int[,] outerGrid) : base(grid.GetLength(0), grid.GetLength(1), globalOffset)
     {
-        TileIDAndPositions = new Dictionary<int, List<Vector2>>();
-        TileIDToRenderer = new Dictionary<int, StaticInstancedTextureRenderer>();
-        // render all tiles
-        for (int y = 0; y < Height; y++)
+        this._tileSet = tileSet;
+        this.grid = grid;
+        siis = new List<InstancingInfo>();
+        for (int _y = 0; _y < grid.GetLength(1); _y++)
         {
-            for (int x = 0; x < Width; x++)
+            for (int _x = 0; _x < grid.GetLength(0); _x++)
             {
-                // Render each tile
-                if (grid[x, y] != -1)
-                {
-                    Vector2 tilePos = new Vector2(TILE_SIZE * x, TILE_SIZE * y) + GlobalOffset;
-                    if (!TileIDAndPositions.ContainsKey(grid[x, y]))
-                    {
-                        TileIDAndPositions.Add(grid[x, y], new List<Vector2>());
-                    }
+                int value = grid[_x, _y];
 
-                    TileIDAndPositions[grid[x, y]].Add(tilePos);
+                if (value == 1)
+                {
+                    Vector2 scale = Vector2.One * TILE_SIZE;
+                    RectangleF rect = tileSet.GetRandomFullTile();
+
+                    siis.Add(InstancingInfo.Create(globalOffset + new Vector2(_x * TileGrid.TILE_SIZE, _y * TileGrid.TILE_SIZE), 0f, scale, Vector2.Zero, rect));
+
+                    // Do bitmasking and stuff
+                    this.AddSideTiles(ref siis, tileSet, scale, globalOffset, _x, _y, grid, outerGrid);
                 }
             }
         }
+    }
 
-        TileIDAndModelMatrices = new Dictionary<int, float[]>();
-        foreach (KeyValuePair<int, List<Vector2>> kvp in TileIDAndPositions)
+    private void AddSideTiles(ref List<InstancingInfo> infos, TileSet tileSet, Vector2 scale, Vector2 globalOffset, int tileX, int tileY, int[,] grid, int[,] outerGrid)
+    {
+        int ValueAt(int x, int y)
         {
-            Tile t = TileManager.GetTileFromID(kvp.Key);
-
-            List<Vector2> positions = kvp.Value;
-            List<Matrix4x4> matrices = new List<Matrix4x4>();
-            for (int i = 0; i < positions.Count; i++)
+            if (x < 0 || x >= grid.GetLength(0))
             {
-                Matrix4x4 transPos = Matrix4x4.CreateTranslation(new Vector3(positions[i], 0.0f));
-                Matrix4x4 rot = Matrix4x4.CreateRotationZ(0f);
-                RectangleF sourceRect = new RectangleF(0, 0, 16, 16);
-                Vector2 scale = Vector2.One * (TILE_SIZE / t.GetTexture().Width);
-                Matrix4x4 mscale = Matrix4x4.CreateScale(new Vector3(new Vector2(sourceRect.Width, sourceRect.Height) * scale, 1.0f));
-
-                matrices.Add(mscale * rot * transPos);
+                return outerGrid[x + 1, y + 1];
             }
+            if (y < 0 || y >= grid.GetLength(1))
+            {
+                return outerGrid[x + 1, y + 1];
+            }
+            return grid[x, y];
+        }
 
-            TileIDToRenderer.Add(kvp.Key, new StaticInstancedTextureRenderer(ModManager.GetAsset<Shader>("default.shader.texture"), TileManager.GetTileFromID(kvp.Key).GetTexture(), new RectangleF(0, 0, 16, 16), matrices.ToArray()));
+        bool topLeft = ValueAt(tileX - 1, tileY - 1) == 1;
+        bool top = ValueAt(tileX, tileY - 1) == 1;
+        bool topRight = ValueAt(tileX + 1, tileY - 1) == 1;
+        bool left = ValueAt(tileX - 1, tileY) == 1;
+        bool right = ValueAt(tileX + 1, tileY) == 1;
+        bool bottomLeft = ValueAt(tileX - 1, tileY + 1) == 1;
+        bool bottom = ValueAt(tileX, tileY + 1) == 1;
+        bool bottomRight = ValueAt(tileX + 1, tileY + 1) == 1;
+
+        if (!topLeft && !top && !left) // Top left outer corner
+        {
+            infos.Add(InstancingInfo.Create(globalOffset + new Vector2((tileX - 1) * TILE_SIZE, (tileY) * TILE_SIZE), 3f * MathF.PI / 2f, scale, new Vector2(0, tileSet.TileSize), tileSet.GetRandomOuterCornerTile()));
+        }
+
+        if (!topRight && !top && !right) // Top right outer corner
+        {
+            infos.Add(InstancingInfo.Create(globalOffset + new Vector2((tileX + 1) * TILE_SIZE, (tileY - 1) * TILE_SIZE), 0f, scale, new Vector2(tileSet.TileSize, 0), tileSet.GetRandomOuterCornerTile()));
+        }
+
+        if (!bottomLeft && !bottom && !left) // Bottom left outer corner
+        {
+            infos.Add(InstancingInfo.Create(globalOffset + new Vector2((tileX) * TILE_SIZE, (tileY + 2) * TILE_SIZE), 2f * MathF.PI / 2f, scale, new Vector2(0, tileSet.TileSize), tileSet.GetRandomOuterCornerTile()));
+        }
+
+        if (!bottomRight && !bottom && !right) // Bottom right outer corner
+        {
+            infos.Add(InstancingInfo.Create(globalOffset + new Vector2((tileX + 2) * TILE_SIZE, (tileY + 1) * TILE_SIZE), MathF.PI / 2f, scale, new Vector2(tileSet.TileSize, 0), tileSet.GetRandomOuterCornerTile()));
+        }
+
+        if (!top)
+        {
+            infos.Add(InstancingInfo.Create(globalOffset + new Vector2((tileX) * TILE_SIZE, (tileY - 1) * TILE_SIZE), 0f, scale, new Vector2(0, tileSet.TileSize), tileSet.GetRandomSideTile()));
+        }
+
+        if (!left)
+        {
+            infos.Add(InstancingInfo.Create(globalOffset + new Vector2((tileX - 1) * TILE_SIZE, (tileY + 1) * TILE_SIZE), 3f * MathF.PI / 2f, scale, new Vector2(0, tileSet.TileSize), tileSet.GetRandomSideTile()));
+        }
+
+        if (!right)
+        {
+            infos.Add(InstancingInfo.Create(globalOffset + new Vector2((tileX + 2) * TILE_SIZE, (tileY) * TILE_SIZE), MathF.PI / 2f, scale, new Vector2(tileSet.TileSize, 0), tileSet.GetRandomSideTile()));
+        }
+
+        if (!bottom)
+        {
+            infos.Add(InstancingInfo.Create(globalOffset + new Vector2((tileX + 1) * TILE_SIZE, (tileY + 2) * TILE_SIZE), MathF.PI, scale, new Vector2(tileSet.TileSize, 0), tileSet.GetRandomSideTile()));
         }
     }
 
@@ -82,26 +129,16 @@ public class StaticTileGrid : TileGrid
 
     public override int GetTileIDAtPos(int x, int y)
     {
-        Vector2 position = TILE_SIZE * new Vector2(x, y) + GlobalOffset;
-        foreach (KeyValuePair<int, List<Vector2>> kvp in TileIDAndPositions)
-        {
-            foreach (Vector2 pos in kvp.Value)
-            {
-                if (pos == position)
-                {
-                    return kvp.Key;
-                }
-            }
-        }
         return -1;
     }
 
     public override void Render()
     {
-        foreach (KeyValuePair<int, StaticInstancedTextureRenderer> kvp in TileIDToRenderer)
+        if (this.sitr == null)
         {
-            Tile t = TileManager.GetTileFromID(kvp.Key);
-            kvp.Value.Render(t.GetTexture(), ColorF.White);
+            this.sitr = new StaticInstancedTextureRenderer(ModManager.GetAsset<Shader>("default.shader.instanced_texture"), this._tileSet.GetTexture(), siis);
         }
+
+        this.sitr.Render(ColorF.White);
     }
 }

@@ -72,7 +72,7 @@ namespace AGame.Engine.Graphics
             Glfw.MakeContextCurrent(WindowHandle);
         }
 
-        public static void InitWindow(int width, int height, string title)
+        public unsafe static void InitWindow(int width, int height, string title)
         {
             PrepareContext();
             WindowHandle = CreateWindow(width, height, title);
@@ -90,6 +90,22 @@ namespace AGame.Engine.Graphics
                 OnFramebufferResize?.Invoke(null, new Vector2(w, h));
                 Logging.Log(LogLevel.Info, $"Framebuffer size changed to {w}x{h}");
             });
+
+            // GL.glEnable(GL_DEBUG_OUTPUT);
+
+            // GL.glDebugMessageCallback((source, type, id, severity, length, message, param) =>
+            // {
+            //     LogLevel level = severity switch
+            //     {
+            //         0 => LogLevel.Info,
+            //         1 => LogLevel.Debug,
+            //         2 => LogLevel.Warning,
+            //         3 => LogLevel.Error,
+            //         _ => LogLevel.Info
+            //     };
+
+            //     Logging.Log(level, $"OpenGL: {message}");
+            // }, (void*)0);
         }
 
         public static void CloseWindow()

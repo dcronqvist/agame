@@ -43,10 +43,8 @@ public class ScreenMultiplayerMenu : Screen<EnterMultiplayerMenuArgs>
                     // Go to a loading screen, will do later
                     ScreenManager.GoToScreen<ScreenTemporaryLoading, EnterTemporaryLoading>(new EnterTemporaryLoading() { Text = "Loading world..." });
 
-                    WorldContainer wc = await world.GetAsContainerAsync();
+                    WorldContainer wc = await world.GetAsContainerAsync(false);
                     List<Entity> entities = await world.GetEntitiesAsync();
-
-
 
                     GameServerConfiguration config = new GameServerConfiguration();
                     config.SetPort(28000).SetMaxConnections(10).SetOnlyAllowLocalConnections(false).SetTickRate(20);
@@ -60,9 +58,9 @@ public class ScreenMultiplayerMenu : Screen<EnterMultiplayerMenuArgs>
                     int serverPort = gameServer.Port;
 
                     GameClient gameClient = new GameClient("127.0.0.1", serverPort, 500, 500000);
-                    ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);
+                    // ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);
 
-                    gameClient.SetWorld(new WorldContainer(swg));
+                    // gameClient.SetWorld(new WorldContainer(swg));
 
                     await gameClient.ConnectAsync(); // Cannot fail, as we are connecting to our own host.
 

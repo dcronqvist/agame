@@ -24,6 +24,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     private ThreadSafe<Queue<Packet>> _receivedPackets;
     private ThreadSafe<Queue<Packet>> _sentPackets;
     private ThreadSafe<Queue<int>> _latency;
+    private ThreadSafe<Queue<IClientTickAction>> _nextTickActions;
 
     private Dictionary<int, Entity> _serverEntityIDToClientEntity;
 
@@ -51,14 +52,20 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         this._receivedPackets = new ThreadSafe<Queue<Packet>>(new Queue<Packet>());
         this._sentPackets = new ThreadSafe<Queue<Packet>>(new Queue<Packet>());
         this._playerId = -1;
+        this._nextTickActions = new ThreadSafe<Queue<IClientTickAction>>(new Queue<IClientTickAction>());
 
         this.RegisterClientEventHandlers();
         this.RegisterPacketHandlers();
     }
 
+    public WorldContainer GetWorld()
+    {
+        return this._world;
+    }
+
     public void SetWorld(WorldContainer world)
     {
-        this._world = world;
+        //this._world = world;
     }
 
     private void StartLatencyChecking()
@@ -152,29 +159,21 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
         this.AddPacketHandler<ChunkUpdatePacket>((packet) =>
         {
+            packet.Chunk.ParentWorld = this._world;
             this._world.UpdateChunk(packet.X, packet.Y, packet.Chunk);
         });
 
         this.AddPacketHandler<UnloadChunkPacket>((packet) =>
         {
-            this._world.DiscardChunk(packet.X, packet.Y);
+            this._nextTickActions.LockedAction((q) => q.Enqueue(new ClientDiscardChunkAction(packet.X, packet.Y)));
         });
 
         this.AddPacketHandler<WholeChunkPacket>((packet) =>
         {
-            this._world.UpdateChunk(packet.X, packet.Y, packet.Chunk);
-
             this.EnqueuePacket(new ReceivedChunkPacket(packet.X, packet.Y), true, false);
-        });
+            packet.Chunk.ParentWorld = this._world;
 
-        this.AddPacketHandler<AnimationStateChangePacket>((packet) =>
-        {
-            if (this.TryGetClientSideEntity(packet.EntityID, out Entity clientEntity))
-            {
-                AnimatorComponent ac = clientEntity.GetComponent<AnimatorComponent>();
-                ac.GetAnimator().SetNextState(packet.NewState);
-                Logging.Log(LogLevel.Debug, $"Client: Server changed animation state of entity {packet.EntityID} to {packet.NewState}");
-            }
+            this._nextTickActions.LockedAction((q) => q.Enqueue(new ClientUpdateChunkAction(packet.X, packet.Y, packet.Chunk)));
         });
     }
 
@@ -186,6 +185,8 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         {
             this._playerId = response.PlayerEntityID;
             this._interpolationTime = (1f / response.ServerTickSpeed) * 2f;
+
+            this._world = new WorldContainer(true, new ServerWorldGenerator(this));
 
             this.EnqueuePacket(new ConnectReadyForData(), true, true, 0);
 
@@ -364,6 +365,15 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         this.InterpolateEntities();
 
         this._ecs.Update(null, GameTime.DeltaTime);
+
+        this._nextTickActions.LockedAction((actions) =>
+        {
+            if (actions.Count > 0)
+            {
+                IClientTickAction action = actions.Dequeue();
+                action.Tick(this);
+            }
+        });
 
         // Entity playerEntity = this.GetPlayerEntity();
         // PlayerPositionComponent ppc = playerEntity.GetComponent<PlayerPositionComponent>();

@@ -5,152 +5,133 @@ using AGame.Engine.Assets;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
 
-namespace AGame.Engine.World
+namespace AGame.Engine.World;
+
+public class DynamicTileGrid
 {
-    public class DynamicTileGrid : TileGrid
+    private Vector2 _globalOffset;
+    private TileSet _tileSet;
+
+    private DynamicInstancedTextureRenderer _ditr;
+    private Dictionary<ChunkAddress, List<InstancingInfo>> _loadedChunks;
+    private WorldContainer _parentWorld;
+    private int _order;
+
+    public DynamicTileGrid(TileSet tileSet, int order, Vector2 globalOffset, WorldContainer container)
     {
-        private Dictionary<int, List<Vector2>> TileIDAndPositions { get; set; }
-        private Dictionary<int, DynamicInstancedTextureRenderer> TileIDToRenderer { get; set; }
+        this._parentWorld = container;
+        this._order = order;
+        this._tileSet = tileSet;
+        this._globalOffset = globalOffset;
+        this._ditr = new DynamicInstancedTextureRenderer(ModManager.GetAsset<Shader>("default.shader.dynamic_instanced_texture"), this._tileSet.GetTexture(), null);
+        this._loadedChunks = new Dictionary<ChunkAddress, List<InstancingInfo>>();
+    }
 
-        public DynamicTileGrid(int[,] grid, Vector2 globalOffset) : base(grid.GetLength(0), grid.GetLength(1), globalOffset)
+    public void RemoveChunk(int x, int y)
+    {
+        ChunkAddress ca = new ChunkAddress(x, y);
+        if (this._loadedChunks.ContainsKey(ca))
         {
-            this.TileIDAndPositions = new Dictionary<int, List<Vector2>>();
-            this.TileIDToRenderer = new Dictionary<int, DynamicInstancedTextureRenderer>();
+            this._ditr.RemoveInstances(this._loadedChunks[ca].ToArray());
+            this._loadedChunks.Remove(ca);
+        }
+    }
 
-            for (int y = 0; y < Height; y++)
+    public void UpdateChunk(int x, int y, ChunkLayer chunkLayer)
+    {
+        ChunkAddress address = new ChunkAddress(x, y);
+
+        List<InstancingInfo> instances = new List<InstancingInfo>();
+
+        for (int _y = 0; _y < chunkLayer.Grid.GetLength(1); _y++)
+        {
+            for (int _x = 0; _x < chunkLayer.Grid.GetLength(0); _x++)
             {
-                for (int x = 0; x < Width; x++)
-                {
-                    // Render each tile
-                    if (grid[x, y] != -1)
-                    {
-                        Vector2 tilePos = new Vector2(TILE_SIZE * x, TILE_SIZE * y) + this.GlobalOffset;
-                        if (!TileIDAndPositions.ContainsKey(grid[x, y]))
-                        {
-                            TileIDAndPositions.Add(grid[x, y], new List<Vector2>());
-                        }
+                int value = chunkLayer.Grid[_x, _y];
 
-                        TileIDAndPositions[grid[x, y]].Add(tilePos);
+                if (value == 1)
+                {
+                    Vector2 scale = Vector2.One * TileGrid.TILE_SIZE;
+                    RectangleF rect = this._tileSet.GetRandomFullTile();
+
+                    instances.Add(InstancingInfo.Create(this._globalOffset + new Vector2((x * Chunk.CHUNK_SIZE + _x) * TileGrid.TILE_SIZE, (y * Chunk.CHUNK_SIZE + _y) * TileGrid.TILE_SIZE), 0f, scale, Vector2.Zero, rect));
+
+                    if (chunkLayer.UseSideTiles)
+                    {
+                        //this.AddSideTiles(ref instances, this._tileSet, scale, this._globalOffset, x, y, _x, _y, chunkLayer);
                     }
                 }
             }
-
-            foreach (KeyValuePair<int, List<Vector2>> kvp in TileIDAndPositions)
-            {
-                Tile t = TileManager.GetTileFromID(kvp.Key);
-
-                List<Vector2> positions = kvp.Value;
-                List<Matrix4x4> matrices = new List<Matrix4x4>();
-                for (int i = 0; i < positions.Count; i++)
-                {
-                    // Matrix4x4 transPos = Matrix4x4.CreateTranslation(new Vector3(positions[i], 0.0f));
-                    // Matrix4x4 rot = Matrix4x4.CreateRotationZ(0f);
-                    // RectangleF sourceRect = new RectangleF(0, 0, 16, 16);
-                    // Vector2 scale = Vector2.One * (TILE_SIZE / t.Texture.Width);
-                    // Matrix4x4 mscale = Matrix4x4.CreateScale(new Vector3(new Vector2(sourceRect.Width, sourceRect.Height) * scale, 1.0f));
-                    Matrix4x4 matrix = Utilities.CreateModelMatrixFromPosition(positions[i], new Vector2(TileGrid.TILE_SIZE));
-                    matrices.Add(matrix);
-                }
-
-                TileIDToRenderer.Add(kvp.Key, new DynamicInstancedTextureRenderer(ModManager.GetAsset<Shader>("default.shader.texture"), TileManager.GetTileFromID(kvp.Key).GetTexture(), new RectangleF(0, 0, 16, 16), matrices.ToArray()));
-            }
         }
 
-        public int GetTileIDAtPosition(int x, int y)
+        List<InstancingInfo> oldInfos = this._loadedChunks.ContainsKey(address) ? this._loadedChunks[address] : new List<InstancingInfo>();
+        this._loadedChunks[address] = instances;
+
+        foreach (InstancingInfo info in oldInfos)
         {
-            Vector2 pos = new Vector2(x, y) * TileGrid.TILE_SIZE + GlobalOffset;
-
-            foreach (KeyValuePair<int, List<Vector2>> kvp in this.TileIDAndPositions)
-            {
-                for (int i = 0; i < kvp.Value.Count; i++)
-                {
-                    if (kvp.Value[i] == pos)
-                    {
-                        return kvp.Key;
-                    }
-                }
-            }
-
-            return -1;
+            this._ditr.RemoveInstances(info);
         }
 
-        public bool RemoveTile(int x, int y)
+        this._ditr.AddInstances(instances.ToArray());
+    }
+
+    private void AddSideTiles(ref List<InstancingInfo> infos, TileSet tileSet, Vector2 scale, Vector2 globalOffset, int chunkX, int chunkY, int tileX, int tileY, ChunkLayer chunkLayer)
+    {
+        int realX = chunkX * Chunk.CHUNK_SIZE + tileX;
+        int realY = chunkY * Chunk.CHUNK_SIZE + tileY;
+
+        bool topLeft = this._parentWorld.GetTileValue(realX - 1, realY - 1, chunkLayer.Order) == 1;
+        bool top = this._parentWorld.GetTileValue(realX, realY - 1, chunkLayer.Order) == 1;
+        bool topRight = this._parentWorld.GetTileValue(realX + 1, realY - 1, chunkLayer.Order) == 1;
+        bool left = this._parentWorld.GetTileValue(realX - 1, realY, chunkLayer.Order) == 1;
+        bool right = this._parentWorld.GetTileValue(realX + 1, realY, chunkLayer.Order) == 1;
+        bool bottomLeft = this._parentWorld.GetTileValue(realX - 1, realY + 1, chunkLayer.Order) == 1;
+        bool bottom = this._parentWorld.GetTileValue(realX, realY + 1, chunkLayer.Order) == 1;
+        bool bottomRight = this._parentWorld.GetTileValue(realX + 1, realY + 1, chunkLayer.Order) == 1;
+
+        if (!topLeft && !top && !left) // Top left outer corner
         {
-            int tileId = this.GetTileIDAtPosition(x, y);
-
-            if (tileId != -1)
-            {
-                Vector2 pos = new Vector2(x, y) * TileGrid.TILE_SIZE + GlobalOffset;
-                Matrix4x4 mat = Utilities.CreateModelMatrixFromPosition(pos, new Vector2(TileGrid.TILE_SIZE));
-
-                this.TileIDToRenderer[tileId].RemoveMatrix(mat);
-
-                this.TileIDAndPositions[tileId].Remove(pos);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            infos.Add(InstancingInfo.Create(globalOffset + new Vector2((realX - 1) * TileGrid.TILE_SIZE, (realY) * TileGrid.TILE_SIZE), 3f * MathF.PI / 2f, scale, new Vector2(0, tileSet.TileSize), tileSet.GetRandomOuterCornerTile()));
         }
 
-        public void SetTile(int x, int y, int tileID)
+        if (!topRight && !top && !right) // Top right outer corner
         {
-            if (this.GetTileIDAtPosition(x, y) == tileID)
-            {
-                return;
-            }
-
-            RemoveTile(x, y);
-            Vector2 worldPosition = new Vector2(x, y) * TileGrid.TILE_SIZE + GlobalOffset;
-
-            if (!this.TileIDAndPositions.ContainsKey(tileID))
-            {
-                this.TileIDAndPositions.Add(tileID, new List<Vector2>());
-            }
-
-            this.TileIDAndPositions[tileID].Add(worldPosition);
-
-            Matrix4x4 modelMatrix = Utilities.CreateModelMatrixFromPosition(worldPosition, new Vector2(TileGrid.TILE_SIZE));
-
-            if (!this.TileIDToRenderer.ContainsKey(tileID))
-            {
-                this.TileIDToRenderer.Add(tileID, new DynamicInstancedTextureRenderer(ModManager.GetAsset<Shader>("default.shader.texture"), TileManager.GetTileFromID(tileID).GetTexture(), new RectangleF(0, 0, 16, 16), new Matrix4x4[] { modelMatrix }));
-            }
-            else
-            {
-                DynamicInstancedTextureRenderer ditr = this.TileIDToRenderer[tileID];
-                ditr.AddMatrix(modelMatrix);
-            }
+            infos.Add(InstancingInfo.Create(globalOffset + new Vector2((realX + 1) * TileGrid.TILE_SIZE, (realY - 1) * TileGrid.TILE_SIZE), 0f, scale, new Vector2(tileSet.TileSize, 0), tileSet.GetRandomOuterCornerTile()));
         }
 
-        public override void Render()
+        if (!bottomLeft && !bottom && !left) // Bottom left outer corner
         {
-            foreach (KeyValuePair<int, DynamicInstancedTextureRenderer> kvp in TileIDToRenderer)
-            {
-                kvp.Value.Render(ColorF.White);
-            }
+            infos.Add(InstancingInfo.Create(globalOffset + new Vector2((realX) * TileGrid.TILE_SIZE, (realY + 2) * TileGrid.TILE_SIZE), 2f * MathF.PI / 2f, scale, new Vector2(0, tileSet.TileSize), tileSet.GetRandomOuterCornerTile()));
         }
 
-        public override string GetTileNameAtPos(int x, int y)
+        if (!bottomRight && !bottom && !right) // Bottom right outer corner
         {
-            return TileManager.GetTileNameFromID(this.GetTileIDAtPos(x, y));
+            infos.Add(InstancingInfo.Create(globalOffset + new Vector2((realX + 2) * TileGrid.TILE_SIZE, (realY + 1) * TileGrid.TILE_SIZE), MathF.PI / 2f, scale, new Vector2(tileSet.TileSize, 0), tileSet.GetRandomOuterCornerTile()));
         }
 
-        public override int GetTileIDAtPos(int x, int y)
+        if (!top)
         {
-            Vector2 position = TILE_SIZE * new Vector2(x, y) + GlobalOffset;
-            foreach (KeyValuePair<int, List<Vector2>> kvp in TileIDAndPositions)
-            {
-                foreach (Vector2 pos in kvp.Value)
-                {
-                    if (pos == position)
-                    {
-                        return kvp.Key;
-                    }
-                }
-            }
-            return -1;
+            infos.Add(InstancingInfo.Create(globalOffset + new Vector2((realX) * TileGrid.TILE_SIZE, (realY - 1) * TileGrid.TILE_SIZE), 0f, scale, new Vector2(0, tileSet.TileSize), tileSet.GetRandomSideTile()));
         }
+
+        if (!left)
+        {
+            infos.Add(InstancingInfo.Create(globalOffset + new Vector2((realX - 1) * TileGrid.TILE_SIZE, (realY + 1) * TileGrid.TILE_SIZE), 3f * MathF.PI / 2f, scale, new Vector2(0, tileSet.TileSize), tileSet.GetRandomSideTile()));
+        }
+
+        if (!right)
+        {
+            infos.Add(InstancingInfo.Create(globalOffset + new Vector2((realX + 2) * TileGrid.TILE_SIZE, (realY) * TileGrid.TILE_SIZE), MathF.PI / 2f, scale, new Vector2(tileSet.TileSize, 0), tileSet.GetRandomSideTile()));
+        }
+
+        if (!bottom)
+        {
+            infos.Add(InstancingInfo.Create(globalOffset + new Vector2((realX + 1) * TileGrid.TILE_SIZE, (realY + 2) * TileGrid.TILE_SIZE), MathF.PI, scale, new Vector2(tileSet.TileSize, 0), tileSet.GetRandomSideTile()));
+        }
+    }
+
+    public void Render()
+    {
+        this._ditr.Render(ColorF.White);
     }
 }

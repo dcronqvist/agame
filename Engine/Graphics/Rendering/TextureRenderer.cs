@@ -10,8 +10,7 @@ namespace AGame.Engine.Graphics.Rendering
     {
         private Shader shader;
         private uint quadVAO;
-        private uint VBO;
-        private uint modelInstanceVBO;
+        private uint quadVBO;
         public RectangleF currentSourceRectangle;
 
         public TextureRenderer(Shader shader)
@@ -34,87 +33,44 @@ namespace AGame.Engine.Graphics.Rendering
 
         public unsafe void Render(Texture2D texture, Vector2 position, Vector2 scale, float rotation, ColorF color, Vector2 origin, RectangleF sourceRectangle)
         {
-            RenderInstanced(texture, new Vector2[] { position }, scale, rotation, color, origin, sourceRectangle);
-        }
-
-        public unsafe void RenderInstanced(Texture2D texture, Vector2[] positions, Vector2 scale, float rotation, ColorF color, Vector2 origin, RectangleF sourceRectangle)
-        {
-            float[] matrixValues = new float[positions.Length * 16];
-
-            for (int i = 0; i < positions.Length; i++)
-            {
-                Matrix4x4 transPos = Matrix4x4.CreateTranslation(new Vector3(positions[i], 0.0f));
-                Matrix4x4 transMid = Matrix4x4.CreateTranslation(new Vector3(origin.X * scale.X, origin.Y * scale.Y, 0.0f));
-                Matrix4x4 rot = Matrix4x4.CreateRotationZ(rotation);
-                Matrix4x4 transOrigin = Matrix4x4.CreateTranslation(new Vector3(-origin.X * scale.X, -origin.Y * scale.Y, 0.0f));
-                Matrix4x4 mscale = Matrix4x4.CreateScale(new Vector3(new Vector2(sourceRectangle.Width, sourceRectangle.Height) * scale, 1.0f));
-
-                float[] m = Utilities.GetMatrix4x4Values(mscale * transOrigin * rot * transMid * transPos);
-                for (int j = 0; j < 16; j++)
-                {
-                    matrixValues[i * 16 + j] = m[j];
-                }
-            }
-
-            RenderInstanced(texture, matrixValues, color, sourceRectangle);
-        }
-
-        public unsafe void RenderInstanced(Texture2D texture, float[] instancedModelMatrices, ColorF color, RectangleF sourceRectangle)
-        {
             shader.Use();
-            shader.SetMatrix4x4("projection", Renderer.Camera.GetProjectionMatrix());
 
+            Matrix4x4 modelMatrix = Utilities.CreateModelMatrixFromPosition(position, rotation, origin, scale * new Vector2(sourceRectangle.Width, sourceRectangle.Height));
+
+            shader.SetMatrix4x4("projection", Renderer.Camera.GetProjectionMatrix());
             shader.SetVec4("textureColor", color.R, color.G, color.B, color.A);
             shader.SetInt("image", 0);
+            shader.SetFloatArray("uvCoords", GetUVCoordinateData(texture, sourceRectangle));
+            shader.SetMatrix4x4("model", modelMatrix);
 
             glActiveTexture(GL_TEXTURE0);
             GLSM.BindTexture(GL_TEXTURE_2D, texture.ID);
 
-            if (sourceRectangle != currentSourceRectangle)
-            {
-                glBindBuffer(GL_ARRAY_BUFFER, VBO);
-                // Assign new texture coordinates based on the src rectangle.
-                float[][] newTex = new float[][]
-                {
-                    // down left
-                    new float[] { sourceRectangle.X / texture.Width, (sourceRectangle.Y + sourceRectangle.Height) / texture.Height },
-                    // top right
-                    new float[] { (sourceRectangle.X + sourceRectangle.Width) / texture.Width, sourceRectangle.Y / texture.Height },
-                    // top left
-                    new float[] { sourceRectangle.X / texture.Width, sourceRectangle.Y / texture.Height },
-                    // down left
-                    new float[] { sourceRectangle.X / texture.Width, (sourceRectangle.Y + sourceRectangle.Height) / texture.Height },
-                    // down right
-                    new float[] { (sourceRectangle.X + sourceRectangle.Width) / texture.Width, (sourceRectangle.Y + sourceRectangle.Height) / texture.Height },
-                    // top right
-                    new float[] { (sourceRectangle.X + sourceRectangle.Width) / texture.Width, sourceRectangle.Y / texture.Height },
-                };
-
-                fixed (float* tex1 = &newTex[0][0], tex2 = &newTex[1][0], tex3 = &newTex[2][0], tex4 = &newTex[3][0], tex5 = &newTex[4][0], tex6 = &newTex[5][0])
-                {
-                    glBufferSubData(GL_ARRAY_BUFFER, 2 * sizeof(float), 2 * sizeof(float), tex1);
-                    glBufferSubData(GL_ARRAY_BUFFER, 6 * sizeof(float), 2 * sizeof(float), tex2);
-                    glBufferSubData(GL_ARRAY_BUFFER, 10 * sizeof(float), 2 * sizeof(float), tex3);
-                    glBufferSubData(GL_ARRAY_BUFFER, 14 * sizeof(float), 2 * sizeof(float), tex4);
-                    glBufferSubData(GL_ARRAY_BUFFER, 18 * sizeof(float), 2 * sizeof(float), tex5);
-                    glBufferSubData(GL_ARRAY_BUFFER, 22 * sizeof(float), 2 * sizeof(float), tex6);
-                }
-                currentSourceRectangle = sourceRectangle;
-            }
-
-            glBindBuffer(GL_ARRAY_BUFFER, modelInstanceVBO);
-            fixed (float* m = &instancedModelMatrices[0])
-            {
-                glBufferData(GL_ARRAY_BUFFER, sizeof(float) * instancedModelMatrices.Length, m, GL_DYNAMIC_DRAW);
-            }
-
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
             glBindVertexArray(quadVAO);
-            glDrawArraysInstanced(GL_TRIANGLES, 0, 6, instancedModelMatrices.Length / 16);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
             glBindVertexArray(0);
         }
 
+        private float[] GetUVCoordinateData(Texture2D texture, RectangleF rec)
+        {
+            float sourceX = rec.X / texture.Width;
+            float sourceY = rec.Y / texture.Height;
+            float sourceWidth = rec.Width / texture.Width;
+            float sourceHeight = rec.Height / texture.Height;
 
+            float[] vertices = { 
+                // tex
+                sourceX, sourceY + sourceHeight, //downLeft
+                sourceX + sourceWidth, sourceY, //topRight
+                sourceX, sourceY, //topLeft
+
+                sourceX, sourceY + sourceHeight, //downLeft
+                sourceX + sourceWidth, sourceY + sourceHeight, //downRight
+                sourceX + sourceWidth, sourceY  //topRight
+            };
+
+            return vertices;
+        }
 
         private unsafe void InitRenderData()
         {
@@ -122,51 +78,28 @@ namespace AGame.Engine.Graphics.Rendering
             quadVAO = glGenVertexArray(); // Created vertex array object
             glBindVertexArray(quadVAO);
 
-            VBO = glGenBuffer();
+            quadVBO = glGenBuffer();
 
             float[] vertices = { 
-                // pos      // tex
-                0.0f, 1.0f, 0.0f, 0.0f, //downLeft
-                1.0f, 0.0f, 1.0f, 1.0f, //topRight
-                0.0f, 0.0f, 0.0f, 1.0f, //topLeft
+                // pos     
+                0.0f, 1.0f,
+                1.0f, 0.0f,
+                0.0f, 0.0f,
 
-                0.0f, 1.0f, 0.0f, 0.0f, //downLeft
-                1.0f, 1.0f, 1.0f, 0.0f, //downRight
-                1.0f, 0.0f, 1.0f, 1.0f  //topRight
+                0.0f, 1.0f,
+                1.0f, 1.0f,
+                1.0f, 0.0f,
             };
 
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
 
             fixed (float* v = &vertices[0])
             {
-                glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertices.Length, v, GL_DYNAMIC_DRAW);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertices.Length, v, GL_STATIC_DRAW);
             }
 
             glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 4, GL_FLOAT, false, 4 * sizeof(float), (void*)0);
-
-            modelInstanceVBO = glGenBuffer();
-            glBindBuffer(GL_ARRAY_BUFFER, modelInstanceVBO);
-
-            float[] m = Utilities.GetMatrix4x4Values(Matrix4x4.Identity);
-
-            fixed (float* mat = &m[0])
-            {
-                glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 16, mat, GL_STATIC_DRAW);
-            }
-
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 4, GL_FLOAT, false, 16 * sizeof(float), (void*)0);
-            glVertexAttribDivisor(1, 1);
-            glEnableVertexAttribArray(2);
-            glVertexAttribPointer(2, 4, GL_FLOAT, false, 16 * sizeof(float), (void*)(1 * 4 * sizeof(float)));
-            glVertexAttribDivisor(2, 1);
-            glEnableVertexAttribArray(3);
-            glVertexAttribPointer(3, 4, GL_FLOAT, false, 16 * sizeof(float), (void*)(2 * 4 * sizeof(float)));
-            glVertexAttribDivisor(3, 1);
-            glEnableVertexAttribArray(4);
-            glVertexAttribPointer(4, 4, GL_FLOAT, false, 16 * sizeof(float), (void*)(3 * 4 * sizeof(float)));
-            glVertexAttribDivisor(4, 1);
+            glVertexAttribPointer(0, 2, GL_FLOAT, false, 2 * sizeof(float), (void*)0);
 
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             glBindVertexArray(0);

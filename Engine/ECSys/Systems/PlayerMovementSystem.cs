@@ -6,7 +6,7 @@ using AGame.Engine.World;
 
 namespace AGame.Engine.ECSys.Systems;
 
-[SystemRunsOn(SystemRunner.Client | SystemRunner.Server)]
+[SystemRunsOn(SystemRunner.Client)]
 public class PlayerMovementSystem : BaseSystem
 {
     public override void Initialize()
@@ -32,17 +32,17 @@ public class PlayerMovementSystem : BaseSystem
             if (ppc.Velocity.Length() > 1f)
             {
                 this._timeIdle[entity.ID] = 0;
-                ac.GetAnimator().SetNextState("walk");
+                ac.GetAnimator().SetNextAnimation("walk", 10);
             }
             else
             {
                 this._timeIdle[entity.ID] += deltaTime;
-                ac.GetAnimator().SetNextState("idle");
+                ac.GetAnimator().SetNextAnimation("idle", 10);
             }
 
             if (this._timeIdle[entity.ID] > 5f)
             {
-                ac.GetAnimator().SetNextState("green");
+                ac.GetAnimator().SetNextAnimation("green", 10);
                 this._timeIdle[entity.ID] = 0;
             }
         }
@@ -50,15 +50,15 @@ public class PlayerMovementSystem : BaseSystem
 
     public override void Render(List<Entity> entities, WorldContainer gameWorld)
     {
-        foreach (Entity entity in entities)
-        {
-            PlayerPositionComponent ppc = entity.GetComponent<PlayerPositionComponent>();
-            CoordinateVector velocity = ppc.Velocity;
+        // foreach (Entity entity in entities)
+        // {
+        //     PlayerPositionComponent ppc = entity.GetComponent<PlayerPositionComponent>();
+        //     CoordinateVector velocity = ppc.Velocity;
 
-            CoordinateVector start = ppc.Position;
-            CoordinateVector end = ppc.Position + velocity * 0.2f;
+        //     CoordinateVector start = ppc.Position;
+        //     CoordinateVector end = ppc.Position + velocity * 0.4f;
 
-            Renderer.Primitive.RenderLine(start.ToWorldVector().ToVector2(), end.ToWorldVector().ToVector2(), 2, ColorF.White);
-        }
+        //     Renderer.Primitive.RenderLine(start.ToWorldVector().ToVector2(), end.ToWorldVector().ToVector2(), 2, ColorF.White);
+        // }
     }
 }

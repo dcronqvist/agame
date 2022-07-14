@@ -15,9 +15,9 @@ public class WorldMetaData
     public DateTime LastPlayedAt { get; set; }
     public string Generator { get; set; }
 
-    public async Task<WorldContainer> GetAsContainerAsync()
+    public async Task<WorldContainer> GetAsContainerAsync(bool rendering)
     {
-        WorldContainer wc = new WorldContainer(Utilities.GetGeneratorFromTypeName(Generator));
+        WorldContainer wc = new WorldContainer(rendering, Utilities.GetGeneratorFromTypeName(Generator));
 
         using (StreamReader sr = new StreamReader(Directory + "/world.json"))
         {
@@ -214,7 +214,7 @@ public class WorldMetaData
                 AllowTrailingCommas = true
             };
 
-            string json = JsonSerializer.Serialize(new WorldContainer(Utilities.GetGeneratorFromTypeName(Generator)), options);
+            string json = JsonSerializer.Serialize(new WorldContainer(false, Utilities.GetGeneratorFromTypeName(Generator)), options);
             sw.Write(json);
         }
 

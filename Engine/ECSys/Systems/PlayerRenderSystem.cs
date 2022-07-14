@@ -26,7 +26,10 @@ public class PlayerRenderSystem : BaseSystem
             AnimatorComponent pac = entity.GetComponent<AnimatorComponent>();
             //Vector2 middleOfRec = pac.GetAnimator().GetCurrentAnimation();
 
-            pac.GetAnimator().Render(pos.ToWorldVector().ToVector2());
+            Animation currentAnim = pac.GetAnimator().GetCurrentAnimation();
+            Renderer.Primitive.RenderCircle(pos.ToWorldVector().ToVector2() + new Vector2(0f, currentAnim.GetMiddleOfCurrentFrameScaled().Y), 7f, ColorF.Black * 0.5f, false);
+
+            pac.GetAnimator().Render(pos.ToWorldVector().ToVector2() - currentAnim.GetMiddleOfCurrentFrameScaled());
         }
     }
 }

@@ -76,7 +76,8 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     private ThreadSafe<Dictionary<Connection, List<ChunkAddress>>> _connectionsLoadedChunks;
 
     // Sends chunks of this distance around the player to clients.
-    private int _chunkDistance = 4;
+    private int _chunkDistanceX = 3;
+    private int _chunkDistanceY = 2;
 
     public GameServer(ECS ecs, WorldContainer world, WorldMetaData worldMeta, GameServerConfiguration config, int reliableMillisBeforeResend, int clientTimeoutMillis) : base(config.Port, reliableMillisBeforeResend, clientTimeoutMillis)
     {
@@ -250,10 +251,10 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         List<ChunkAddress> currentLoaded = this._connectionsLoadedChunks.LockedAction((clc) => clc.ContainsKey(connection) ? clc[connection].ToList() : new List<ChunkAddress>());
 
         List<ChunkAddress> chunksToSend = new List<ChunkAddress>();
-        int fromX = x - this._chunkDistance;
-        int toX = x + this._chunkDistance;
-        int fromY = y - this._chunkDistance;
-        int toY = y + this._chunkDistance;
+        int fromX = x - this._chunkDistanceX;
+        int toX = x + this._chunkDistanceX;
+        int fromY = y - this._chunkDistanceY;
+        int toY = y + this._chunkDistanceY;
 
         for (int i = fromX; i <= toX; i++)
         {

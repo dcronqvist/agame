@@ -9,10 +9,13 @@ public class Animator
 {
     public Dictionary<string, AnimationState> States { get; set; }
     public string CurrentState { get; set; }
+
     private string _nextState;
+    private int _currentFramesPerSecond;
+    private int _nextFramesPerSecond;
     private bool _transitioned;
 
-    public Animator(IEnumerable<AnimationState> states, string initialState)
+    public Animator(IEnumerable<AnimationState> states, string initialState, int initialFps)
     {
         this.States = new Dictionary<string, AnimationState>();
         foreach (var state in states)
@@ -20,15 +23,15 @@ public class Animator
             this.States.Add(state.Name, state);
         }
         this.CurrentState = initialState;
+        this._currentFramesPerSecond = initialFps;
     }
 
     public bool Update(float deltaTime)
     {
         AnimationState state = this.States[this.CurrentState];
 
-        if (state.Animation.Update(deltaTime))
+        if (state.Animation.Update(this._currentFramesPerSecond, deltaTime))
         {
-            Logging.Log(LogLevel.Debug, $"Client: Animation {state.Name} finished.");
             // The animation has finished, go to the next state.
             if (this._nextState == null)
             {
@@ -41,12 +44,12 @@ public class Animator
                 this._nextState = null;
             }
 
+            this._currentFramesPerSecond = this._nextFramesPerSecond;
             return true;
         }
 
         if (this._transitioned)
         {
-            Logging.Log(LogLevel.Debug, $"Client: Transitioned to state {this.CurrentState}.");
             this._transitioned = false;
             return true;
         }
@@ -59,9 +62,10 @@ public class Animator
         return this.States[this.CurrentState].Animation;
     }
 
-    public void SetNextState(string state)
+    public void SetNextAnimation(string state, int framesPerSecond)
     {
         this._nextState = state;
+        this._nextFramesPerSecond = framesPerSecond;
 
         if (!this.States[this.CurrentState].MustFinish)
         {
@@ -70,6 +74,7 @@ public class Animator
                 this.States[this.CurrentState].Animation.Reset();
                 this.CurrentState = state;
                 this._transitioned = true;
+                this._currentFramesPerSecond = this._nextFramesPerSecond;
             }
         }
     }
@@ -81,7 +86,7 @@ public class Animator
 
     public Animator Clone()
     {
-        return new Animator(this.States.Values, this.CurrentState);
+        return new Animator(this.States.Values, this.CurrentState, this._currentFramesPerSecond);
     }
 }
 

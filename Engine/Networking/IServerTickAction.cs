@@ -9,6 +9,11 @@ public interface IServerTickAction
     void Tick(GameServer server);
 }
 
+public interface IClientTickAction
+{
+    void Tick(GameClient client);
+}
+
 public class DestroyEntityAction : IServerTickAction
 {
     public int EntityID { get; set; }
@@ -79,5 +84,41 @@ public class TellClientToUnloadChunkAction : IServerTickAction
         };
 
         server.EnqueuePacket(wcp, this.Connection, true, false);
+    }
+}
+
+public class ClientUpdateChunkAction : IClientTickAction
+{
+    public int X { get; set; }
+    public int Y { get; set; }
+    public Chunk Chunk { get; set; }
+
+    public ClientUpdateChunkAction(int x, int y, Chunk chunk)
+    {
+        this.X = x;
+        this.Y = y;
+        this.Chunk = chunk;
+    }
+
+    public void Tick(GameClient client)
+    {
+        client.GetWorld().UpdateChunk(this.X, this.Y, this.Chunk);
+    }
+}
+
+public class ClientDiscardChunkAction : IClientTickAction
+{
+    public int X { get; set; }
+    public int Y { get; set; }
+
+    public ClientDiscardChunkAction(int x, int y)
+    {
+        this.X = x;
+        this.Y = y;
+    }
+
+    public void Tick(GameClient client)
+    {
+        client.GetWorld().DiscardChunk(this.X, this.Y);
     }
 }

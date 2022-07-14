@@ -19,6 +19,7 @@ public class AnimatorDescription : Asset
 {
     public List<AnimationStateDescription> States { get; set; }
     public string InitialState { get; set; }
+    public int InitialFramesPerSecond { get; set; }
 
     public override bool InitOpenGL()
     {
@@ -28,6 +29,6 @@ public class AnimatorDescription : Asset
 
     public Animator GetAnimator()
     {
-        return new Animator(States.Select(s => s.GetAnimationState()), InitialState);
+        return new Animator(States.Select(s => s.GetAnimationState()), InitialState, this.InitialFramesPerSecond);
     }
 }

@@ -19,12 +19,11 @@ public class Animation
     public ColorF ColorTint { get; set; }
     public RectangleF[] Frames { get; set; }
     public float Rotation { get; set; }
-    public int FramesPerSecond { get; set; }
     private int _currentFrame;
 
     private float _currentFrameTime;
 
-    public Animation(string texture, Vector2 renderScale, Vector2 origin, ColorF colorTint, RectangleF[] frames, float rotation, int framesPerSecond)
+    public Animation(string texture, Vector2 renderScale, Vector2 origin, ColorF colorTint, RectangleF[] frames, float rotation)
     {
         Texture = texture;
         RenderScale = renderScale;
@@ -32,7 +31,6 @@ public class Animation
         ColorTint = colorTint;
         Frames = frames;
         Rotation = rotation;
-        FramesPerSecond = framesPerSecond;
         this._currentFrame = 0;
     }
 
@@ -44,6 +42,12 @@ public class Animation
     private float GetFrameTime(int fps)
     {
         return 1f / fps;
+    }
+
+    public Vector2 GetMiddleOfCurrentFrameScaled()
+    {
+        RectangleF frame = this.Frames[this._currentFrame];
+        return new Vector2(frame.Width / 2, frame.Height / 2) * this.RenderScale;
     }
 
     public void Reset()
@@ -64,10 +68,10 @@ public class Animation
     /// Updates the animation with the supplied time delta.
     /// if the animation is finished, it will return true, otherwise false.
     /// </summary>
-    public bool Update(float deltaTime)
+    public bool Update(int framesPerSecond, float deltaTime)
     {
         _currentFrameTime += deltaTime;
-        if (_currentFrameTime >= GetFrameTime(FramesPerSecond))
+        if (_currentFrameTime >= GetFrameTime(framesPerSecond))
         {
             _currentFrameTime = 0;
             _currentFrame++;
@@ -87,6 +91,6 @@ public class Animation
 
     public Animation Clone()
     {
-        return new Animation(this.Texture, this.RenderScale, this.Origin, this.ColorTint, this.Frames, this.Rotation, this.FramesPerSecond);
+        return new Animation(this.Texture, this.RenderScale, this.Origin, this.ColorTint, this.Frames, this.Rotation);
     }
 }

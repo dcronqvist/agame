@@ -63,7 +63,8 @@ public static class ModManager
             { ".locale", new LocaleLoader() },
             { ".wav", new AudioLoader() },
             { ".anim", new AnimationLoader() },
-            { ".animator", new AnimatorLoader() }
+            { ".animator", new AnimatorLoader() },
+            { ".tileset", new TileSetLoader() }
         };
     }
 

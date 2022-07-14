@@ -26,6 +26,5 @@ public abstract class TileGrid
 
     public abstract string GetTileNameAtPos(int x, int y);
     public abstract int GetTileIDAtPos(int x, int y);
-    public virtual void Update() { }
     public virtual void Render() { }
 }

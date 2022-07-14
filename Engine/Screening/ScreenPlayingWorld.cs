@@ -65,7 +65,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
                 Camera.Zoom *= 1 / 1.05f;
             }
 
-            Camera.Zoom = Utilities.Clamp(1f, 3f, Camera.Zoom);
+            Camera.Zoom = Utilities.Clamp(1.3f, 3f, Camera.Zoom);
         };
     }
 
@@ -133,6 +133,9 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             Entity localPlayer = this._client.GetPlayerEntity();
             int remotePlayerID = this._client.GetRemoteIDForEntity(localPlayer.ID);
             Renderer.Text.RenderText(f, $"RemotePlayerID: {remotePlayerID}", new Vector2(20, 80), 1f, ColorF.White, Renderer.Camera);
+
+            CoordinateVector position = localPlayer.GetComponent<PlayerPositionComponent>().Position;
+            Renderer.Text.RenderText(f, $"X: {MathF.Round(position.X, 1)} Y: {MathF.Round(position.Y, 1)}", new Vector2(200, 80), 1f, ColorF.White, Renderer.Camera);
 
             this.SetCameraPosition(localPlayer.GetComponent<PlayerPositionComponent>().Position, false);
         }

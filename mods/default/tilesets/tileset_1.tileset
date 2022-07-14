@@ -1,0 +1,8 @@
+{
+    "texture": "default.tex.test_tileset",
+    "tileSize": 16,
+    "fullTileVariants": 3,
+    "sideTileVariants": 2,
+    "outerCornerVariants": 2,
+    "innerCornerVariants": 1
+}
