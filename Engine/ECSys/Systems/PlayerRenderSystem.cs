@@ -27,9 +27,9 @@ public class PlayerRenderSystem : BaseSystem
             //Vector2 middleOfRec = pac.GetAnimator().GetCurrentAnimation();
 
             Animation currentAnim = pac.GetAnimator().GetCurrentAnimation();
-            Renderer.Primitive.RenderCircle(pos.ToWorldVector().ToVector2() + new Vector2(0f, currentAnim.GetMiddleOfCurrentFrameScaled().Y), 7f, ColorF.Black * 0.5f, false);
+            Renderer.Primitive.RenderCircle(pos.ToWorldVector().ToVector2() + new Vector2(0f, currentAnim.GetMiddleOfCurrentFrameScaled().Y - 2), 26f, ColorF.Black * 0.2f, true);
 
-            pac.GetAnimator().Render(pos.ToWorldVector().ToVector2() - currentAnim.GetMiddleOfCurrentFrameScaled());
+            pac.GetAnimator().Render(pos.ToWorldVector().ToVector2() - currentAnim.GetMiddleOfCurrentFrameScaled(), ColorF.White);
         }
     }
 }

@@ -16,19 +16,17 @@ public class Animation
     public string Texture { get; set; }
     public Vector2 RenderScale { get; set; }
     public Vector2 Origin { get; set; }
-    public ColorF ColorTint { get; set; }
     public RectangleF[] Frames { get; set; }
     public float Rotation { get; set; }
     private int _currentFrame;
 
     private float _currentFrameTime;
 
-    public Animation(string texture, Vector2 renderScale, Vector2 origin, ColorF colorTint, RectangleF[] frames, float rotation)
+    public Animation(string texture, Vector2 renderScale, Vector2 origin, RectangleF[] frames, float rotation)
     {
         Texture = texture;
         RenderScale = renderScale;
         Origin = origin;
-        ColorTint = colorTint;
         Frames = frames;
         Rotation = rotation;
         this._currentFrame = 0;
@@ -68,10 +66,10 @@ public class Animation
     /// Updates the animation with the supplied time delta.
     /// if the animation is finished, it will return true, otherwise false.
     /// </summary>
-    public bool Update(int framesPerSecond, float deltaTime)
+    public bool Update(float frameTime, float deltaTime)
     {
         _currentFrameTime += deltaTime;
-        if (_currentFrameTime >= GetFrameTime(framesPerSecond))
+        if (_currentFrameTime >= frameTime)
         {
             _currentFrameTime = 0;
             _currentFrame++;
@@ -84,13 +82,13 @@ public class Animation
         return false;
     }
 
-    public void Render(Vector2 position)
+    public void Render(Vector2 position, ColorF tint, TextureRenderEffects effects)
     {
-        Renderer.Texture.Render(this.GetTexture(), position, this.RenderScale, this.Rotation, this.ColorTint, this.Origin, this.GetFrame(_currentFrame));
+        Renderer.Texture.Render(this.GetTexture(), position, this.RenderScale, this.Rotation, tint, this.Origin, this.GetFrame(this._currentFrame), effects);
     }
 
     public Animation Clone()
     {
-        return new Animation(this.Texture, this.RenderScale, this.Origin, this.ColorTint, this.Frames, this.Rotation);
+        return new Animation(this.Texture, this.RenderScale, this.Origin, this.Frames, this.Rotation);
     }
 }

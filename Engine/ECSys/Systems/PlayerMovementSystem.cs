@@ -15,8 +15,6 @@ public class PlayerMovementSystem : BaseSystem
         this.RegisterComponentType<AnimatorComponent>();
     }
 
-    private Dictionary<int, float> _timeIdle = new Dictionary<int, float>();
-
     public override void Update(List<Entity> entities, WorldContainer gameWorld, float deltaTime)
     {
         foreach (Entity entity in entities)
@@ -24,26 +22,21 @@ public class PlayerMovementSystem : BaseSystem
             PlayerPositionComponent ppc = entity.GetComponent<PlayerPositionComponent>();
             AnimatorComponent ac = entity.GetComponent<AnimatorComponent>();
 
-            if (!this._timeIdle.ContainsKey(entity.ID))
-            {
-                this._timeIdle.Add(entity.ID, 0);
-            }
-
             if (ppc.Velocity.Length() > 1f)
             {
-                this._timeIdle[entity.ID] = 0;
-                ac.GetAnimator().SetNextAnimation("walk", 10);
+
+                if (ppc.Velocity.X > 0f)
+                {
+                    ac.GetAnimator().SetNextAnimation("run_right");
+                }
+                else
+                {
+                    ac.GetAnimator().SetNextAnimation("run_left");
+                }
             }
             else
             {
-                this._timeIdle[entity.ID] += deltaTime;
-                ac.GetAnimator().SetNextAnimation("idle", 10);
-            }
-
-            if (this._timeIdle[entity.ID] > 5f)
-            {
-                ac.GetAnimator().SetNextAnimation("green", 10);
-                this._timeIdle[entity.ID] = 0;
+                ac.GetAnimator().SetNextAnimation("idle");
             }
         }
     }

@@ -19,7 +19,8 @@ public class AnimatorLoader : IAssetLoader
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             IncludeFields = true,
-            AllowTrailingCommas = true
+            AllowTrailingCommas = true,
+            Converters = { new JsonStringEnumConverter() }
         };
 
         using (StreamReader sr = new StreamReader(fileStream))

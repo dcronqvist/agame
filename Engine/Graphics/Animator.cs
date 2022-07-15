@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Numerics;
 using AGame.Engine.Configuration;
+using AGame.Engine.Graphics.Rendering;
 
 namespace AGame.Engine.Graphics;
 
@@ -11,11 +12,14 @@ public class Animator
     public string CurrentState { get; set; }
 
     private string _nextState;
-    private int _currentFramesPerSecond;
-    private int _nextFramesPerSecond;
+    private float _currentSecondsPerFrame;
+    private float _nextSecondsPerFrame;
+    private TextureRenderEffects _currentEffects;
+    private TextureRenderEffects _nextEffects;
+
     private bool _transitioned;
 
-    public Animator(IEnumerable<AnimationState> states, string initialState, int initialFps)
+    public Animator(IEnumerable<AnimationState> states, string initialState)
     {
         this.States = new Dictionary<string, AnimationState>();
         foreach (var state in states)
@@ -23,14 +27,14 @@ public class Animator
             this.States.Add(state.Name, state);
         }
         this.CurrentState = initialState;
-        this._currentFramesPerSecond = initialFps;
+        this._currentSecondsPerFrame = this.GetAnimationState(this.CurrentState).MillisPerFrame / 1000f;
     }
 
     public bool Update(float deltaTime)
     {
         AnimationState state = this.States[this.CurrentState];
 
-        if (state.Animation.Update(this._currentFramesPerSecond, deltaTime))
+        if (state.Animation.Update(this._currentSecondsPerFrame, deltaTime))
         {
             // The animation has finished, go to the next state.
             if (this._nextState == null)
@@ -44,7 +48,8 @@ public class Animator
                 this._nextState = null;
             }
 
-            this._currentFramesPerSecond = this._nextFramesPerSecond;
+            this._currentSecondsPerFrame = this._nextSecondsPerFrame;
+            this._currentEffects = this._nextEffects;
             return true;
         }
 
@@ -57,15 +62,21 @@ public class Animator
         return false;
     }
 
+    public AnimationState GetAnimationState(string stateName)
+    {
+        return this.States[stateName];
+    }
+
     public Animation GetCurrentAnimation()
     {
         return this.States[this.CurrentState].Animation;
     }
 
-    public void SetNextAnimation(string state, int framesPerSecond)
+    public void SetNextAnimation(string state)
     {
         this._nextState = state;
-        this._nextFramesPerSecond = framesPerSecond;
+        this._nextSecondsPerFrame = this.States[this._nextState].MillisPerFrame / 1000f;
+        this._nextEffects = this.States[this._nextState].Effects;
 
         if (!this.States[this.CurrentState].MustFinish)
         {
@@ -74,19 +85,20 @@ public class Animator
                 this.States[this.CurrentState].Animation.Reset();
                 this.CurrentState = state;
                 this._transitioned = true;
-                this._currentFramesPerSecond = this._nextFramesPerSecond;
+                this._currentSecondsPerFrame = this._nextSecondsPerFrame;
+                this._currentEffects = this._nextEffects;
             }
         }
     }
 
-    public void Render(Vector2 position)
+    public void Render(Vector2 position, ColorF tint)
     {
-        this.States[this.CurrentState].Animation.Render(position);
+        this.States[this.CurrentState].Animation.Render(position, tint, this._currentEffects);
     }
 
     public Animator Clone()
     {
-        return new Animator(this.States.Values, this.CurrentState, this._currentFramesPerSecond);
+        return new Animator(this.States.Values, this.CurrentState);
     }
 }
 
@@ -96,6 +108,8 @@ public class AnimationState
     public Animation Animation { get; set; }
     public bool MustFinish { get; set; }
     public string DefaultNextState { get; set; }
+    public int MillisPerFrame { get; set; }
+    public TextureRenderEffects Effects { get; set; }
 
     public AnimationState(string name, Animation animation)
     {
@@ -117,12 +131,26 @@ public class AnimationState
         return this;
     }
 
+    public AnimationState SetMillisPerFrame(int millisPerFrame)
+    {
+        this.MillisPerFrame = millisPerFrame;
+        return this;
+    }
+
+    public AnimationState SetEffects(TextureRenderEffects effects)
+    {
+        this.Effects = effects;
+        return this;
+    }
+
     public AnimationState Clone()
     {
         return new AnimationState(this.Name, this.Animation.Clone())
         {
             MustFinish = this.MustFinish,
             DefaultNextState = this.DefaultNextState,
+            MillisPerFrame = this.MillisPerFrame,
+            Effects = this.Effects,
         };
     }
 }

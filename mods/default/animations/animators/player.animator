@@ -1,24 +1,27 @@
 {
     "initialState": "idle",
-    "initialFramesPerSecond": 10,
     "states": [
         {
             "name": "idle",
             "animation": "default.anim.player_idle",
             "mustFinish": false,
-            "defaultNextState": "idle"
+            "defaultNextState": "idle",
+            "millisPerFrame": 1000
         },
         {
-            "name": "walk",
+            "name": "run_right",
             "animation": "default.anim.player_walk",
             "mustFinish": false,
-            "defaultNextState": "walk"
+            "defaultNextState": "idle",
+            "millisPerFrame": 100
         },
         {
-            "name": "green",
-            "animation": "default.anim.player_greenball",
-            "mustFinish": true,
-            "defaultNextState": "idle"
+            "name": "run_left",
+            "animation": "default.anim.player_walk",
+            "mustFinish": false,
+            "defaultNextState": "idle",
+            "millisPerFrame": 100,
+            "effects": "flipHorizontal"
         }
     ]
 }

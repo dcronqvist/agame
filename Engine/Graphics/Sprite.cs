@@ -60,9 +60,9 @@ namespace AGame.Engine.Graphics
             return new RectangleF(position.X + this.CollisionBox.X * RenderScale.X, position.Y + this.CollisionBox.Y * RenderScale.Y, this.CollisionBox.Width * RenderScale.X, this.CollisionBox.Height * RenderScale.Y);
         }
 
-        public virtual void Render(Vector2 position)
+        public virtual void Render(Vector2 position, TextureRenderEffects effects = TextureRenderEffects.None)
         {
-            Renderer.Texture.Render(this.Texture, position, this.RenderScale, this.Rotation, this.ColorTint, this.Origin, this.SourceRectangle);
+            Renderer.Texture.Render(this.Texture, position, this.RenderScale, this.Rotation, this.ColorTint, this.Origin, this.SourceRectangle, effects);
         }
     }
 }
