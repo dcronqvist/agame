@@ -28,6 +28,7 @@ public class Animator
         }
         this.CurrentState = initialState;
         this._currentSecondsPerFrame = this.GetAnimationState(this.CurrentState).MillisPerFrame / 1000f;
+        this._currentEffects = this.GetAnimationState(this.CurrentState).Effects;
     }
 
     public bool Update(float deltaTime)

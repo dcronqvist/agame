@@ -53,20 +53,6 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
                 ScreenManager.GoToScreen<ScreenMainMenu, EnterMainMenuArgs>(new EnterMainMenuArgs());
             });
         };
-
-        Input.OnScroll += (sender, e) =>
-        {
-            if (e > 0)
-            {
-                Camera.Zoom *= 1.05f;
-            }
-            else
-            {
-                Camera.Zoom *= 1 / 1.05f;
-            }
-
-            Camera.Zoom = Utilities.Clamp(1.3f, 3f, Camera.Zoom);
-        };
     }
 
     public override async void OnLeave()

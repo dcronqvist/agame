@@ -6,21 +6,23 @@
             "animation": "default.anim.player_idle",
             "mustFinish": false,
             "defaultNextState": "idle",
-            "millisPerFrame": 1000
+            "millisPerFrame": 1000,
+            "effects": "none"
         },
         {
             "name": "run_right",
             "animation": "default.anim.player_walk",
             "mustFinish": false,
             "defaultNextState": "idle",
-            "millisPerFrame": 100
+            "millisPerFrame": 70,
+            "effects": "none"
         },
         {
             "name": "run_left",
             "animation": "default.anim.player_walk",
             "mustFinish": false,
             "defaultNextState": "idle",
-            "millisPerFrame": 100,
+            "millisPerFrame": 70,
             "effects": "flipHorizontal"
         }
     ]
