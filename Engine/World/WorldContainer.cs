@@ -257,11 +257,6 @@ public class WorldContainer
         int inChunkX = x - ca.X * Chunk.CHUNK_SIZE;
         int inChunkY = y - ca.Y * Chunk.CHUNK_SIZE;
 
-        if (inChunkX < 0 || inChunkX >= Chunk.CHUNK_SIZE || inChunkY < 0 || inChunkY >= Chunk.CHUNK_SIZE)
-        {
-            int xxx = 2;
-        }
-
         return chunk.GetTileValue(order, inChunkX % Chunk.CHUNK_SIZE, inChunkY % Chunk.CHUNK_SIZE);
     }
 
