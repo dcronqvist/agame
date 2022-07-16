@@ -1,9 +1,11 @@
 using System.Numerics;
 using AGame.Engine.Assets;
+using AGame.Engine.Assets.Scripting;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
+using AGame.Engine.Items;
 using AGame.Engine.Networking;
 using AGame.Engine.UI;
 using AGame.Engine.World;
@@ -29,7 +31,10 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
 
     public override void OnEnter(EnterMainMenuArgs args)
     {
+        ItemDescription id = ModManager.GetAsset<ItemDescription>("default.item.test_item");
+        object o = ScriptingManager.CreateInstance("default.script.test_class");
 
+        Item i = id.CreateItem();
     }
 
     public override void OnLeave()

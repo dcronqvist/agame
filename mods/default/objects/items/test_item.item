@@ -1,0 +1,8 @@
+{
+    "itemName": "Item Name",
+    "texture": "default.tex.chest",
+    "itemType": "tool",
+    "maxStack": 1,
+    "durability": 1000,
+    "onUse": "mod.script.IUseToolImpl"
+}

@@ -157,7 +157,11 @@ public class TransformComponent : Component
         // ColliderComponent
 
         float range = 2f;
-        List<Entity> tileAlignedWithinRange = ecs.GetAllEntities(e => e.HasComponent<ColliderComponent>() && e.GetComponent<ColliderComponent>().Solid && e.ID != parentEntity.ID);
+        List<Entity> tileAlignedWithinRange = ecs.GetAllEntities(e => e.HasComponent<ColliderComponent>() &&
+                                                                    e.HasComponent<TransformComponent>() &&
+                                                                    e.GetComponent<ColliderComponent>().Solid &&
+                                                                    e.ID != parentEntity.ID &&
+                                                                    (e.GetComponent<TransformComponent>().Position - this.Position).Length() <= range);
 
         bool w = command.IsKeyDown(UserCommand.KEY_W);
         bool a = command.IsKeyDown(UserCommand.KEY_A);
@@ -227,7 +231,6 @@ public class TransformComponent : Component
                 // There will be a vertical collision if move entire velocity.X
 
                 // Start moving vertically until there is collision
-
                 while (!GetPlayerRec(0, Math.Sign(playerVelocity.Y)).IntersectsWith(rec))
                 {
                     // While there is no collision by only moving 1 pixel vertically, move vertically

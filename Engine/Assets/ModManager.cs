@@ -64,7 +64,8 @@ public static class ModManager
             { ".wav", new AudioLoader() },
             { ".anim", new AnimationLoader() },
             { ".animator", new AnimatorLoader() },
-            { ".tileset", new TileSetLoader() }
+            { ".tileset", new TileSetLoader() },
+            { ".item", new ItemLoader() }
         };
     }
 

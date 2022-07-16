@@ -137,10 +137,13 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             int remotePlayerID = this._client.GetRemoteIDForEntity(localPlayer.ID);
             // Renderer.Text.RenderText(f, $"RemotePlayerID: {remotePlayerID}", new Vector2(20, 80), 1f, ColorF.White, Renderer.Camera);
 
-            CoordinateVector position = localPlayer.GetComponent<TransformComponent>().Position;
+            var position = localPlayer.GetComponent<TransformComponent>().Position;
             Renderer.Text.RenderText(f, $"X: {MathF.Round(position.X, 1)} Y: {MathF.Round(position.Y, 1)}", new Vector2(20, 80), 1f, ColorF.White, Renderer.Camera);
 
-            this.SetCameraPosition(localPlayer.GetComponent<TransformComponent>().Position, false);
+            var animator = localPlayer.GetComponent<AnimatorComponent>();
+            var offset = animator.GetAnimator().GetCurrentAnimation().GetMiddleOfCurrentFrameScaled();
+
+            this.SetCameraPosition(position + new CoordinateVector(offset.X / TileGrid.TILE_SIZE, offset.Y / TileGrid.TILE_SIZE), false);
         }
 
         // foreach ((Type t, int b) in stats.ComponentUpdatesReceivedBytesByType)

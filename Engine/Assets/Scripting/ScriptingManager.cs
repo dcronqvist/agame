@@ -16,11 +16,13 @@ namespace AGame.Engine.Assets.Scripting
     {
         private static Dictionary<string, Script> Scripts { get; set; }
         private static Dictionary<string, Script> TypeToScript { get; set; }
+        private static Dictionary<string, (Script, string)> ScriptClassAttributeNameToScript { get; set; }
 
         static ScriptingManager()
         {
             Scripts = new Dictionary<string, Script>();
             TypeToScript = new Dictionary<string, Script>();
+            ScriptClassAttributeNameToScript = new Dictionary<string, (Script, string)>();
         }
 
         private static void AddScript(string key, Script script)
@@ -54,10 +56,26 @@ namespace AGame.Engine.Assets.Scripting
 
             foreach (Script script in scripts)
             {
-                // All went well, just add the script to the dictionary of scripts.
-                AddScript(script.Name, script); // Add script to Scripts dictionary
-                Logging.Log(LogLevel.Info, $"Registered script {script.Name}");
-                PointTypesToScript(script.GetTypes(), script.Name); // Point all types in this script to this script
+                // // All went well, just add the script to the dictionary of scripts.
+                // AddScript(script.Name, script); // Add script to Scripts dictionary
+                // Logging.Log(LogLevel.Info, $"Registered script {script.Name}");
+                // PointTypesToScript(script.GetTypes(), script.Name); // Point all types in this script to this script
+                Type[] types = script.GetTypes();
+
+                foreach (Type t in types)
+                {
+                    if (t.GetCustomAttribute<ScriptClassAttribute>() != null)
+                    {
+                        var scriptAssetNameNoEnd = script.Name.Substring(0, script.Name.LastIndexOf(".") + 1);
+                        ScriptClassAttribute attr = t.GetCustomAttribute<ScriptClassAttribute>();
+
+                        if (!ScriptClassAttributeNameToScript.ContainsKey(attr.Name))
+                        {
+                            ScriptClassAttributeNameToScript.Add(scriptAssetNameNoEnd + attr.Name, (script, t.FullName));
+
+                        }
+                    }
+                }
             }
         }
 
@@ -66,9 +84,9 @@ namespace AGame.Engine.Assets.Scripting
             return Scripts[name];
         }
 
-        public static Script GetScriptFromType(string type)
+        public static (Script, string) GetScriptFromType(string type)
         {
-            return TypeToScript[type];
+            return ScriptClassAttributeNameToScript[type];
         }
 
         public static T CreateInstance<T>(string type)
@@ -78,8 +96,20 @@ namespace AGame.Engine.Assets.Scripting
 
         public static T CreateInstance<T>(string type, params object[] args)
         {
-            Script sc = GetScriptFromType(type);
-            return sc.CreateInstance<T>(type, args);
+            (Script sc, string realType) = GetScriptFromType(type);
+            return sc.CreateInstance<T>(realType, args);
+        }
+
+        public static object CreateInstance(string type, params object[] args)
+        {
+            (Script sc, string realType) = GetScriptFromType(type);
+            return sc.CreateInstance(realType, args);
+        }
+
+        public static object CreateInstance(string type)
+        {
+            (Script sc, string realType) = GetScriptFromType(type);
+            return sc.CreateInstance(realType, null);
         }
     }
 }
