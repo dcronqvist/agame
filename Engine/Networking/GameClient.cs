@@ -228,7 +228,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
         this.AddPacketHandler<DestroyEntityPacket>((packet) =>
         {
-            this.DestroyClientSideEntity(packet.EntityID);
+            this._nextTickActions.LockedAction((q) => q.Enqueue(new ClientDestroyClientSideEntity(packet.EntityID)));
         });
 
         this.AddPacketHandler<ChunkUpdatePacket>((packet) =>
@@ -248,6 +248,13 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             packet.Chunk.ParentWorld = this._world;
 
             this._nextTickActions.LockedAction((q) => q.Enqueue(new ClientUpdateChunkAction(packet.X, packet.Y, packet.Chunk)));
+        });
+
+        base.AddPacketHandler<PlaceEntityAcceptPacket>((packet) =>
+        {
+            Entity clientSide = this._ecs.GetEntityFromID(packet.ClientSideEntityID);
+            this._serverEntityIDToClientEntity.Add(packet.ServerSideEntityID, clientSide);
+            Logging.Log(LogLevel.Debug, $"Client: Server accepted entity {packet.ClientSideEntityID} and gave it ID {packet.ServerSideEntityID}");
         });
     }
 
@@ -309,7 +316,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         return null;
     }
 
-    private void DestroyClientSideEntity(int serverEntityID)
+    public void DestroyClientSideEntity(int serverEntityID)
     {
         if (TryGetClientSideEntity(serverEntityID, out Entity clientEntity))
         {
@@ -423,6 +430,25 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             playerEntity.ApplyInput(command, this._world, this._ecs);
             this._pendingCommands.Add(command);
         }
+
+        if (Input.IsKeyPressed(GLFW.Keys.Space))
+        {
+            // Let's place an entity to the left of us.
+            var transform = playerEntity.GetComponent<TransformComponent>();
+            var posLeft = transform.Position - new CoordinateVector(1, 0);
+            var tileAligned = posLeft.ToTileAligned();
+
+            this.PlaceEntity("default.entity.placeable", tileAligned);
+        }
+    }
+
+    public void PlaceEntity(string assetName, Vector2i tileAlignedPos)
+    {
+        Entity e = this._ecs.CreateEntityFromAsset(assetName);
+        e.GetComponent<TransformComponent>().Position = new CoordinateVector(tileAlignedPos.X, tileAlignedPos.Y);
+
+        this.EnqueuePacket(new PlaceEntityPacket(assetName, tileAlignedPos, e.ID), true, false);
+        Logging.Log(LogLevel.Debug, $"Client: Placing entity default.entity.placeable with ID {e.ID}");
     }
 
     public void Update()

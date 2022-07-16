@@ -123,11 +123,6 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                     Entity entity = ecs.CreateEntityFromAsset("default.entity.player");
                     entity.GetComponent<CharacterComponent>().Name = e.RequestPacket.Name;
 
-                    Entity place = ecs.CreateEntityFromAsset("default.entity.placeable");
-                    TransformComponent tapc = place.GetComponent<TransformComponent>();
-
-                    tapc.Position = new CoordinateVector(Utilities.GetRandomInt(-5, 5), Utilities.GetRandomInt(-5, 5));
-
                     return entity;
                 });
 
@@ -212,6 +207,14 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         });
     }
 
+    public void PerformOnECS(Action<ECS> action)
+    {
+        this._ecs.LockedAction((ecs) =>
+        {
+            action(ecs);
+        });
+    }
+
     private void RegisterPacketHandlers()
     {
         base.AddPacketHandler<UserCommand>((packet, connection) =>
@@ -244,6 +247,12 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         {
             Logging.Log(LogLevel.Debug, $"Server: Received chunk request from {connection.RemoteEndPoint} for {packet.X}, {packet.Y}");
             Task.Run(() => new SendChunkToClientAction(connection, packet.X, packet.Y).Tick(this));
+        });
+
+        base.AddPacketHandler<PlaceEntityPacket>((packet, connection) =>
+        {
+            Logging.Log(LogLevel.Debug, $"Server: Received entity placement from {connection.RemoteEndPoint} for {packet.EntityAssetName}");
+            this.PerformActionNextTick(new PlaceEntityAction(packet, connection));
         });
     }
 

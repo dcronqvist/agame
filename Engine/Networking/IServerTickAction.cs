@@ -1,4 +1,6 @@
 using AGame.Engine.Configuration;
+using AGame.Engine.ECSys;
+using AGame.Engine.ECSys.Components;
 using AGame.Engine.World;
 using GameUDPProtocol;
 
@@ -9,10 +11,6 @@ public interface IServerTickAction
     void Tick(GameServer server);
 }
 
-public interface IClientTickAction
-{
-    void Tick(GameClient client);
-}
 
 public class DestroyEntityAction : IServerTickAction
 {
@@ -87,38 +85,28 @@ public class TellClientToUnloadChunkAction : IServerTickAction
     }
 }
 
-public class ClientUpdateChunkAction : IClientTickAction
+public class PlaceEntityAction : IServerTickAction
 {
-    public int X { get; set; }
-    public int Y { get; set; }
-    public Chunk Chunk { get; set; }
+    public Connection Connection { get; set; }
+    public PlaceEntityPacket Packet { get; set; }
 
-    public ClientUpdateChunkAction(int x, int y, Chunk chunk)
+    public PlaceEntityAction(PlaceEntityPacket packet, Connection connection)
     {
-        this.X = x;
-        this.Y = y;
-        this.Chunk = chunk;
+        this.Packet = packet;
+        this.Connection = connection;
     }
 
-    public void Tick(GameClient client)
+    public void Tick(GameServer server)
     {
-        client.GetWorld().UpdateChunk(this.X, this.Y, this.Chunk);
-    }
-}
+        server.PerformOnECS((ecs) =>
+        {
+            Entity entity = ecs.CreateEntityFromAsset(this.Packet.EntityAssetName);
+            // Assume entity to have a Transform component
 
-public class ClientDiscardChunkAction : IClientTickAction
-{
-    public int X { get; set; }
-    public int Y { get; set; }
+            var transform = entity.GetComponent<TransformComponent>();
+            transform.Position = new CoordinateVector(this.Packet.TileAlignedPosition.X, this.Packet.TileAlignedPosition.Y);
 
-    public ClientDiscardChunkAction(int x, int y)
-    {
-        this.X = x;
-        this.Y = y;
-    }
-
-    public void Tick(GameClient client)
-    {
-        client.GetWorld().DiscardChunk(this.X, this.Y);
+            server.EnqueuePacket(new PlaceEntityAcceptPacket(Packet.ClientSideEntityID, entity.ID), this.Connection, true, false);
+        });
     }
 }
