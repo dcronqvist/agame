@@ -50,36 +50,39 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
 
         if (GUI.Button(Localization.GetString("screen.main_menu.button.singleplayer"), new Vector2(middleOfScreen.X - width / 2f, middleOfScreen.Y), new Vector2(width, height)))
         {
-            ScreenManager.GoToScreen<ScreenSelectWorld, EnterSelectWorldArgs>(new EnterSelectWorldArgs(async (world) =>
+            ScreenManager.GoToScreen<ScreenSelectWorld, EnterSelectWorldArgs>(new EnterSelectWorldArgs((world) =>
             {
-                await Task.Run(async () =>
+                ScreenManager.GoToScreen<ScreenSelectName, EnterSelectNameArgs>(new EnterSelectNameArgs(async (name) =>
                 {
-                    // Go to a loading screen, will do later
-                    ScreenManager.GoToScreen<ScreenTemporaryLoading, EnterTemporaryLoading>(new EnterTemporaryLoading() { Text = "Loading world..." });
+                    await Task.Run(async () =>
+                    {
+                        // Go to a loading screen, will do later
+                        ScreenManager.GoToScreen<ScreenTemporaryLoading, EnterTemporaryLoading>(new EnterTemporaryLoading() { Text = "Loading world..." });
 
-                    WorldContainer wc = await world.GetAsContainerAsync(false);
-                    List<Entity> entities = await world.GetEntitiesAsync();
+                        WorldContainer wc = await world.GetAsContainerAsync(false);
+                        List<Entity> entities = await world.GetEntitiesAsync();
 
 
-                    GameServerConfiguration config = new GameServerConfiguration();
-                    config.SetPort(0).SetMaxConnections(1).SetOnlyAllowLocalConnections(true).SetTickRate(20);
+                        GameServerConfiguration config = new GameServerConfiguration();
+                        config.SetPort(0).SetMaxConnections(1).SetOnlyAllowLocalConnections(true).SetTickRate(20);
 
-                    ECS serverECS = new ECS();
-                    GameServer gameServer = new GameServer(serverECS, wc, world, config, 500, 5000);
-                    serverECS.Initialize(SystemRunner.Server, gameServer: gameServer, entities: entities);
+                        ECS serverECS = new ECS();
+                        GameServer gameServer = new GameServer(serverECS, wc, world, config, 500, 5000);
+                        serverECS.Initialize(SystemRunner.Server, gameServer: gameServer, entities: entities);
 
-                    await gameServer.StartAsync();
-                    _ = gameServer.RunAsync();
+                        await gameServer.StartAsync();
+                        _ = gameServer.RunAsync();
 
-                    int serverPort = gameServer.Port;
+                        int serverPort = gameServer.Port;
 
-                    GameClient gameClient = new GameClient("127.0.0.1", serverPort, 500, 5000);
-                    //ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);
+                        GameClient gameClient = new GameClient("127.0.0.1", serverPort, 500, 5000);
+                        //ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);
 
-                    await gameClient.ConnectAsync(); // Cannot fail, as we are connecting to our own host.
+                        await gameClient.ConnectAsync(name); // Cannot fail, as we are connecting to our own host.
 
-                    ScreenManager.GoToScreen<ScreenPlayingWorld, EnterPlayingWorldArgs>(new EnterPlayingWorldArgs() { Server = gameServer, Client = gameClient });
-                });
+                        ScreenManager.GoToScreen<ScreenPlayingWorld, EnterPlayingWorldArgs>(new EnterPlayingWorldArgs() { Server = gameServer, Client = gameClient });
+                    });
+                }));
             }));
         }
 

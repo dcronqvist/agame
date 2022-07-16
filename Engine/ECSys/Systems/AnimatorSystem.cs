@@ -6,7 +6,7 @@ using GameUDPProtocol;
 
 namespace AGame.Engine.ECSys.Systems;
 
-[SystemRunsOn(SystemRunner.Client | SystemRunner.Server)]
+[SystemRunsOn(SystemRunner.Client)]
 public class AnimatorSystem : BaseSystem
 {
     public override void Initialize()
@@ -24,10 +24,4 @@ public class AnimatorSystem : BaseSystem
             ac.GetAnimator().Update(deltaTime);
         }
     }
-}
-
-public class AnimationStateChangePacket : Packet
-{
-    public int EntityID { get; set; }
-    public string NewState { get; set; }
 }

@@ -45,32 +45,35 @@ public class ScreenJoinWorld : Screen<EnterJoinWorldArgs>
 
         if (GUI.Button("Join", middleOfScreen + new Vector2(-width / 2f, 100f), new Vector2(width, 40f)))
         {
-            Task.Run(async () =>
+            ScreenManager.GoToScreen<ScreenSelectName, EnterSelectNameArgs>(new EnterSelectNameArgs((name) =>
             {
-                // Go to a loading screen, will do later
-                ScreenManager.GoToScreen<ScreenTemporaryLoading, EnterTemporaryLoading>(new EnterTemporaryLoading() { Text = "Loading world..." });
-
-                GameClient gameClient = new GameClient(Utilities.ResolveIPOrDomain(this._ip), int.Parse(this._port), 500, 5000);
-                // ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);
-
-                // gameClient.SetWorld(new WorldContainer(swg));
-
-                bool connected = await gameClient.ConnectAsync();
-
-                if (connected) // Cannot fail, as we are connecting to our own host.
+                Task.Run(async () =>
                 {
-                    ScreenManager.GoToScreen<ScreenPlayingWorld, EnterPlayingWorldArgs>(new EnterPlayingWorldArgs() { Client = gameClient });
-                }
-                else
-                {
-                    _ = Task.Run(async () =>
+                    // Go to a loading screen, will do later
+                    ScreenManager.GoToScreen<ScreenTemporaryLoading, EnterTemporaryLoading>(new EnterTemporaryLoading() { Text = "Loading world..." });
+
+                    GameClient gameClient = new GameClient(Utilities.ResolveIPOrDomain(this._ip), int.Parse(this._port), 500, 5000);
+                    // ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);
+
+                    // gameClient.SetWorld(new WorldContainer(swg));
+
+                    bool connected = await gameClient.ConnectAsync(name);
+
+                    if (connected) // Cannot fail, as we are connecting to our own host.
                     {
-                        ScreenManager.GoToScreen<ScreenTemporaryLoading, EnterTemporaryLoading>(new EnterTemporaryLoading() { Text = "Failed to connect to server." });
-                        await Task.Delay(2000);
-                        ScreenManager.GoToScreen<ScreenJoinWorld, EnterJoinWorldArgs>(new EnterJoinWorldArgs());
-                    });
-                }
-            });
+                        ScreenManager.GoToScreen<ScreenPlayingWorld, EnterPlayingWorldArgs>(new EnterPlayingWorldArgs() { Client = gameClient });
+                    }
+                    else
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            ScreenManager.GoToScreen<ScreenTemporaryLoading, EnterTemporaryLoading>(new EnterTemporaryLoading() { Text = "Failed to connect to server." });
+                            await Task.Delay(2000);
+                            ScreenManager.GoToScreen<ScreenJoinWorld, EnterJoinWorldArgs>(new EnterJoinWorldArgs());
+                        });
+                    }
+                });
+            }));
         }
 
         if (GUI.Button(Localization.GetString("menu.button.back"), new Vector2(10f, DisplayManager.GetWindowSizeInPixels().Y - 50f), new Vector2(200f, 40f)))

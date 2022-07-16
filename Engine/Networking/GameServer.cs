@@ -121,6 +121,13 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 Entity entity = this._ecs.LockedAction((ecs) =>
                 {
                     Entity entity = ecs.CreateEntityFromAsset("default.entity.player");
+                    entity.GetComponent<CharacterComponent>().Name = e.RequestPacket.Name;
+
+                    Entity place = ecs.CreateEntityFromAsset("default.entity.placeable");
+                    TransformComponent tapc = place.GetComponent<TransformComponent>();
+
+                    tapc.Position = new CoordinateVector(Utilities.GetRandomInt(-5, 5), Utilities.GetRandomInt(-5, 5));
+
                     return entity;
                 });
 
@@ -244,7 +251,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     {
         int playerEntityID = this._connectionToPlayerId.LockedAction((ctp) => ctp[connection]);
         Entity playerEntity = this._ecs.LockedAction((ecs) => ecs.GetEntityFromID(playerEntityID));
-        ChunkAddress chunkAddress = playerEntity.GetComponent<PlayerPositionComponent>().Position.ToChunkAddress();
+        ChunkAddress chunkAddress = playerEntity.GetComponent<TransformComponent>().Position.ToChunkAddress();
         int x = chunkAddress.X;
         int y = chunkAddress.Y;
 
@@ -327,7 +334,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 this._ecs.LockedAction((ecs) =>
                 {
                     Entity entity = ecs.GetEntityFromID(entityID);
-                    entity.ApplyInput(command, this._world);
+                    entity.ApplyInput(command, this._world, ecs);
                 });
 
                 this._lastProcessedCommand.LockedAction((lastProcessedCommand) =>
@@ -393,7 +400,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             ecs.Update(null, deltaTime);
         });
 
-        List<EntityUpdate> updatesToSend = Utilities.GetPackedEntityUpdatesMaxByteSize(this._updatedComponents, 1024, out List<(Entity, Component)> usedUpdates);
+        List<EntityUpdate> updatesToSend = Utilities.GetPackedEntityUpdatesMaxByteSize(this.Encoder, this._updatedComponents, 1024, out List<(Entity, Component)> usedUpdates);
 
         this._connections.LockedAction((conns) =>
         {

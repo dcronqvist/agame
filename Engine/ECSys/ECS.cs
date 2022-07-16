@@ -220,15 +220,36 @@ public class ECS
     {
         EntityDescription ed = ModManager.GetAsset<EntityDescription>(assetName);
 
-        Entity entity = new Entity(_nextEntityID++);
-
-        foreach (Component c in ed.Components)
+        if (ed.Extends is not null)
         {
-            AddComponentToEntity(entity, c.Clone());
-        }
+            Entity extend = CreateEntityFromAsset(ed.Extends);
 
-        this.AddEntity(entity);
-        return entity;
+            foreach (Component c in ed.Components)
+            {
+                if (extend.HasComponent(c.GetType()))
+                {
+                    extend.GetComponent(c.GetType()).UpdateComponent(c.Clone());
+                }
+                else
+                {
+                    AddComponentToEntity(extend, c.Clone());
+                }
+            }
+
+            return extend;
+        }
+        else
+        {
+            Entity entity = new Entity(_nextEntityID++);
+
+            foreach (Component c in ed.Components)
+            {
+                AddComponentToEntity(entity, c.Clone());
+            }
+
+            this.AddEntity(entity);
+            return entity;
+        }
     }
 
     public bool EntityExists(int id)

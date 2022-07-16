@@ -57,7 +57,7 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
     public abstract void UpdateComponent(Component newComponent);
     public abstract void InterpolateProperties(Component from, Component to, float amt);
     public new abstract int GetHashCode();
-    public abstract void ApplyInput(UserCommand command, WorldContainer world);
+    public abstract void ApplyInput(Entity parentEntity, UserCommand command, WorldContainer world, ECS ecs);
 
     public ComponentNetworkingAttribute GetCNAttrib()
     {

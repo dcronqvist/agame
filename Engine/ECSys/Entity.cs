@@ -61,11 +61,11 @@ public class Entity
         };
     }
 
-    public void ApplyInput(UserCommand command, WorldContainer world)
+    public void ApplyInput(UserCommand command, WorldContainer world, ECS ecs)
     {
         foreach (var c in this.Components)
         {
-            c.ApplyInput(command, world);
+            c.ApplyInput(this, command, world, ecs);
         }
     }
 

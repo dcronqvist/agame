@@ -333,7 +333,7 @@ namespace AGame.Engine
             return null;
         }
 
-        public static List<EntityUpdate> GetPackedEntityUpdatesMaxByteSize(List<(Entity, Component)> updates, int maxByteSize, out List<(Entity, Component)> usedUpdates)
+        public static List<EntityUpdate> GetPackedEntityUpdatesMaxByteSize(IByteEncoder encoder, List<(Entity, Component)> updates, int maxByteSize, out List<(Entity, Component)> usedUpdates)
         {
             List<EntityUpdate> entityUpdates = new List<EntityUpdate>();
 
@@ -349,16 +349,15 @@ namespace AGame.Engine
                 updatedComponents.Find(tuple => tuple.Item1 == e).Item2.Add(c);
             }
 
-            int cumulativeSum = 0;
-
             usedUpdates = new List<(Entity, Component)>();
+            List<byte> cumBytes = new List<byte>();
 
             foreach ((Entity e, List<Component> components) in updatedComponents)
             {
                 EntityUpdate eu = new EntityUpdate(e.ID, components.ToArray());
-                cumulativeSum += eu.ToBytes().Length;
+                cumBytes.AddRange(eu.ToBytes());
 
-                if (cumulativeSum <= maxByteSize)
+                if (encoder.Encode(cumBytes.ToArray()).Length <= maxByteSize)
                 {
                     entityUpdates.Add(eu);
                     foreach (Component c in components)
@@ -373,6 +372,16 @@ namespace AGame.Engine
             }
 
             return entityUpdates;
+        }
+
+        public static RectangleF Lerp(this RectangleF rec, RectangleF to, float amount)
+        {
+            RectangleF r = new RectangleF(
+                rec.X + (to.X - rec.X) * amount,
+                rec.Y + (to.Y - rec.Y) * amount,
+                rec.Width + (to.Width - rec.Width) * amount,
+                rec.Height + (to.Height - rec.Height) * amount);
+            return r;
         }
 
         public static byte[] RunLengthEncode(byte[] buffer)

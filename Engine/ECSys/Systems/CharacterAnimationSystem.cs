@@ -7,24 +7,24 @@ using AGame.Engine.World;
 namespace AGame.Engine.ECSys.Systems;
 
 [SystemRunsOn(SystemRunner.Client)]
-public class PlayerMovementSystem : BaseSystem
+public class CharacterAnimationSystem : BaseSystem
 {
     public override void Initialize()
     {
-        this.RegisterComponentType<PlayerPositionComponent>();
+        this.RegisterComponentType<TransformComponent>();
         this.RegisterComponentType<AnimatorComponent>();
+        this.RegisterComponentType<CharacterComponent>();
     }
 
     public override void Update(List<Entity> entities, WorldContainer gameWorld, float deltaTime)
     {
         foreach (Entity entity in entities)
         {
-            PlayerPositionComponent ppc = entity.GetComponent<PlayerPositionComponent>();
+            TransformComponent ppc = entity.GetComponent<TransformComponent>();
             AnimatorComponent ac = entity.GetComponent<AnimatorComponent>();
 
             if (ppc.Velocity.Length() > 1f)
             {
-
                 if (ppc.Velocity.X > 0f)
                 {
                     ac.GetAnimator().SetNextAnimation("run_right");
@@ -39,19 +39,5 @@ public class PlayerMovementSystem : BaseSystem
                 ac.GetAnimator().SetNextAnimation("idle");
             }
         }
-    }
-
-    public override void Render(List<Entity> entities, WorldContainer gameWorld)
-    {
-        // foreach (Entity entity in entities)
-        // {
-        //     PlayerPositionComponent ppc = entity.GetComponent<PlayerPositionComponent>();
-        //     CoordinateVector velocity = ppc.Velocity;
-
-        //     CoordinateVector start = ppc.Position;
-        //     CoordinateVector end = ppc.Position + velocity * 0.4f;
-
-        //     Renderer.Primitive.RenderLine(start.ToWorldVector().ToVector2(), end.ToWorldVector().ToVector2(), 2, ColorF.White);
-        // }
     }
 }

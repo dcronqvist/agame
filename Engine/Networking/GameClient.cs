@@ -137,6 +137,11 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         //this._world = world;
     }
 
+    public int GetAmountOfEntities()
+    {
+        return this._ecs.GetAllEntities().Count;
+    }
+
     private void StartLatencyChecking()
     {
         Task.Run(async () =>
@@ -246,9 +251,9 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         });
     }
 
-    public async Task<bool> ConnectAsync()
+    public async Task<bool> ConnectAsync(string clientName)
     {
-        ConnectResponse response = await base.ConnectAsync(new ConnectRequest() { Name = "TestPlayer" }, 5000);
+        ConnectResponse response = await base.ConnectAsync(new ConnectRequest() { Name = clientName }, 5000);
 
         if (response is not null && response.Accepted)
         {
@@ -353,7 +358,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                         for (int i = 0; i < commandsAfterLast.Count; i++)
                         {
                             UserCommand command = commandsAfterLast[i];
-                            clientEntity.ApplyInput(command, this._world);
+                            clientEntity.ApplyInput(command, this._world, this._ecs);
                         }
                     }
                     else
@@ -415,7 +420,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         Entity playerEntity = this.GetPlayerEntity();
         if (playerEntity != null)
         {
-            playerEntity.ApplyInput(command, this._world);
+            playerEntity.ApplyInput(command, this._world, this._ecs);
             this._pendingCommands.Add(command);
         }
     }

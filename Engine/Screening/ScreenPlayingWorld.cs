@@ -127,8 +127,9 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
 
         Font f = ModManager.GetAsset<Font>("default.font.rainyhearts");
         Renderer.Text.RenderText(f, $"Ping: {this._client.GetPing()}ms", new Vector2(20, 20), 1f, ColorF.White, Renderer.Camera);
-        // Renderer.Text.RenderText(f, $"RX: {stats.GetRXBytesString()}", new Vector2(20, 20), 1f, ColorF.White, Renderer.Camera);
-        // Renderer.Text.RenderText(f, $"TX: {stats.GetTXBytesString()}", new Vector2(20, 40), 1f, ColorF.White, Renderer.Camera);
+        Renderer.Text.RenderText(f, $"Entities: {this._client.GetAmountOfEntities()}", new Vector2(20, 40), 1f, ColorF.White, Renderer.Camera);
+        // Renderer.Text.RenderText(f, $"RX: {stats.GetRXBytesString()}", new Vector2(20, 40), 1f, ColorF.White, Renderer.Camera);
+        // Renderer.Text.RenderText(f, $"TX: {stats.GetTXBytesString()}", new Vector2(20, 60), 1f, ColorF.White, Renderer.Camera);
 
         if (this._client.GetPlayerEntity() != null)
         {
@@ -136,10 +137,10 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             int remotePlayerID = this._client.GetRemoteIDForEntity(localPlayer.ID);
             // Renderer.Text.RenderText(f, $"RemotePlayerID: {remotePlayerID}", new Vector2(20, 80), 1f, ColorF.White, Renderer.Camera);
 
-            CoordinateVector position = localPlayer.GetComponent<PlayerPositionComponent>().Position;
-            Renderer.Text.RenderText(f, $"X: {MathF.Round(position.X, 1)} Y: {MathF.Round(position.Y, 1)}", new Vector2(20, 40), 1f, ColorF.White, Renderer.Camera);
+            CoordinateVector position = localPlayer.GetComponent<TransformComponent>().Position;
+            Renderer.Text.RenderText(f, $"X: {MathF.Round(position.X, 1)} Y: {MathF.Round(position.Y, 1)}", new Vector2(20, 80), 1f, ColorF.White, Renderer.Camera);
 
-            this.SetCameraPosition(localPlayer.GetComponent<PlayerPositionComponent>().Position, false);
+            this.SetCameraPosition(localPlayer.GetComponent<TransformComponent>().Position, false);
         }
 
         // foreach ((Type t, int b) in stats.ComponentUpdatesReceivedBytesByType)

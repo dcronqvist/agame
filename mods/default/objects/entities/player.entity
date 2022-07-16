@@ -1,12 +1,31 @@
 {
     "components": [
         {
-            "componentType": "PlayerPosition",
+            "componentType": "Transform",
             "speed": 4
         },
         {
             "componentType": "Animator",
             "animator": "default.animator.player"
+        },
+        {
+            "componentType": "Collider",
+            "transformOffset": {
+                "x": 3,
+                "y": 44
+            },
+            "box": {
+                "width": 26,
+                "height": 20
+            },
+            "solid": false
+        },
+        {
+            "componentType": "Character",
+            "nameRenderOffset": {
+                "x": 16,
+                "y": -8
+            }
         }
     ]
 }

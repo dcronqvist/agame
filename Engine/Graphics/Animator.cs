@@ -12,11 +12,6 @@ public class Animator
     public string CurrentState { get; set; }
 
     private string _nextState;
-    private float _currentSecondsPerFrame;
-    private float _nextSecondsPerFrame;
-    private TextureRenderEffects _currentEffects;
-    private TextureRenderEffects _nextEffects;
-
     private bool _transitioned;
 
     public Animator(IEnumerable<AnimationState> states, string initialState)
@@ -27,15 +22,13 @@ public class Animator
             this.States.Add(state.Name, state);
         }
         this.CurrentState = initialState;
-        this._currentSecondsPerFrame = this.GetAnimationState(this.CurrentState).MillisPerFrame / 1000f;
-        this._currentEffects = this.GetAnimationState(this.CurrentState).Effects;
     }
 
     public bool Update(float deltaTime)
     {
         AnimationState state = this.States[this.CurrentState];
 
-        if (state.Animation.Update(this._currentSecondsPerFrame, deltaTime))
+        if (state.Animation.Update(state.MillisPerFrame / 1000f, deltaTime))
         {
             // The animation has finished, go to the next state.
             if (this._nextState == null)
@@ -49,8 +42,6 @@ public class Animator
                 this._nextState = null;
             }
 
-            this._currentSecondsPerFrame = this._nextSecondsPerFrame;
-            this._currentEffects = this._nextEffects;
             return true;
         }
 
@@ -76,8 +67,6 @@ public class Animator
     public void SetNextAnimation(string state)
     {
         this._nextState = state;
-        this._nextSecondsPerFrame = this.States[this._nextState].MillisPerFrame / 1000f;
-        this._nextEffects = this.States[this._nextState].Effects;
 
         if (!this.States[this.CurrentState].MustFinish)
         {
@@ -86,15 +75,13 @@ public class Animator
                 this.States[this.CurrentState].Animation.Reset();
                 this.CurrentState = state;
                 this._transitioned = true;
-                this._currentSecondsPerFrame = this._nextSecondsPerFrame;
-                this._currentEffects = this._nextEffects;
             }
         }
     }
 
     public void Render(Vector2 position, ColorF tint)
     {
-        this.States[this.CurrentState].Animation.Render(position, tint, this._currentEffects);
+        this.States[this.CurrentState].Animation.Render(position, tint, this.States[this.CurrentState].Effects);
     }
 
     public Animator Clone()

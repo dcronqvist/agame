@@ -120,9 +120,9 @@ public class WorldContainer
                 }
 
                 //Update all chunks around this chunk
-                // for (int i = -2; i <= 2; i++)
+                // for (int i = -1; i <= 1; i++)
                 // {
-                //     for (int j = -2; j <= 2; j++)
+                //     for (int j = -1; j <= 1; j++)
                 //     {
                 //         if (i == 0 && j == 0)
                 //         {

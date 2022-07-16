@@ -37,7 +37,7 @@ public class AnimatorComponent : Component
         return _animatorInstance;
     }
 
-    public override void ApplyInput(UserCommand command, WorldContainer world)
+    public override void ApplyInput(Entity parentEntity, UserCommand command, WorldContainer world, ECS ecs)
     {
 
     }

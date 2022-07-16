@@ -1,0 +1,23 @@
+{
+    "components": [
+        {
+            "componentType": "Transform"
+        },
+        {
+            "componentType": "Collider",
+            "transformOffset": {
+                "x": 0,
+                "y": 32
+            },
+            "box": {
+                "width": 32,
+                "height": 32
+            },
+            "solid": true
+        },
+        {
+            "componentType": "Animator",
+            "animator": "default.animator.player"
+        }
+    ]
+}
