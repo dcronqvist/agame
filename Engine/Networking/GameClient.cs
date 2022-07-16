@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Numerics;
 using AGame.Engine.Assets;
 using AGame.Engine.Configuration;
@@ -12,6 +13,74 @@ using GameUDPProtocol;
 
 namespace AGame.Engine.Networking;
 
+public class TestEncoder : IByteEncoder
+{
+    // public byte[] Decode(byte[] buffer)
+    // {
+    //     using (var compressedMs = new MemoryStream(buffer))
+    //     {
+    //         using (var decompressedMs = new MemoryStream())
+    //         {
+    //             using (var gzs = new BufferedStream(new GZipStream(compressedMs, CompressionMode.Decompress)))
+    //             {
+    //                 gzs.CopyTo(decompressedMs);
+    //             }
+    //             return decompressedMs.ToArray();
+    //         }
+    //     }
+    // }
+
+    // public byte[] Encode(byte[] buffer)
+    // {
+    //     using (var compressIntoMs = new MemoryStream())
+    //     {
+    //         using (var gzs = new BufferedStream(new GZipStream(compressIntoMs,
+    //          CompressionMode.Compress)))
+    //         {
+    //             gzs.Write(buffer, 0, buffer.Length);
+    //         }
+    //         return compressIntoMs.ToArray();
+    //     }
+    // }
+    // public byte[] Decode(byte[] buffer)
+    // {
+    //     return Utilities.RunLengthDecode(buffer);
+    // }
+
+    // public byte[] Encode(byte[] buffer)
+    // {
+    //     return Utilities.RunLengthEncode(buffer);
+    // }
+    public byte[] Decode(byte[] buffer)
+    {
+        MemoryStream input = new MemoryStream(buffer);
+        MemoryStream output = new MemoryStream();
+        using (DeflateStream dstream = new DeflateStream(input, CompressionMode.Decompress))
+        {
+            dstream.CopyTo(output);
+        }
+        return output.ToArray();
+    }
+
+    public byte[] Encode(byte[] buffer)
+    {
+        MemoryStream output = new MemoryStream();
+        using (DeflateStream dstream = new DeflateStream(output, CompressionLevel.Fastest))
+        {
+            dstream.Write(buffer, 0, buffer.Length);
+        }
+        return output.ToArray();
+    }
+    // public byte[] Decode(byte[] buffer)
+    // {
+    //     return buffer;
+    // }
+
+    // public byte[] Encode(byte[] buffer)
+    // {
+    //     return buffer;
+    // }
+}
 public class GameClient : Client<ConnectRequest, ConnectResponse>
 {
     private UserCommand _lastSentCommand;
@@ -37,7 +106,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
     private int _renderDistance = 4;
 
-    public GameClient(string hostname, int port, int reliableMillisBeforeResend, int timeoutMillis) : base(hostname, port, reliableMillisBeforeResend, timeoutMillis)
+    public GameClient(string hostname, int port, int reliableMillisBeforeResend, int timeoutMillis) : base(hostname, port, reliableMillisBeforeResend, timeoutMillis, new TestEncoder())
     {
         this._ecs = new ECS();
         this._ecs.Initialize(SystemRunner.Client, gameClient: this);
@@ -74,7 +143,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         {
             while (true)
             {
-                QueryResponse response = await Client.QueryServerAsync<QueryResponse>(this._hostname, this._port, 5000);
+                QueryResponse response = await Client.QueryServerAsync<QueryResponse>(this._hostname, this._port, 5000, this.Encoder);
                 await Task.Delay(1000);
 
                 _ = Task.Run(async () =>
@@ -204,7 +273,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
     public TRXStats GetTRXStats()
     {
-        return new TRXStats(this._receivedPackets.LockedAction(rp => rp.ToList()), this._sentPackets.LockedAction(rp => rp.ToList()));
+        return new TRXStats(this._receivedPackets.LockedAction(rp => rp.ToList()), this._sentPackets.LockedAction(rp => rp.ToList()), base.Encoder);
     }
 
     public int GetPing()

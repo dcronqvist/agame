@@ -44,6 +44,7 @@ namespace AGame.Engine
             DisplayManager.OnFramebufferResize += (window, size) =>
             {
                 glViewport(0, 0, (int)size.X, (int)size.Y);
+
                 Logging.Log(LogLevel.Info, $"glViewport set to {size.X}x{size.Y}");
             };
 

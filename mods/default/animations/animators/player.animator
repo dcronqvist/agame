@@ -14,7 +14,7 @@
             "animation": "default.anim.player_walk",
             "mustFinish": false,
             "defaultNextState": "idle",
-            "millisPerFrame": 70,
+            "millisPerFrame": 90,
             "effects": "none"
         },
         {
@@ -22,7 +22,7 @@
             "animation": "default.anim.player_walk",
             "mustFinish": false,
             "defaultNextState": "idle",
-            "millisPerFrame": 70,
+            "millisPerFrame": 90,
             "effects": "flipHorizontal"
         }
     ]

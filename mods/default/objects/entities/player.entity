@@ -2,7 +2,7 @@
     "components": [
         {
             "componentType": "PlayerPosition",
-            "speed": 3
+            "speed": 4
         },
         {
             "componentType": "Animator",

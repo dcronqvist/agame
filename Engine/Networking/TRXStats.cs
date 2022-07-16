@@ -22,18 +22,18 @@ public class TRXStats
 
     public List<(Type, int)> ComponentUpdatesReceivedBytesByType { get; set; }
 
-    public TRXStats(List<Packet> receivedPackets, List<Packet> sentPackets)
+    public TRXStats(List<Packet> receivedPackets, List<Packet> sentPackets, IByteEncoder encoder)
     {
         PacketsSent = sentPackets.Count;
         PacketsReceived = receivedPackets.Count;
-        PacketsSentBytes = sentPackets.Sum(x => x.ToBytes().Length);
-        PacketsReceivedBytes = receivedPackets.Sum(x => x.ToBytes().Length);
+        PacketsSentBytes = sentPackets.Sum(x => encoder.Encode(x.ToBytes()).Length);
+        PacketsReceivedBytes = receivedPackets.Sum(x => encoder.Encode(x.ToBytes()).Length);
         PacketsSentAverageSize = PacketsSentBytes / Math.Max(PacketsSent, 1);
         PacketsReceivedAverageSize = PacketsReceivedBytes / Math.Max(PacketsReceived, 1);
         PacketsSentByType = sentPackets.GroupBy(x => x.GetType()).Select(x => (x.Key, x.Count())).ToList();
         PacketsReceivedByType = receivedPackets.GroupBy(x => x.GetType()).Select(x => (x.Key, x.Count())).ToList();
-        PacketsSentBytesByType = sentPackets.GroupBy(x => x.GetType()).Select(x => (x.Key, x.Sum(y => y.ToBytes().Length))).ToList();
-        PacketsReceivedBytesByType = receivedPackets.GroupBy(x => x.GetType()).Select(x => (x.Key, x.Sum(y => y.ToBytes().Length))).ToList();
+        PacketsSentBytesByType = sentPackets.GroupBy(x => x.GetType()).Select(x => (x.Key, x.Sum(y => encoder.Encode(y.ToBytes()).Length))).ToList();
+        PacketsReceivedBytesByType = receivedPackets.GroupBy(x => x.GetType()).Select(x => (x.Key, x.Sum(y => encoder.Encode(y.ToBytes()).Length))).ToList();
 
         ComponentUpdatesReceivedBytesByType = new List<(Type, int)>();
 
@@ -53,7 +53,7 @@ public class TRXStats
                         else
                         {
                             int index = ComponentUpdatesReceivedBytesByType.FindIndex(x => x.Item1 == c.GetType());
-                            ComponentUpdatesReceivedBytesByType[index] = (c.GetType(), ComponentUpdatesReceivedBytesByType[index].Item2 + c.ToBytes().Length);
+                            ComponentUpdatesReceivedBytesByType[index] = (c.GetType(), ComponentUpdatesReceivedBytesByType[index].Item2 + encoder.Encode(c.ToBytes()).Length);
                         }
                     }
                 }

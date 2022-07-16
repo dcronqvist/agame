@@ -37,10 +37,25 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
 
     }
 
+    private void OnFramebufferResize(object sender, Vector2 newSize)
+    {
+        // Make sure that zoom always stays the same, no matter the window size
+        float targetZoom = 2f; // On full hd, the window size is 1920x1080, so the zoom is 2.0f
+
+        Vector2 targetSize = new Vector2(1920, 1080);
+        Vector2 factor = newSize / targetSize;
+
+        Camera.Zoom = targetZoom * factor.X;
+    }
+
     public override void OnEnter(EnterPlayingWorldArgs args)
     {
         _paused = false;
         Camera = new Camera2D(Vector2.Zero, 2f);
+
+        DisplayManager.OnFramebufferResize += OnFramebufferResize;
+        this.OnFramebufferResize(null, DisplayManager.GetWindowSizeInPixels());
+
         _server = args.Server;
         _client = args.Client;
 
@@ -59,6 +74,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
     {
         if (!this._disconnected)
         {
+            DisplayManager.OnFramebufferResize -= OnFramebufferResize;
             await this.ExitWorld();
         }
     }
@@ -107,29 +123,29 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
         }
 
         Renderer.SetRenderTarget(null, null);
-        TRXStats stats = this._client.GetTRXStats();
+        // TRXStats stats = this._client.GetTRXStats();
 
         Font f = ModManager.GetAsset<Font>("default.font.rainyhearts");
-        Renderer.Text.RenderText(f, $"RX: {stats.GetRXBytesString()}", new Vector2(20, 20), 1f, ColorF.White, Renderer.Camera);
-        Renderer.Text.RenderText(f, $"TX: {stats.GetTXBytesString()}", new Vector2(20, 40), 1f, ColorF.White, Renderer.Camera);
-        Renderer.Text.RenderText(f, $"Ping: {this._client.GetPing()}ms", new Vector2(20, 60), 1f, ColorF.White, Renderer.Camera);
+        Renderer.Text.RenderText(f, $"Ping: {this._client.GetPing()}ms", new Vector2(20, 20), 1f, ColorF.White, Renderer.Camera);
+        // Renderer.Text.RenderText(f, $"RX: {stats.GetRXBytesString()}", new Vector2(20, 20), 1f, ColorF.White, Renderer.Camera);
+        // Renderer.Text.RenderText(f, $"TX: {stats.GetTXBytesString()}", new Vector2(20, 40), 1f, ColorF.White, Renderer.Camera);
 
         if (this._client.GetPlayerEntity() != null)
         {
             Entity localPlayer = this._client.GetPlayerEntity();
             int remotePlayerID = this._client.GetRemoteIDForEntity(localPlayer.ID);
-            Renderer.Text.RenderText(f, $"RemotePlayerID: {remotePlayerID}", new Vector2(20, 80), 1f, ColorF.White, Renderer.Camera);
+            // Renderer.Text.RenderText(f, $"RemotePlayerID: {remotePlayerID}", new Vector2(20, 80), 1f, ColorF.White, Renderer.Camera);
 
             CoordinateVector position = localPlayer.GetComponent<PlayerPositionComponent>().Position;
-            Renderer.Text.RenderText(f, $"X: {MathF.Round(position.X, 1)} Y: {MathF.Round(position.Y, 1)}", new Vector2(200, 80), 1f, ColorF.White, Renderer.Camera);
+            Renderer.Text.RenderText(f, $"X: {MathF.Round(position.X, 1)} Y: {MathF.Round(position.Y, 1)}", new Vector2(20, 40), 1f, ColorF.White, Renderer.Camera);
 
             this.SetCameraPosition(localPlayer.GetComponent<PlayerPositionComponent>().Position, false);
         }
 
-        foreach ((Type t, int b) in stats.ComponentUpdatesReceivedBytesByType)
-        {
-            Renderer.Text.RenderText(f, $"{t.Name}: {b}", new Vector2(20, 100 + 20 * stats.ComponentUpdatesReceivedBytesByType.IndexOf((t, b))), 1f, ColorF.White, Renderer.Camera);
-        }
+        // foreach ((Type t, int b) in stats.ComponentUpdatesReceivedBytesByType)
+        // {
+        //     Renderer.Text.RenderText(f, $"{t.Name}: {b}", new Vector2(20, 100 + 20 * stats.ComponentUpdatesReceivedBytesByType.IndexOf((t, b))), 1f, ColorF.White, Renderer.Camera);
+        // }
     }
 
     public override void Update()

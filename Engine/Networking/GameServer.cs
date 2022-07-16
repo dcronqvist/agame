@@ -79,7 +79,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     private int _chunkDistanceX = 2;
     private int _chunkDistanceY = 2;
 
-    public GameServer(ECS ecs, WorldContainer world, WorldMetaData worldMeta, GameServerConfiguration config, int reliableMillisBeforeResend, int clientTimeoutMillis) : base(config.Port, reliableMillisBeforeResend, clientTimeoutMillis)
+    public GameServer(ECS ecs, WorldContainer world, WorldMetaData worldMeta, GameServerConfiguration config, int reliableMillisBeforeResend, int clientTimeoutMillis) : base(config.Port, reliableMillisBeforeResend, clientTimeoutMillis, new TestEncoder())
     {
         this._configuration = config;
         this._world = world;
