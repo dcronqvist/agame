@@ -1,4 +1,5 @@
 using System.Numerics;
+using AGame.Engine.Assets;
 using AGame.Engine.ECSys;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
@@ -53,6 +54,7 @@ public class ScreenJoinWorld : Screen<EnterJoinWorldArgs>
                     ScreenManager.GoToScreen<ScreenTemporaryLoading, EnterTemporaryLoading>(new EnterTemporaryLoading() { Text = "Loading world..." });
 
                     GameClient gameClient = new GameClient(Utilities.ResolveIPOrDomain(this._ip), int.Parse(this._port), 500, 5000);
+                    ItemManager.Initialize(gameClient);
                     // ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);
 
                     // gameClient.SetWorld(new WorldContainer(swg));

@@ -1,4 +1,5 @@
 {
+    "extend": "default.entity.base_entity",
     "components": [
         {
             "componentType": "Transform",
@@ -26,6 +27,22 @@
                 "x": 16,
                 "y": -8
             }
+        },
+        {
+            "componentType": "Inventory",
+            "width": 8,
+            "height": 3
+        },
+        {
+            "componentType": "Hotbar"
+        },
+        {
+            "componentType": "PlayerState"
+        },
+        {
+            "componentType": "Render",
+            "sortByY": true,
+            "renderLayer": 0
         }
     ]
 }

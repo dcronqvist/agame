@@ -163,10 +163,10 @@ public class TransformComponent : Component
                                                                     e.ID != parentEntity.ID &&
                                                                     (e.GetComponent<TransformComponent>().Position - this.Position).Length() <= range);
 
-        bool w = command.IsKeyDown(UserCommand.KEY_W);
-        bool a = command.IsKeyDown(UserCommand.KEY_A);
-        bool s = command.IsKeyDown(UserCommand.KEY_S);
-        bool d = command.IsKeyDown(UserCommand.KEY_D);
+        bool w = command.IsInputDown(UserCommand.KEY_W);
+        bool a = command.IsInputDown(UserCommand.KEY_A);
+        bool s = command.IsInputDown(UserCommand.KEY_S);
+        bool d = command.IsInputDown(UserCommand.KEY_D);
 
         CoordinateVector movement = new CoordinateVector(0, 0);
 

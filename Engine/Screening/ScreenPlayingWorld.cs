@@ -6,6 +6,7 @@ using AGame.Engine.ECSys.Components;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Cameras;
 using AGame.Engine.Graphics.Rendering;
+using AGame.Engine.Items;
 using AGame.Engine.Networking;
 using AGame.Engine.UI;
 using AGame.Engine.World;
@@ -31,6 +32,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
     List<Packet> _receivedPackets = new List<Packet>();
 
     bool _paused = false;
+    bool _showingInventory = false;
 
     public override void Initialize()
     {
@@ -123,33 +125,30 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
         }
 
         Renderer.SetRenderTarget(null, null);
-        // TRXStats stats = this._client.GetTRXStats();
 
         Font f = ModManager.GetAsset<Font>("default.font.rainyhearts");
         Renderer.Text.RenderText(f, $"Ping: {this._client.GetPing()}ms", new Vector2(20, 20), 1f, ColorF.White, Renderer.Camera);
         Renderer.Text.RenderText(f, $"Entities: {this._client.GetAmountOfEntities()}", new Vector2(20, 40), 1f, ColorF.White, Renderer.Camera);
-        // Renderer.Text.RenderText(f, $"RX: {stats.GetRXBytesString()}", new Vector2(20, 40), 1f, ColorF.White, Renderer.Camera);
-        // Renderer.Text.RenderText(f, $"TX: {stats.GetTXBytesString()}", new Vector2(20, 60), 1f, ColorF.White, Renderer.Camera);
 
         if (this._client.GetPlayerEntity() != null)
         {
             Entity localPlayer = this._client.GetPlayerEntity();
             int remotePlayerID = this._client.GetRemoteIDForEntity(localPlayer.ID);
-            // Renderer.Text.RenderText(f, $"RemotePlayerID: {remotePlayerID}", new Vector2(20, 80), 1f, ColorF.White, Renderer.Camera);
 
             var position = localPlayer.GetComponent<TransformComponent>().Position;
-            Renderer.Text.RenderText(f, $"X: {MathF.Round(position.X, 1)} Y: {MathF.Round(position.Y, 1)}", new Vector2(20, 80), 1f, ColorF.White, Renderer.Camera);
+            Renderer.Text.RenderText(f, $"X: {MathF.Round(position.X, 1)} Y: {MathF.Round(position.Y, 1)}", new Vector2(150, 80), 1f, ColorF.White, Renderer.Camera);
 
             var animator = localPlayer.GetComponent<AnimatorComponent>();
             var offset = animator.GetAnimator().GetCurrentAnimation().GetMiddleOfCurrentFrameScaled();
 
             this.SetCameraPosition(position + new CoordinateVector(offset.X / TileGrid.TILE_SIZE, offset.Y / TileGrid.TILE_SIZE), false);
+            this.RenderPlayerHotbar();
         }
 
-        // foreach ((Type t, int b) in stats.ComponentUpdatesReceivedBytesByType)
-        // {
-        //     Renderer.Text.RenderText(f, $"{t.Name}: {b}", new Vector2(20, 100 + 20 * stats.ComponentUpdatesReceivedBytesByType.IndexOf((t, b))), 1f, ColorF.White, Renderer.Camera);
-        // }
+        if (_showingInventory)
+        {
+            this.RenderPlayerInventory();
+        }
     }
 
     public override void Update()
@@ -158,12 +157,50 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
         //Audio.SetListenerPosition(this._client.GetPlayerEntity().GetComponent<TransformComponent>().Position);
 
         //this._server?.Update();
-        this._client.Update();
+        Vector2 pos = Input.GetMousePosition(this.Camera);
+        WorldVector wv = new WorldVector(pos.X, pos.Y);
+        this._client.Update(!this._paused && !this._showingInventory, wv.ToCoordinateVector().ToTileAligned());
 
         if (Input.IsKeyPressed(GLFW.Keys.Escape))
         {
             this._paused = !this._paused;
         }
+
+        if (Input.IsKeyPressed(GLFW.Keys.E))
+        {
+            if (!this._showingInventory)
+            {
+                this._client.RequestPlayerInventory();
+                this._showingInventory = true;
+            }
+            else
+            {
+                this._showingInventory = false;
+            }
+        }
+    }
+
+    public void RenderPlayerInventory()
+    {
+        Entity player = this._client.GetPlayerEntity();
+        Inventory inventory = player.GetComponent<InventoryComponent>().GetInventory();
+
+        Vector2 middleOfScreen = DisplayManager.GetWindowSizeInPixels() / 2f;
+        Vector2 inventorySize = inventory.GetRenderSize();
+
+        inventory.Render(middleOfScreen - inventorySize / 2f);
+    }
+
+    public void RenderPlayerHotbar()
+    {
+        Entity player = this._client.GetPlayerEntity();
+        HotbarComponent hotbar = player.GetComponent<HotbarComponent>();
+        Inventory inventory = player.GetComponent<InventoryComponent>().GetInventory();
+
+        float inventoryWidth = inventory.GetRenderSize().X;
+        Vector2 middleOfScreen = new Vector2(DisplayManager.GetWindowSizeInPixels().X / 2f - inventoryWidth / 2f, DisplayManager.GetWindowSizeInPixels().Y - 74);
+
+        hotbar.Render(middleOfScreen, inventory);
     }
 
     public async Task ExitWorld()

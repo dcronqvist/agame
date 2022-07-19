@@ -98,6 +98,11 @@ public struct CoordinateVector
         return (float)Math.Sqrt(X * X + Y * Y);
     }
 
+    public float DistanceTo(CoordinateVector other)
+    {
+        return (other - this).Length();
+    }
+
     public CoordinateVector Normalize()
     {
         float length = Length();

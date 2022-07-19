@@ -446,6 +446,13 @@ namespace AGame.Engine
                 return MathF.Round((float)bytesPerSecond / (1024 * 1024 * 1024), 3) + " GB/s";
             }
         }
+
+        public static float CalcQuadratic(float a, float b, float c, float x)
+        {
+            // f(x) = a*x^2 + b*x + c
+
+            return a * x * x + b * x + c;
+        }
     }
 
     public struct Vector2i : IPacketable

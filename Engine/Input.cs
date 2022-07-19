@@ -18,6 +18,9 @@ namespace AGame.Engine
         public static Dictionary<MouseButton, bool> currentMouseState;
         public static Dictionary<MouseButton, bool> previousMouseState;
 
+        public static double currentMouseScroll;
+        public static double previousMouseScroll;
+
         public static event EventHandler<char> OnChar;
         public static event EventHandler OnBackspace;
         public static event EventHandler<float> OnScroll;
@@ -63,6 +66,7 @@ namespace AGame.Engine
 
             Glfw.SetScrollCallback(DisplayManager.WindowHandle, (window, x, y) =>
             {
+                currentMouseScroll += y;
                 OnScroll?.Invoke(null, (float)y);
             });
         }
@@ -107,6 +111,7 @@ namespace AGame.Engine
         {
             previousKeyboardState = currentKeyboardState;
             previousMouseState = currentMouseState;
+            previousMouseScroll = currentMouseScroll;
         }
 
         public static bool IsKeyDown(Keys key)
@@ -153,6 +158,11 @@ namespace AGame.Engine
         {
             Glfw.GetCursorPosition(DisplayManager.WindowHandle, out double x, out double y);
             return new Vector2((float)x, (float)y);
+        }
+
+        public static int GetScroll()
+        {
+            return (int)(currentMouseScroll - previousMouseScroll);
         }
     }
 }

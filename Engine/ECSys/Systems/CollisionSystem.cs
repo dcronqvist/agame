@@ -25,14 +25,4 @@ public class CollisionSystem : BaseSystem
             collider.UpdateBox(position);
         }
     }
-
-    public override void Render(List<Entity> entities, WorldContainer gameWorld)
-    {
-        foreach (Entity entity in entities)
-        {
-            var collider = entity.GetComponent<ColliderComponent>();
-
-            Renderer.Primitive.RenderRectangle(collider.Box, ColorF.Red * 0.5f);
-        }
-    }
 }

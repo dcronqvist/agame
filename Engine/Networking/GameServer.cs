@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using AGame.Engine.Assets;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
 using AGame.Engine.ECSys.Components;
@@ -14,51 +15,67 @@ public class UserCommand : Packet
     public int CommandNumber { get; set; }
     public float DeltaTime { get; set; }
 
-    [PacketPropIgnore]
-    public byte PreviousButtons { get; set; }
+    public ushort PreviousButtons { get; set; }
 
-    public byte Buttons { get; set; }
+    public ushort Buttons { get; set; }
+
+    public int MouseTileX { get; set; }
+    public int MouseTileY { get; set; }
 
     public UserCommand()
     {
 
     }
 
-    public UserCommand(byte previousButtons, float delta, int commandNumber)
+    public UserCommand(ushort previousButtons, float delta, int commandNumber, Vector2i mouseTilePos)
     {
         this.PreviousButtons = previousButtons;
         this.DeltaTime = delta;
         this.CommandNumber = commandNumber;
+        this.MouseTileX = mouseTilePos.X;
+        this.MouseTileY = mouseTilePos.Y;
     }
 
-    public UserCommand(byte previousButtons, float delta, byte buttons, int commandNumber)
+    public UserCommand(ushort previousButtons, float delta, ushort buttons, int commandNumber, Vector2i mouseTilePos)
     {
         this.PreviousButtons = previousButtons;
         this.Buttons = buttons;
         this.DeltaTime = delta;
         this.CommandNumber = commandNumber;
+        this.MouseTileX = mouseTilePos.X;
+        this.MouseTileY = mouseTilePos.Y;
     }
 
-    public static readonly byte KEY_W = 1 << 0;
-    public static readonly byte KEY_A = 1 << 1;
-    public static readonly byte KEY_S = 1 << 2;
-    public static readonly byte KEY_D = 1 << 3;
-    public static readonly byte KEY_SPACE = 1 << 4;
-    public static readonly byte KEY_SHIFT = 1 << 5;
+    public static readonly ushort KEY_W = 1 << 0;
+    public static readonly ushort KEY_A = 1 << 1;
+    public static readonly ushort KEY_S = 1 << 2;
+    public static readonly ushort KEY_D = 1 << 3;
+    public static readonly ushort KEY_SPACE = 1 << 4;
+    public static readonly ushort KEY_SHIFT = 1 << 5;
 
-    public void SetKeyDown(byte key)
+    public static readonly ushort MOUSE_SCROLL_UP = 1 << 6;
+    public static readonly ushort MOUSE_SCROLL_DOWN = 1 << 7;
+
+    public static readonly ushort USE_ITEM = 1 << 8;
+
+    public void SetInputDown(ushort key)
     {
         this.Buttons |= key;
     }
 
-    public bool IsKeyDown(int key)
+    public bool IsInputDown(ushort key)
     {
         return (this.Buttons & key) != 0;
     }
 
-    public bool IsKeyPressed(int key)
+    public bool IsInputPressed(ushort key)
     {
         return (this.Buttons & key) != 0 && (this.PreviousButtons & key) == 0;
+    }
+
+    public bool IsInputReleased(ushort key)
+    {
+        return (this.Buttons & key) == 0 && (this.PreviousButtons & key) != 0;
     }
 }
 
@@ -74,6 +91,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     private GameServerConfiguration _configuration;
     private ThreadSafe<Queue<IServerTickAction>> _nextTickActions;
     private ThreadSafe<Dictionary<Connection, List<ChunkAddress>>> _connectionsLoadedChunks;
+    private Dictionary<Connection, List<Entity>> _connectionsLoadedEntities;
 
     // Sends chunks of this distance around the player to clients.
     private int _chunkDistanceX = 2;
@@ -90,6 +108,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         this._nextTickActions = new ThreadSafe<Queue<IServerTickAction>>(new Queue<IServerTickAction>());
         this._connectionsLoadedChunks = new ThreadSafe<Dictionary<Connection, List<ChunkAddress>>>(new Dictionary<Connection, List<ChunkAddress>>());
         this._ecs = new ThreadSafe<ECS>(ecs);
+        this._connectionsLoadedEntities = new Dictionary<Connection, List<Entity>>();
         this._updatedComponents = new List<(Entity, Component)>();
 
         this.RegisterServerEventHandlers();
@@ -122,6 +141,14 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 {
                     Entity entity = ecs.CreateEntityFromAsset("default.entity.player");
                     entity.GetComponent<CharacterComponent>().Name = e.RequestPacket.Name;
+
+                    int runs = Utilities.GetRandomInt(5, 10);
+                    for (int i = 0; i < runs; i++)
+                    {
+                        string item = Utilities.ChooseUniform("default.item.test_item", "default.item.test_item_2");
+                        entity.GetComponent<InventoryComponent>().GetInventory().AddItem(item, 1);
+                    }
+
 
                     return entity;
                 });
@@ -215,6 +242,14 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         });
     }
 
+    public T PerformOnECS<T>(Func<ECS, T> action)
+    {
+        return this._ecs.LockedAction((ecs) =>
+        {
+            return action(ecs);
+        });
+    }
+
     private void RegisterPacketHandlers()
     {
         base.AddPacketHandler<UserCommand>((packet, connection) =>
@@ -253,6 +288,11 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         {
             Logging.Log(LogLevel.Debug, $"Server: Received entity placement from {connection.RemoteEndPoint} for {packet.EntityAssetName}");
             this.PerformActionNextTick(new PlaceEntityAction(packet, connection));
+        });
+
+        base.AddPacketHandler<RequestInventoryContentPacket>((packet, connection) =>
+        {
+            this.PerformActionNextTick(new RespondToInventoryRequestAction(packet, connection));
         });
     }
 
@@ -400,6 +440,21 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         });
     }
 
+    private List<Entity> GetEntitiesInRangeOfPlayer(Connection conn)
+    {
+        float entityDistance = 0f;
+
+        return this._ecs.LockedAction((ecs) =>
+        {
+            var playerID = this._connectionToPlayerId.LockedAction((ctp) => ctp[conn]);
+            var playerTransform = ecs.GetEntityFromID(playerID).GetComponent<TransformComponent>();
+            var playerPosition = playerTransform.Position;
+
+            List<Entity> inRange = ecs.GetAllEntities(e => !e.HasComponent<TransformComponent>() || e.GetComponent<TransformComponent>().Position.DistanceTo(playerPosition) <= entityDistance).ToList();
+            return inRange;
+        });
+    }
+
     private void Tick(float deltaTime)
     {
         this.ProcessInputs();
@@ -415,8 +470,20 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         {
             foreach (Connection conn in conns)
             {
-                //this.BroadcastEntireECS(conn);
                 this.SendChunksToClient(conn);
+
+                if (!this._connectionsLoadedEntities.ContainsKey(conn))
+                    this._connectionsLoadedEntities.Add(conn, new List<Entity>());
+
+                List<Entity> lastEntitiesInRange = this._connectionsLoadedEntities[conn];
+                List<Entity> entitiesInRange = this.GetEntitiesInRangeOfPlayer(conn);
+
+                List<Entity> newEntities = entitiesInRange.Except(lastEntitiesInRange).ToList();
+                // Somehow create these entities on the client
+
+                List<Entity> entitiesToRemove = lastEntitiesInRange.Except(entitiesInRange).ToList();
+                // Destroy these entities on the client
+
                 this.SendECSUpdate(conn, updatesToSend);
             }
         });
@@ -476,5 +543,22 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     public void SaveServer()
     {
 
+    }
+
+    private float CalcPriorityForEntity(Connection connection, Entity entity, float cutoffDistance)
+    {
+        var transform = entity.GetComponent<TransformComponent>();
+        var entityPos = transform.Position;
+
+        var playerID = this._connectionToPlayerId.LockedAction((c) => c[connection]);
+        var playerEntity = this._ecs.LockedAction((ecs) => ecs.GetEntityFromID(playerID));
+        var playerTransform = playerEntity.GetComponent<TransformComponent>();
+        var playerPos = playerTransform.Position;
+
+        var distance = (entityPos - playerPos).Length();
+
+        // Currently follows a simple quadratic formula, maybe try using a exponential one?
+        // Exponential gets kinda weird and is slow as hell, so I'm not using it for now.
+        return Utilities.CalcQuadratic((1f / (cutoffDistance * cutoffDistance)), 0f, 1f, -distance);
     }
 }

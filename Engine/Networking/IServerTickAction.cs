@@ -1,6 +1,8 @@
+using AGame.Engine.Assets;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
 using AGame.Engine.ECSys.Components;
+using AGame.Engine.Items;
 using AGame.Engine.World;
 using GameUDPProtocol;
 
@@ -108,5 +110,28 @@ public class PlaceEntityAction : IServerTickAction
 
             server.EnqueuePacket(new PlaceEntityAcceptPacket(Packet.ClientSideEntityID, entity.ID), this.Connection, true, false);
         });
+    }
+}
+
+public class RespondToInventoryRequestAction : IServerTickAction
+{
+    Connection Connection { get; set; }
+    RequestInventoryContentPacket Packet { get; set; }
+
+    public RespondToInventoryRequestAction(RequestInventoryContentPacket packet, Connection connection)
+    {
+        this.Packet = packet;
+        this.Connection = connection;
+    }
+
+    public void Tick(GameServer server)
+    {
+        var inventory = server.PerformOnECS((ecs) =>
+        {
+            return ecs.GetEntityFromID(Packet.EntityID).GetComponent<InventoryComponent>().GetInventory();
+        });
+
+        server.EnqueuePacket(new SetInventoryContentPacket(Packet.EntityID, inventory), this.Connection, true, false);
+        Logging.Log(LogLevel.Debug, $"Server: Sent InventoryContentPacket to client {this.Connection.RemoteEndPoint}");
     }
 }

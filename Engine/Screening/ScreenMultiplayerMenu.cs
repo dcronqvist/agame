@@ -1,4 +1,5 @@
 using System.Numerics;
+using AGame.Engine.Assets;
 using AGame.Engine.ECSys;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
@@ -60,6 +61,7 @@ public class ScreenMultiplayerMenu : Screen<EnterMultiplayerMenuArgs>
                         int serverPort = gameServer.Port;
 
                         GameClient gameClient = new GameClient("127.0.0.1", serverPort, 500, 500000);
+                        ItemManager.Initialize(gameClient);
                         // ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);
 
                         // gameClient.SetWorld(new WorldContainer(swg));

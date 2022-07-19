@@ -31,10 +31,7 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
 
     public override void OnEnter(EnterMainMenuArgs args)
     {
-        ItemDescription id = ModManager.GetAsset<ItemDescription>("default.item.test_item");
-        object o = ScriptingManager.CreateInstance("default.script.test_class");
 
-        Item i = id.CreateItem();
     }
 
     public override void OnLeave()

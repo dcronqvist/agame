@@ -1,0 +1,13 @@
+{
+    "initialState": "still",
+    "states": [
+        {
+            "name": "still",
+            "animation": "default.anim.ore_test",
+            "mustFinish": false,
+            "defaultNextState": "still",
+            "millisPerFrame": 100000,
+            "effects": "none"
+        }
+    ]
+}

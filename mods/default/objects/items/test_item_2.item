@@ -1,9 +1,9 @@
 {
-    "itemName": "Item Name",
-    "texture": "default.tex.chest",
+    "itemName": "Item Name 2",
+    "texture": "default.tex.marsdirt",
     "itemType": "tool",
     "maxStack": 1,
     "durability": 1000,
     "onUse": "default.script.no_use_tool",
-    "reach": 3
+    "reach": 2
 }

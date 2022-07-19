@@ -1,3 +1,5 @@
+using AGame.Engine.ECSys;
+using AGame.Engine.ECSys.Components;
 using AGame.Engine.World;
 
 namespace AGame.Engine.Networking;
@@ -55,5 +57,36 @@ public class ClientDestroyClientSideEntity : IClientTickAction
     public void Tick(GameClient client)
     {
         client.DestroyClientSideEntity(this.ServerSideEntityID);
+    }
+}
+
+public class ClientSetInventoryContentAction : IClientTickAction
+{
+    public SetInventoryContentPacket Packet { get; set; }
+
+    public ClientSetInventoryContentAction(SetInventoryContentPacket packet)
+    {
+        this.Packet = packet;
+    }
+
+    public void Tick(GameClient client)
+    {
+        int serverSideEntity = Packet.EntityID;
+
+        if (client.TryGetClientSideEntity(serverSideEntity, out Entity entity))
+        {
+            var inventory = entity.GetComponent<InventoryComponent>();
+
+            for (int i = 0; i < Packet.Width; i++)
+            {
+                for (int j = 0; j < Packet.Height; j++)
+                {
+                    if (Packet.Slots[i, j] != null)
+                    {
+                        inventory.GetInventory().SetItem(i, j, Packet.Slots[i, j]);
+                    }
+                }
+            }
+        }
     }
 }

@@ -8,6 +8,7 @@ using AGame.Engine.ECSys.Components;
 using AGame.Engine.ECSys.Systems;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
+using AGame.Engine.Items;
 using AGame.Engine.World;
 using GameUDPProtocol;
 
@@ -130,6 +131,11 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     public WorldContainer GetWorld()
     {
         return this._world;
+    }
+
+    public ECS GetECS()
+    {
+        return this._ecs;
     }
 
     public void SetWorld(WorldContainer world)
@@ -256,6 +262,12 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             this._serverEntityIDToClientEntity.Add(packet.ServerSideEntityID, clientSide);
             Logging.Log(LogLevel.Debug, $"Client: Server accepted entity {packet.ClientSideEntityID} and gave it ID {packet.ServerSideEntityID}");
         });
+
+        base.AddPacketHandler<SetInventoryContentPacket>((packet) =>
+        {
+            Logging.Log(LogLevel.Debug, $"Client: Received inventory content packet");
+            this._nextTickActions.LockedAction((q) => q.Enqueue(new ClientSetInventoryContentAction(packet)));
+        });
     }
 
     public async Task<bool> ConnectAsync(string clientName)
@@ -276,6 +288,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                 await Task.Delay(1);
             }
 
+            this.EnqueuePacket(new RequestInventoryContentPacket() { EntityID = this._playerId }, true, false);
             this.StartLatencyChecking();
             return true;
         }
@@ -301,7 +314,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         });
     }
 
-    private bool TryGetClientSideEntity(int serverEntityID, out Entity clientEntity)
+    public bool TryGetClientSideEntity(int serverEntityID, out Entity clientEntity)
     {
         return this._serverEntityIDToClientEntity.TryGetValue(serverEntityID, out clientEntity);
     }
@@ -394,7 +407,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         this._pendingCommands.RemoveAll(c => c.CommandNumber <= this._serverLastProcessedCommand);
     }
 
-    private void ProcessInputs()
+    private void ProcessInputs(bool allowInput, Vector2i mouseTilePos)
     {
         List<(GLFW.Keys, int)> inputs = new List<(GLFW.Keys, int)>()
         {
@@ -407,14 +420,33 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         };
 
         UserCommand command = new UserCommand();
+        command.MouseTileX = mouseTilePos.X;
+        command.MouseTileY = mouseTilePos.Y;
         command.DeltaTime = GameTime.DeltaTime;
         command.PreviousButtons = this._lastSentCommand == null ? (byte)0 : this._lastSentCommand.Buttons;
 
-        foreach ((GLFW.Keys, byte) input in inputs)
+        if (allowInput)
         {
-            if (Input.IsKeyDown(input.Item1))
+            foreach ((GLFW.Keys, byte) input in inputs)
             {
-                command.SetKeyDown(input.Item2);
+                if (Input.IsKeyDown(input.Item1))
+                {
+                    command.SetInputDown(input.Item2);
+                }
+            }
+
+            if (Input.GetScroll() > 0)
+            {
+                command.SetInputDown(UserCommand.MOUSE_SCROLL_UP);
+            }
+            else if (Input.GetScroll() < 0)
+            {
+                command.SetInputDown(UserCommand.MOUSE_SCROLL_DOWN);
+            }
+
+            if (Input.IsMouseButtonDown(GLFW.MouseButton.Left))
+            {
+                command.SetInputDown(UserCommand.USE_ITEM);
             }
         }
 
@@ -430,16 +462,6 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             playerEntity.ApplyInput(command, this._world, this._ecs);
             this._pendingCommands.Add(command);
         }
-
-        if (Input.IsKeyPressed(GLFW.Keys.Space))
-        {
-            // Let's place an entity to the left of us.
-            var transform = playerEntity.GetComponent<TransformComponent>();
-            var posLeft = transform.Position - new CoordinateVector(1, 0);
-            var tileAligned = posLeft.ToTileAligned();
-
-            this.PlaceEntity("default.entity.placeable", tileAligned);
-        }
     }
 
     public void PlaceEntity(string assetName, Vector2i tileAlignedPos)
@@ -451,7 +473,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         Logging.Log(LogLevel.Debug, $"Client: Placing entity default.entity.placeable with ID {e.ID}");
     }
 
-    public void Update()
+    public void Update(bool allowInput, Vector2i mouseTilePos)
     {
         this.ProcessServerECSUpdates();
 
@@ -460,7 +482,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             return;
         }
 
-        this.ProcessInputs();
+        this.ProcessInputs(allowInput, mouseTilePos);
 
         this.InterpolateEntities();
 
@@ -500,5 +522,11 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     {
         this._world.Render();
         this._ecs.Render(this._world);
+    }
+
+    public void RequestPlayerInventory()
+    {
+        // Request the inventory for this entity
+        this.EnqueuePacket(new RequestInventoryContentPacket() { EntityID = this._playerId }, true, false);
     }
 }
