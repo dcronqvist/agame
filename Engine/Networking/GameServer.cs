@@ -12,6 +12,7 @@ namespace AGame.Engine.Networking;
 
 public class UserCommand : Packet
 {
+    public int LastReceivedServerTick { get; set; }
     public int CommandNumber { get; set; }
     public float DeltaTime { get; set; }
 
@@ -92,6 +93,9 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     private ThreadSafe<Queue<IServerTickAction>> _nextTickActions;
     private ThreadSafe<Dictionary<Connection, List<ChunkAddress>>> _connectionsLoadedChunks;
     private Dictionary<Connection, List<Entity>> _connectionsLoadedEntities;
+
+    // Server tick
+    private int _serverTick = 0;
 
     // Sends chunks of this distance around the player to clients.
     private int _chunkDistanceX = 2;
@@ -224,6 +228,20 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
             this._updatedComponents.Add((e.Entity, e.Component));
         };
+
+        this._world.ChunkGenerated += (sender, e) =>
+        {
+            // For every chunk that is generated, run all entity distribution definitions on it.
+            foreach (var definition in this._world.WorldGenerator.GetEntityDistributionDefinitions())
+            {
+                this.PerformActionNextTick(new ExecuteSpawnEntityDefinitionsAction(definition, e.Chunk));
+            }
+        };
+    }
+
+    private void SpawnEntity(SpawnEntityDefinition definition)
+    {
+
     }
 
     private void PerformActionNextTick(IServerTickAction action)
@@ -262,7 +280,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
         base.AddPacketHandler<ConnectReadyForData>((packet, connection) =>
         {
-            this.BroadcastEntireECS(connection);
+            //this.BroadcastEntireECS(connection);
         });
 
         base.AddPacketHandler<ReceivedChunkPacket>((packet, connection) =>
@@ -401,35 +419,21 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         }
     }
 
-    private void SendECSUpdate(Connection connection, List<EntityUpdate> updates)
+    private void SendECSUpdate(Connection connection, List<EntityUpdate> updates, int serverTick, int[] deleteEntities)
     {
         int lastProcessedCommand = this._lastProcessedCommand.LockedAction((lastProcessedCommand) =>
         {
             return lastProcessedCommand[connection].CommandNumber;
         });
 
-        UpdateEntitiesPacket uep = new UpdateEntitiesPacket(lastProcessedCommand, updates.ToArray());
+        UpdateEntitiesPacket uep = new UpdateEntitiesPacket(lastProcessedCommand, serverTick, deleteEntities, updates.ToArray());
         base.EnqueuePacket(uep, connection, false, true);
     }
 
-    private void BroadcastEntireECS(Connection connection)
+    // This is to provide lag compensation for performing actions on the server
+    private void ReconstructECSForClientAtTick(Connection connection, int tick)
     {
-        List<Entity> entities = this._ecs.LockedAction(x => x.GetAllEntities().ToList());
-
-        List<EntityUpdate> entityUpdates = new List<EntityUpdate>();
-
-        foreach (Entity entity in entities)
-        {
-            entityUpdates.Add(new EntityUpdate(entity.ID, entity.Components.Where(c => c.GetCNAttrib().CreateTriggersNetworkUpdate).ToArray()));
-        }
-
-        int lastProcessedCommand = this._lastProcessedCommand.LockedAction((lastProcessedCommand) =>
-        {
-            return lastProcessedCommand[connection].CommandNumber;
-        });
-
-        UpdateEntitiesPacket uep = new UpdateEntitiesPacket(lastProcessedCommand, entityUpdates.ToArray());
-        base.EnqueuePacket(uep, connection, true, false);
+        // Figure out 
     }
 
     public void DestroyEntity(int entityId)
@@ -442,7 +446,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
     private List<Entity> GetEntitiesInRangeOfPlayer(Connection conn)
     {
-        float entityDistance = 0f;
+        float entityDistance = 20f;
 
         return this._ecs.LockedAction((ecs) =>
         {
@@ -455,8 +459,20 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         });
     }
 
+    private List<EntityUpdate> CreateUpdatesForNewEntities(List<Entity> entities)
+    {
+        List<EntityUpdate> updates = new List<EntityUpdate>();
+        foreach (Entity entity in entities)
+        {
+            updates.Add(new EntityUpdate(entity.ID, entity.Components.Where(c => c.GetCNAttrib().CreateTriggersNetworkUpdate).ToArray()));
+        }
+        return updates;
+    }
+
     private void Tick(float deltaTime)
     {
+        this._serverTick += 1;
+
         this.ProcessInputs();
 
         this._ecs.LockedAction((ecs) =>
@@ -464,7 +480,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             ecs.Update(null, deltaTime);
         });
 
-        List<EntityUpdate> updatesToSend = Utilities.GetPackedEntityUpdatesMaxByteSize(this.Encoder, this._updatedComponents, 1024, out List<(Entity, Component)> usedUpdates);
+        List<EntityUpdate> updatesToSend = Utilities.GetPackedEntityUpdatesMaxByteSize(this.Encoder, this._updatedComponents, 800, out List<(Entity, Component)> usedUpdates);
 
         this._connections.LockedAction((conns) =>
         {
@@ -478,13 +494,19 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 List<Entity> lastEntitiesInRange = this._connectionsLoadedEntities[conn];
                 List<Entity> entitiesInRange = this.GetEntitiesInRangeOfPlayer(conn);
 
+                this._connectionsLoadedEntities[conn] = entitiesInRange;
+
                 List<Entity> newEntities = entitiesInRange.Except(lastEntitiesInRange).ToList();
                 // Somehow create these entities on the client
+                // These will be new to the client, so the client receiving them will mean
+                // that they will create them locally and bind their server side entity id to the client side entity id
+                List<EntityUpdate> newEntityUpdates = this.CreateUpdatesForNewEntities(newEntities);
 
                 List<Entity> entitiesToRemove = lastEntitiesInRange.Except(entitiesInRange).ToList();
                 // Destroy these entities on the client
+                int[] entityIDsToRemove = entitiesToRemove.Select(e => e.ID).ToArray();
 
-                this.SendECSUpdate(conn, updatesToSend);
+                this.SendECSUpdate(conn, updatesToSend.Concat(newEntityUpdates).ToList(), this._serverTick, entityIDsToRemove);
             }
         });
 

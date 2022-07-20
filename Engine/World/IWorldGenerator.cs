@@ -10,6 +10,7 @@ public interface IWorldGenerator
 {
     Chunk GenerateChunk(int x, int y);
     Task<Chunk> GenerateChunkAsync(int x, int y);
+    List<EntityDistributionDefinition> GetEntityDistributionDefinitions();
 }
 
 public class TestWorldGenerator : IWorldGenerator
@@ -48,6 +49,11 @@ public class TestWorldGenerator : IWorldGenerator
     public Task<Chunk> GenerateChunkAsync(int x, int y)
     {
         return Task.FromResult(this.GenerateChunk(x, y));
+    }
+
+    public List<EntityDistributionDefinition> GetEntityDistributionDefinitions()
+    {
+        return new List<EntityDistributionDefinition>();
     }
 }
 
@@ -134,21 +140,10 @@ public class ServerWorldGenerator : IWorldGenerator
     public ServerWorldGenerator(GameClient client)
     {
         this._gameClient = client;
-        // _gameClient.AddPacketHandler<WholeChunkPacket>((packet) =>
-        // {
-        //     Logging.Log(LogLevel.Debug, $"Client: Received chunk {packet.X}, {packet.Y}");
-        //     _requestedChunks.LockedAction((rc) =>
-        //     {
-        //         rc[new ChunkAddress(packet.X, packet.Y)] = packet.Chunk;
-        //     });
-
-        //     _gameClient.EnqueuePacket(new ReceivedChunkPacket(packet.X, packet.Y), true, false);
-        // });
     }
 
     public Chunk GenerateChunk(int x, int y)
     {
-        //this.RequestChunk(x, y);
         ChunkAddress chunkAddress = new ChunkAddress(x, y);
 
         while (_requestedChunks.LockedAction((rc) => { return rc[chunkAddress] == null; }))
@@ -168,7 +163,6 @@ public class ServerWorldGenerator : IWorldGenerator
     {
         return await Task.Run(() =>
         {
-            //this.RequestChunk(x, y);
             ChunkAddress chunkAddress = new ChunkAddress(x, y);
 
             while (_requestedChunks.LockedAction((rc) => { return rc[chunkAddress] == null; }))
@@ -185,16 +179,8 @@ public class ServerWorldGenerator : IWorldGenerator
         });
     }
 
-    private void RequestChunk(int x, int y)
+    public List<EntityDistributionDefinition> GetEntityDistributionDefinitions()
     {
-        // ChunkAddress address = new ChunkAddress(x, y);
-        // _requestedChunks.LockedAction((rc) =>
-        // {
-        //     if (!rc.ContainsKey(address))
-        //     {
-        //         _gameClient.EnqueuePacket(new RequestChunkPacket() { X = x, Y = y }, true, false);
-        //         rc.Add(address, null);
-        //     }
-        // });
+        return new List<EntityDistributionDefinition>();
     }
 }

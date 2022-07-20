@@ -133,6 +133,7 @@ public class TransformComponent : Component
         this.Position = tc.Position;
         this.Velocity = tc.Velocity;
         this.TargetVelocity = tc.TargetVelocity;
+        this.Speed = tc.Speed;
     }
 
     public override void InterpolateProperties(Component from, Component to, float amt)
@@ -143,6 +144,7 @@ public class TransformComponent : Component
         this.Position = CoordinateVector.Lerp(fromTC.Position, toTC.Position, amt);
         this.Velocity = CoordinateVector.Lerp(fromTC.Velocity, toTC.Velocity, amt);
         this.TargetVelocity = CoordinateVector.Lerp(fromTC.TargetVelocity, toTC.TargetVelocity, amt);
+        this.Speed = Utilities.Lerp(fromTC.Speed, toTC.Speed, amt);
     }
 
     public override int GetHashCode()

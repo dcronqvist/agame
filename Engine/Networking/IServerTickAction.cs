@@ -47,8 +47,6 @@ public class SendChunkToClientAction : IServerTickAction
 
     public void Tick(GameServer server)
     {
-        Logging.Log(LogLevel.Debug, $"Server: Sending chunk {this.X}, {this.Y} to client {this.Connection.RemoteEndPoint}");
-
         WholeChunkPacket wcp = new WholeChunkPacket()
         {
             X = this.X,
@@ -75,8 +73,6 @@ public class TellClientToUnloadChunkAction : IServerTickAction
 
     public void Tick(GameServer server)
     {
-        Logging.Log(LogLevel.Debug, $"Server: Telling client {this.Connection.RemoteEndPoint} to unload chunk {this.X}, {this.Y}");
-
         UnloadChunkPacket wcp = new UnloadChunkPacket()
         {
             X = this.X,
@@ -133,5 +129,39 @@ public class RespondToInventoryRequestAction : IServerTickAction
 
         server.EnqueuePacket(new SetInventoryContentPacket(Packet.EntityID, inventory), this.Connection, true, false);
         Logging.Log(LogLevel.Debug, $"Server: Sent InventoryContentPacket to client {this.Connection.RemoteEndPoint}");
+    }
+}
+
+public class ExecuteSpawnEntityDefinitionsAction : IServerTickAction
+{
+    EntityDistributionDefinition Definition { get; set; }
+    Chunk Chunk { get; set; }
+
+    public ExecuteSpawnEntityDefinitionsAction(EntityDistributionDefinition definition, Chunk chunk)
+    {
+        this.Definition = definition;
+        this.Chunk = chunk;
+    }
+
+    public void Tick(GameServer server)
+    {
+        server.PerformOnECS((ecs) =>
+        {
+            if (this.Definition.Frequency > Utilities.GetRandomFloat())
+            {
+                var randomVec2 = Utilities.GetRandomVector2(0, Chunk.CHUNK_SIZE, 0, Chunk.CHUNK_SIZE);
+                var tileVec = new Vector2i((int)randomVec2.X + this.Chunk.X * Chunk.CHUNK_SIZE, (int)randomVec2.Y + this.Chunk.Y * Chunk.CHUNK_SIZE);
+                var spawnEntities = this.Definition.GetDistribution(tileVec);
+
+                foreach (var entity in spawnEntities)
+                {
+                    var e = ecs.CreateEntityFromAsset(this.Definition.EntityAsset);
+
+                    // Assume a transform exists for this entity
+                    var transform = e.GetComponent<TransformComponent>();
+                    transform.Position = new CoordinateVector(entity.TileAlignedPosition.X, entity.TileAlignedPosition.Y);
+                }
+            }
+        });
     }
 }

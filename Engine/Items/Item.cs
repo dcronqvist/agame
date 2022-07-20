@@ -35,6 +35,8 @@ public abstract class Item
         if (placingEntity.ID == _gameClient.GetPlayerEntity().ID)
         {
             // Only if the placing entity is the local player is it allowed to place entities
+            // In cases where other players or entities place entities, the server will send us the new entity instead
+            // So we should not send a request for it.
             _gameClient?.PlaceEntity(assetName, tileAlignedPos);
         }
     }

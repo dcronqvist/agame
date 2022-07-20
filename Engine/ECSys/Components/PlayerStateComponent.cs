@@ -93,8 +93,8 @@ public class PlayerStateComponent : Component
 
         this.HoldingUseItem = toC.HoldingUseItem;
         this.HoldingItem = toC.HoldingItem;
-        this.MouseTileX = toC.MouseTileX;
-        this.MouseTileY = toC.MouseTileY;
+        this.MouseTileX = (int)Math.Round(Utilities.Lerp(fromC.MouseTileX, toC.MouseTileX, amt));
+        this.MouseTileY = (int)Math.Round(Utilities.Lerp(fromC.MouseTileY, toC.MouseTileY, amt));
     }
 
     public override int Populate(byte[] data, int offset)

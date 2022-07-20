@@ -84,4 +84,12 @@ public class CoolWorldGenerator : IWorldGenerator
     {
         return Task.FromResult(this.GenerateChunk(x, y));
     }
+
+    public List<EntityDistributionDefinition> GetEntityDistributionDefinitions()
+    {
+        return new List<EntityDistributionDefinition>()
+        {
+            new EntityDistributionDefinition("default.entity.test_rock", 0.1f, 1f, "default.script.distributor_squares"),
+        };
+    }
 }

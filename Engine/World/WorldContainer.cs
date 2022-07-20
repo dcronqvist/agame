@@ -20,6 +20,7 @@ public class WorldContainer
 
     // Events
     public event EventHandler<ChunkUpdatedEventArgs> ChunkUpdated;
+    public event EventHandler<ChunkGeneratedEventArgs> ChunkGenerated;
 
     public WorldContainer(bool rendering, IWorldGenerator generator)
     {
@@ -195,6 +196,7 @@ public class WorldContainer
     public Chunk GenerateChunk(int x, int y)
     {
         Chunk chunk = this.WorldGenerator.GenerateChunk(x, y);
+        this.ChunkGenerated?.Invoke(this, new ChunkGeneratedEventArgs(chunk));
         AddChunk(x, y, chunk);
         return chunk;
     }
@@ -202,6 +204,7 @@ public class WorldContainer
     public async Task<Chunk> GenerateChunkAsync(int x, int y)
     {
         Chunk chunk = await this.WorldGenerator.GenerateChunkAsync(x, y);
+        this.ChunkGenerated?.Invoke(this, new ChunkGeneratedEventArgs(chunk));
         AddChunk(x, y, chunk);
         return chunk;
     }
@@ -310,6 +313,16 @@ public class ChunkUpdatedEventArgs : EventArgs
     public Chunk Chunk { get; set; }
 
     public ChunkUpdatedEventArgs(Chunk chunk)
+    {
+        this.Chunk = chunk;
+    }
+}
+
+public class ChunkGeneratedEventArgs : EventArgs
+{
+    public Chunk Chunk { get; set; }
+
+    public ChunkGeneratedEventArgs(Chunk chunk)
     {
         this.Chunk = chunk;
     }

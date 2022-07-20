@@ -1,5 +1,5 @@
 {
-    "extend": "default.entity.base_entity",
+    "extends": "default.entity.base_entity",
     "components": [
         {
             "componentType": "Transform",
@@ -42,7 +42,11 @@
         {
             "componentType": "Render",
             "sortByY": true,
-            "renderLayer": 0
+            "renderLayer": 0,
+            "feetOffset": {
+                "x": 16,
+                "y": 64
+            }
         }
     ]
 }

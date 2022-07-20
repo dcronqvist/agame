@@ -86,6 +86,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 {
     private UserCommand _lastSentCommand;
     private int _serverLastProcessedCommand;
+    private int _lastProcessedServerTick;
 
     private ECS _ecs;
     private WorldContainer _world;
@@ -351,6 +352,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
                 UpdateEntitiesPacket packet = rep.Dequeue();
                 this._serverLastProcessedCommand = packet.LastProcessedCommand;
+                this._lastProcessedServerTick = packet.ServerTick;
 
                 foreach (EntityUpdate update in packet.Updates)
                 {
@@ -395,6 +397,19 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                     }
                 }
 
+                // Begin by deleting entities that are part of the packet's DeleteList
+                int[] deleteEntities = packet.DeleteEntities;
+
+                foreach (int serverSideEntity in deleteEntities)
+                {
+                    //Logging.Log(LogLevel.Debug, $"Client: Deleting entity {serverSideEntity} since server told me to.");
+                    if (TryGetClientSideEntity(serverSideEntity, out Entity clientEntity))
+                    {
+                        this._ecs.DestroyEntity(clientEntity.ID);
+                        this._serverEntityIDToClientEntity.Remove(serverSideEntity);
+                    }
+                }
+
                 return false;
             });
 
@@ -424,6 +439,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         command.MouseTileY = mouseTilePos.Y;
         command.DeltaTime = GameTime.DeltaTime;
         command.PreviousButtons = this._lastSentCommand == null ? (byte)0 : this._lastSentCommand.Buttons;
+        command.LastReceivedServerTick = this._lastProcessedServerTick;
 
         if (allowInput)
         {
@@ -469,7 +485,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         Entity e = this._ecs.CreateEntityFromAsset(assetName);
         e.GetComponent<TransformComponent>().Position = new CoordinateVector(tileAlignedPos.X, tileAlignedPos.Y);
 
-        this.EnqueuePacket(new PlaceEntityPacket(assetName, tileAlignedPos, e.ID), true, false);
+        this.EnqueuePacket(new PlaceEntityPacket(assetName, tileAlignedPos, e.ID, this._lastSentCommand.CommandNumber), true, false);
         Logging.Log(LogLevel.Debug, $"Client: Placing entity default.entity.placeable with ID {e.ID}");
     }
 

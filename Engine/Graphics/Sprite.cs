@@ -21,7 +21,6 @@ namespace AGame.Engine.Graphics
             }
         }
         public float Rotation { get; set; }
-        public RectangleF CollisionBox { get; set; }
 
         [JsonConstructor]
         public Sprite()
@@ -29,7 +28,7 @@ namespace AGame.Engine.Graphics
 
         }
 
-        public Sprite(Texture2D texture, Vector2 renderScale, Vector2 origin, ColorF colorTint, RectangleF sourceRectangle, float rotation, RectangleF collisionBox)
+        public Sprite(Texture2D texture, Vector2 renderScale, Vector2 origin, ColorF colorTint, RectangleF sourceRectangle, float rotation)
         {
             Texture = texture;
             RenderScale = renderScale;
@@ -37,7 +36,6 @@ namespace AGame.Engine.Graphics
             ColorTint = colorTint;
             SourceRectangle = sourceRectangle;
             Rotation = rotation;
-            CollisionBox = collisionBox;
         }
 
         public virtual int GetWidth()
@@ -53,11 +51,6 @@ namespace AGame.Engine.Graphics
         public virtual void Update()
         {
 
-        }
-
-        public RectangleF GetCollisionBox(Vector2 position)
-        {
-            return new RectangleF(position.X + this.CollisionBox.X * RenderScale.X, position.Y + this.CollisionBox.Y * RenderScale.Y, this.CollisionBox.Width * RenderScale.X, this.CollisionBox.Height * RenderScale.Y);
         }
 
         public virtual void Render(Vector2 position, TextureRenderEffects effects = TextureRenderEffects.None)

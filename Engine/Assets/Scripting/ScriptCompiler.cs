@@ -50,7 +50,7 @@ namespace AGame.Engine.Assets.Scripting
         private static CSharpCompilation GenerateCode(string sourceCode)
         {
             var codeString = SourceText.From(sourceCode);
-            var options = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Latest);
+            var options = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Preview);
 
             var parsedSyntaxTree = SyntaxFactory.ParseSyntaxTree(codeString, options);
 

@@ -47,10 +47,9 @@ public class Tool : Item
     private float _totalTimeUsed = 0f;
     private Vector2i _startMouseTilePos;
 
-    private bool CanReach(Vector2i mouseTilePos, CoordinateVector playerPos)
+    private bool CanReach(CoordinateVector mouseTilePos, CoordinateVector playerPos)
     {
-        CoordinateVector cv = new CoordinateVector(mouseTilePos.X, mouseTilePos.Y);
-        return (cv - playerPos).Length() <= Reach;
+        return (mouseTilePos - playerPos).Length() <= Reach;
     }
 
     private CoordinateVector GetMiddleOfPlayerEntity(Entity playerEntity)
@@ -58,10 +57,10 @@ public class Tool : Item
         var transform = playerEntity.GetComponent<TransformComponent>();
         var animator = playerEntity.GetComponent<AnimatorComponent>();
 
-        var playerPos = transform.Position;
+        var playerPos = transform.Position.ToWorldVector().ToVector2();
         var vec2Offset = animator.GetAnimator().GetCurrentAnimation().GetMiddleOfCurrentFrameScaled();
 
-        return playerPos + (new CoordinateVector(vec2Offset.X, vec2Offset.Y));
+        return new CoordinateVector(playerPos.X + vec2Offset.X, playerPos.Y + vec2Offset.Y) / TileGrid.TILE_SIZE;
     }
 
     public override void OnHoldLeftClick(Entity playerEntity, Vector2i mouseTilePos, ECS ecs, float deltaTime)
@@ -73,15 +72,14 @@ public class Tool : Item
         }
         else
         {
-            AnimatorComponent ac = playerEntity.GetComponent<AnimatorComponent>();
-            Vector2 offset = ac.GetAnimator().GetCurrentAnimation().GetMiddleOfCurrentFrameScaled() / 2f;
-            CoordinateVector playerPos = playerEntity.GetComponent<TransformComponent>().Position + new CoordinateVector(offset.X / TileGrid.TILE_SIZE, offset.Y / TileGrid.TILE_SIZE);
-            CoordinateVector cv = new CoordinateVector(mouseTilePos.X, mouseTilePos.Y);
+            var playerPos = GetMiddleOfPlayerEntity(playerEntity);
+            var cv = new CoordinateVector(mouseTilePos.X, mouseTilePos.Y);
+            var middleOfTilePos = cv + new CoordinateVector(0.5f, 0.5f);
 
-            if (this.CanReach(mouseTilePos, playerPos) && this.OnUse.CanUse(this, playerEntity, new CoordinateVector(mouseTilePos.X, mouseTilePos.Y), ecs))
+            if (this.CanReach(middleOfTilePos, playerPos) && this.OnUse.CanUse(this, playerEntity, middleOfTilePos, ecs))
             {
                 _totalTimeUsed += deltaTime;
-                bool done = this.OnUse.UseTool(this, playerEntity, cv, ecs, deltaTime, this._totalTimeUsed);
+                bool done = this.OnUse.UseTool(this, playerEntity, middleOfTilePos, ecs, deltaTime, this._totalTimeUsed);
                 if (done)
                 {
                     this._totalTimeUsed = 0f;
@@ -101,18 +99,14 @@ public class Tool : Item
 
     public override void OnHoldLeftClickRender(Entity playerEntity, Vector2i mouseWorldPosition, ECS ecs)
     {
-        if (this.CanReach(mouseWorldPosition, playerEntity.GetComponent<TransformComponent>().Position) && this.OnUse.CanUse(this, playerEntity, new CoordinateVector(mouseWorldPosition.X, mouseWorldPosition.Y), ecs))
+        var playerPos = GetMiddleOfPlayerEntity(playerEntity);
+        var playerPos2 = playerPos.ToWorldVector().ToVector2();
+        var cv = new CoordinateVector(mouseWorldPosition.X, mouseWorldPosition.Y);
+        var middleOfTilePos = cv + new CoordinateVector(0.5f, 0.5f);
+
+        if (this.CanReach(middleOfTilePos, playerPos) && this.OnUse.CanUse(this, playerEntity, middleOfTilePos, ecs))
         {
-            var animator = playerEntity.GetComponent<AnimatorComponent>();
-            var animationOffset = animator.GetAnimator().GetCurrentAnimation().GetMiddleOfCurrentFrameScaled();
-
-            CoordinateVector playerPos = playerEntity.GetComponent<TransformComponent>().Position;
-            CoordinateVector mousePos = new CoordinateVector(mouseWorldPosition.X, mouseWorldPosition.Y);
-
-            Vector2 playerPos2 = playerPos.ToWorldVector().ToVector2() + animationOffset;
-            Vector2 mousePos2 = mousePos.ToWorldVector().ToVector2() + new Vector2(TileGrid.TILE_SIZE, TileGrid.TILE_SIZE) / 2f;
-
-            Renderer.Primitive.RenderLine(playerPos2, mousePos2, 2, ColorF.Green * 0.5f);
+            Renderer.Primitive.RenderLine(playerPos2, middleOfTilePos.ToWorldVector().ToVector2(), 2, ColorF.Green * 0.5f);
 
             base.OnHoldLeftClickRender(playerEntity, mouseWorldPosition, ecs);
         }

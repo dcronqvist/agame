@@ -38,7 +38,7 @@ public class RenderSystem : BaseSystem
             List<Entity> sortedEntities = layerEntities.Where(e => e.GetComponent<RenderComponent>().SortByY).ToList();
 
             // Sort by y position
-            sortedEntities = sortedEntities.OrderBy(e => e.GetComponent<TransformComponent>().Position.Y).ToList();
+            sortedEntities = sortedEntities.OrderBy(e => (e.GetComponent<TransformComponent>().Position.ToWorldVector().ToVector2() + e.GetComponent<RenderComponent>().FeetOffset).Y).ToList();
 
             // Render all entities with sortByY set to true
             foreach (Entity entity in sortedEntities)
@@ -92,11 +92,6 @@ public class RenderSystem : BaseSystem
             if (state.HoldingItem != "")
             {
                 var item = ItemManager.GetItem(state.HoldingItem);
-
-                //Vector2 itemPos = (transform.Position + new CoordinateVector(0.5f, -0.5f)).ToWorldVector().ToVector2();
-
-                //Renderer.Texture.Render(item.Texture, itemPos, new Vector2(1, 1), 0f, ColorF.White);
-
                 if (state.HoldingUseItem)
                 {
                     Renderer.Text.RenderText(ModManager.GetAsset<Font>("default.font.rainyhearts"), "using...", transform.Position.ToWorldVector().ToVector2(), 1f, ColorF.DeepBlue, Renderer.Camera);
@@ -107,10 +102,12 @@ public class RenderSystem : BaseSystem
                     item.OnReleaseLeftClickRender(entity, new Vector2i(state.MouseTileX, state.MouseTileY), ParentECS);
                 }
             }
+        }
 
-            // RectangleF rect = new RectangleF(state.MouseTileX * TileGrid.TILE_SIZE, state.MouseTileY * TileGrid.TILE_SIZE, TileGrid.TILE_SIZE, TileGrid.TILE_SIZE);
-
-            // Renderer.Primitive.RenderRectangle(rect, ColorF.DeepBlue);
+        if (entity.HasComponent<SpriteComponent>())
+        {
+            var sprite = entity.GetComponent<SpriteComponent>();
+            sprite.GetSprite().Render(transform.Position.ToWorldVector().ToVector2());
         }
     }
 }

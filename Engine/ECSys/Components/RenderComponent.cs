@@ -1,3 +1,4 @@
+using System.Numerics;
 using AGame.Engine.Networking;
 using AGame.Engine.World;
 
@@ -34,6 +35,20 @@ public class RenderComponent : Component
         }
     }
 
+    private Vector2 _feetOffset;
+    public Vector2 FeetOffset
+    {
+        get => _feetOffset;
+        set
+        {
+            if (_feetOffset != value)
+            {
+                _feetOffset = value;
+                this.NotifyPropertyChanged();
+            }
+        }
+    }
+
     public override void ApplyInput(Entity parentEntity, UserCommand command, WorldContainer world, ECS ecs)
     {
 
@@ -44,13 +59,14 @@ public class RenderComponent : Component
         return new RenderComponent()
         {
             SortByY = this.SortByY,
-            RenderLayer = this.RenderLayer
+            RenderLayer = this.RenderLayer,
+            FeetOffset = this.FeetOffset
         };
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(this.SortByY, this.RenderLayer);
+        return HashCode.Combine(this.SortByY, this.RenderLayer, this.FeetOffset);
     }
 
     public override void InterpolateProperties(Component from, Component to, float amt)
@@ -58,6 +74,7 @@ public class RenderComponent : Component
         var toC = (RenderComponent)to;
         this.SortByY = toC.SortByY;
         this.RenderLayer = toC.RenderLayer;
+        this.FeetOffset = toC.FeetOffset;
     }
 
     public override int Populate(byte[] data, int offset)
@@ -67,6 +84,8 @@ public class RenderComponent : Component
         offset += sizeof(bool);
         this.RenderLayer = data[offset];
         offset += sizeof(byte);
+        this.FeetOffset = new Vector2(BitConverter.ToSingle(data, offset), BitConverter.ToSingle(data, offset + sizeof(float)));
+        offset += sizeof(float) * 2;
         return offset - start;
     }
 
@@ -75,6 +94,8 @@ public class RenderComponent : Component
         List<byte> bytes = new List<byte>();
         bytes.AddRange(BitConverter.GetBytes(this.SortByY));
         bytes.Add(this.RenderLayer);
+        bytes.AddRange(BitConverter.GetBytes(this.FeetOffset.X));
+        bytes.AddRange(BitConverter.GetBytes(this.FeetOffset.Y));
         return bytes.ToArray();
     }
 
@@ -88,5 +109,6 @@ public class RenderComponent : Component
         var newC = (RenderComponent)newComponent;
         this.SortByY = newC.SortByY;
         this.RenderLayer = newC.RenderLayer;
+        this.FeetOffset = newC.FeetOffset;
     }
 }

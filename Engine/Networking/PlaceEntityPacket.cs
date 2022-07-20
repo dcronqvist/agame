@@ -9,17 +9,19 @@ public class PlaceEntityPacket : Packet
     public string EntityAssetName { get; set; }
     public Vector2i TileAlignedPosition { get; set; }
     public int ClientSideEntityID { get; set; }
+    public int ClientCommandID { get; set; }
 
     public PlaceEntityPacket()
     {
 
     }
 
-    public PlaceEntityPacket(string entityAssetName, Vector2i tileAlignedPos, int clientSideEntityID)
+    public PlaceEntityPacket(string entityAssetName, Vector2i tileAlignedPos, int clientSideEntityID, int commandID)
     {
         this.EntityAssetName = entityAssetName;
         this.TileAlignedPosition = tileAlignedPos;
         this.ClientSideEntityID = clientSideEntityID;
+        this.ClientCommandID = commandID;
     }
 }
 

@@ -8,22 +8,20 @@ public class UpdateEntitiesPacket : Packet
 {
     public int LastProcessedCommand { get; set; }
     public EntityUpdate[] Updates { get; set; }
+    public int[] DeleteEntities { get; set; }
+    public int ServerTick { get; set; }
 
     public UpdateEntitiesPacket()
     {
 
     }
 
-    public UpdateEntitiesPacket(int lastProcessedCommand, params EntityUpdate[] updates)
+    public UpdateEntitiesPacket(int lastProcessedCommand, int serverTick, int[] deleteEntities, params EntityUpdate[] updates)
     {
         this.Updates = updates;
         this.LastProcessedCommand = lastProcessedCommand;
-    }
-
-    public UpdateEntitiesPacket(params EntityUpdate[] updates)
-    {
-        this.Updates = updates;
-        this.LastProcessedCommand = 0;
+        this.DeleteEntities = deleteEntities;
+        this.ServerTick = serverTick;
     }
 }
 
