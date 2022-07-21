@@ -7,19 +7,19 @@ public static class ItemManager
 {
     private static Dictionary<string, Item> _items = new Dictionary<string, Item>();
 
-    public static void Initialize(GameClient gameClient)
+    public static void Initialize(GameServer gameServer, GameClient gameClient)
     {
         var descriptions = ModManager.GetAssetsOfType<ItemDescription>();
 
         foreach (var description in descriptions)
         {
-            RegisterItem(description, gameClient);
+            RegisterItem(description, gameServer, gameClient);
         }
     }
 
-    private static void RegisterItem(ItemDescription description, GameClient gameClient)
+    private static void RegisterItem(ItemDescription description, GameServer gameServer, GameClient gameClient)
     {
-        var item = description.CreateItem(gameClient);
+        var item = description.CreateItem(gameServer, gameClient);
         _items.Add(description.Name, item);
     }
 

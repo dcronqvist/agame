@@ -63,11 +63,34 @@ public class PlayerStateComponent : Component
         }
     }
 
+    private float _itemUsedTime;
+    public float ItemUsedTime
+    {
+        get => _itemUsedTime;
+        set
+        {
+            if (_itemUsedTime != value)
+            {
+                _itemUsedTime = value;
+                this.NotifyPropertyChanged();
+            }
+        }
+    }
+
     public override void ApplyInput(Entity parentEntity, UserCommand command, WorldContainer world, ECS ecs)
     {
         this.HoldingUseItem = command.IsInputDown(UserCommand.USE_ITEM);
         this.MouseTileX = command.MouseTileX;
         this.MouseTileY = command.MouseTileY;
+
+        if (this.HoldingUseItem)
+        {
+            this.ItemUsedTime += command.DeltaTime;
+        }
+        else
+        {
+            this.ItemUsedTime = 0;
+        }
     }
 
     public override Component Clone()
@@ -95,6 +118,7 @@ public class PlayerStateComponent : Component
         this.HoldingItem = toC.HoldingItem;
         this.MouseTileX = (int)Math.Round(Utilities.Lerp(fromC.MouseTileX, toC.MouseTileX, amt));
         this.MouseTileY = (int)Math.Round(Utilities.Lerp(fromC.MouseTileY, toC.MouseTileY, amt));
+        this.ItemUsedTime = Utilities.Lerp(fromC.ItemUsedTime, toC.ItemUsedTime, amt);
     }
 
     public override int Populate(byte[] data, int offset)
@@ -110,6 +134,8 @@ public class PlayerStateComponent : Component
         offset += sizeof(int);
         this.MouseTileY = BitConverter.ToInt32(data, offset);
         offset += sizeof(int);
+        this.ItemUsedTime = BitConverter.ToSingle(data, offset);
+        offset += sizeof(float);
         return offset - start;
     }
 
@@ -121,6 +147,7 @@ public class PlayerStateComponent : Component
         bytes.AddRange(Encoding.UTF8.GetBytes(this.HoldingItem));
         bytes.AddRange(BitConverter.GetBytes(this.MouseTileX));
         bytes.AddRange(BitConverter.GetBytes(this.MouseTileY));
+        bytes.AddRange(BitConverter.GetBytes(this.ItemUsedTime));
         return bytes.ToArray();
     }
 
@@ -136,5 +163,6 @@ public class PlayerStateComponent : Component
         this.HoldingItem = newC.HoldingItem;
         this.MouseTileX = newC.MouseTileX;
         this.MouseTileY = newC.MouseTileY;
+        this.ItemUsedTime = newC.ItemUsedTime;
     }
 }

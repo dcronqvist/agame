@@ -65,6 +65,11 @@ public class ECS
         this.RegisterAllSystems();
     }
 
+    public bool IsRunner(SystemRunner runner)
+    {
+        return this._runner == runner;
+    }
+
     public void SetInterpolationTime(float time)
     {
         this.InterpolationTime = time;

@@ -95,11 +95,7 @@ public class RenderSystem : BaseSystem
                 if (state.HoldingUseItem)
                 {
                     Renderer.Text.RenderText(ModManager.GetAsset<Font>("default.font.rainyhearts"), "using...", transform.Position.ToWorldVector().ToVector2(), 1f, ColorF.DeepBlue, Renderer.Camera);
-                    item.OnHoldLeftClickRender(entity, new Vector2i(state.MouseTileX, state.MouseTileY), ParentECS);
-                }
-                else
-                {
-                    item.OnReleaseLeftClickRender(entity, new Vector2i(state.MouseTileX, state.MouseTileY), ParentECS);
+                    item.OnHoldLeftClickRender(entity, new Vector2i(state.MouseTileX, state.MouseTileY), ParentECS, state.ItemUsedTime);
                 }
             }
         }
@@ -108,6 +104,15 @@ public class RenderSystem : BaseSystem
         {
             var sprite = entity.GetComponent<SpriteComponent>();
             sprite.GetSprite().Render(transform.Position.ToWorldVector().ToVector2());
+        }
+
+        if (entity.HasComponent<GroundItemComponent>())
+        {
+            var itemComponent = entity.GetComponent<GroundItemComponent>();
+            var itemID = itemComponent.Item;
+            var item = ItemManager.GetItem(itemID);
+
+            Renderer.Texture.Render(item.Texture, transform.Position.ToWorldVector().ToVector2(), Vector2.One * 2f, 0f, ColorF.White);
         }
     }
 }

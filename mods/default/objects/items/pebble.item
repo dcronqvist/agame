@@ -1,0 +1,6 @@
+{
+    "itemName": "Pebble",
+    "texture": "default.tex.pebble",
+    "itemType": "resource",
+    "maxStack": 1
+}

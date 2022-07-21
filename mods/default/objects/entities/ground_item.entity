@@ -1,0 +1,29 @@
+{
+    "extends": "default.entity.base_entity",
+    "components": [
+        {
+            "componentType": "Collider",
+            "transformOffset": {
+                "x": 8,
+                "y": 8
+            },
+            "box": {
+                "width": 16,
+                "height": 16
+            },
+            "solid": false
+        },
+        {
+            "componentType": "Render",
+            "sortByY": true,
+            "renderLayer": 1,
+            "feetOffset": {
+                "x": 16,
+                "y": 32
+            }
+        },
+        {
+            "componentType": "GroundItem"
+        }
+    ]
+}

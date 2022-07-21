@@ -46,6 +46,17 @@
                 "height": 16
             },
             "rotation": 0
+        },
+        {
+            "componentType": "Harvestable",
+            "tags": ["rock"],
+            "yields": [
+                {
+                    "minAmount": 2,
+                    "maxAmount": 4,
+                    "item": "default.item.pebble"
+                }
+            ]
         }
     ]
 }

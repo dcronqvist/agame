@@ -5,27 +5,42 @@ using AGame.Engine.ECSys;
 using AGame.Engine.ECSys.Components;
 using AGame.Engine.Items;
 using AGame.Engine.World;
+using System.Linq;
 
 namespace DefaultMod
 {
     [ScriptClass(Name = "no_use_tool")] // default.script.no_use_tool
     public class NoUseTool : IUseTool
     {
-        public bool CanUse(Tool tool, Entity playerEntity, CoordinateVector mouseWorldPosition, ECS ecs)
+        public bool CanUse(Tool tool, Entity playerEntity, Vector2i mouseWorldPosition, ECS ecs)
         {
             return true;
         }
 
-        public bool UseTool(Tool tool, Entity playerEntity, CoordinateVector mouseWorldPosition, ECS ecs, float deltaTime, float totalTimeUsed)
+        public void UseTool(Tool tool, Entity playerEntity, Vector2i mouseWorldPosition, ECS ecs)
         {
-            if (totalTimeUsed > 0.3f)
-            {
-                tool.PlaceEntity(playerEntity, "default.entity.test_rock", mouseWorldPosition.ToTileAligned());
+            Logging.Log(LogLevel.Debug, $"no_use_tool used");
+        }
+    }
 
-                Logging.Log(LogLevel.Debug, $"no_use_tool created entity");
-                return true;
-            }
-            return false;
+    [ScriptClass(Name = "rock_tool")] // default.script.rock_tool
+    public class HarvestRockTool : IUseTool
+    {
+        public bool CanUse(Tool tool, Entity playerEntity, Vector2i mouseWorldPosition, ECS ecs)
+        {
+            return true;
+        }
+
+        public void UseTool(Tool tool, Entity playerEntity, Vector2i mouseWorldPosition, ECS ecs)
+        {
+            // Do nothing though
+            Logging.Log(LogLevel.Debug, $"HarvestRockTool used tool");
+
+            tool.CreateEntity("default.entity.ground_item", ecs, (e) =>
+            {
+                e.GetComponent<TransformComponent>().Position = new CoordinateVector(mouseWorldPosition.X, mouseWorldPosition.Y) + new CoordinateVector(1, 1);
+                e.GetComponent<GroundItemComponent>().Item = "default.item.pebble";
+            });
         }
     }
 }

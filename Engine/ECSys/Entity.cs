@@ -67,6 +67,8 @@ public class Entity
         {
             c.ApplyInput(this, command, world, ecs);
         }
+
+        command.HasBeenRun = true;
     }
 
     public void InterpolateComponents(float interpolationTime)

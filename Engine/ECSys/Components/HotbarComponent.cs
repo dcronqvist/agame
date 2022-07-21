@@ -25,6 +25,20 @@ public class HotbarComponent : Component
         }
     }
 
+    private float _useTime;
+    public float UseTime
+    {
+        get => _useTime;
+        set
+        {
+            if (_useTime != value)
+            {
+                _useTime = value;
+                this.NotifyPropertyChanged();
+            }
+        }
+    }
+
     public override void ApplyInput(Entity parentEntity, UserCommand command, WorldContainer world, ECS ecs)
     {
         int scrollDir = command.IsInputDown(UserCommand.MOUSE_SCROLL_DOWN) ? 1 : 0;
@@ -42,6 +56,21 @@ public class HotbarComponent : Component
         else if (this.SelectedSlot >= inventoryComponent.Width)
         {
             this.SelectedSlot = 0;
+        }
+
+        InventorySlot slot = inventoryComponent.GetInventory().GetSlot(this.SelectedSlot, 2);
+        var state = parentEntity.GetComponent<PlayerStateComponent>();
+
+        if (slot != null)
+        {
+            if (command.IsInputDown(UserCommand.USE_ITEM))
+            {
+                bool working = slot.GetItem().OnHoldLeftClick(command, parentEntity, new Vector2i(state.MouseTileX, state.MouseTileY), ecs, command.DeltaTime, state.ItemUsedTime);
+                if (!working)
+                {
+                    state.ItemUsedTime = 0;
+                }
+            }
         }
     }
 

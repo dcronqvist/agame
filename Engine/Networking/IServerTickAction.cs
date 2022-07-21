@@ -83,32 +83,6 @@ public class TellClientToUnloadChunkAction : IServerTickAction
     }
 }
 
-public class PlaceEntityAction : IServerTickAction
-{
-    public Connection Connection { get; set; }
-    public PlaceEntityPacket Packet { get; set; }
-
-    public PlaceEntityAction(PlaceEntityPacket packet, Connection connection)
-    {
-        this.Packet = packet;
-        this.Connection = connection;
-    }
-
-    public void Tick(GameServer server)
-    {
-        server.PerformOnECS((ecs) =>
-        {
-            Entity entity = ecs.CreateEntityFromAsset(this.Packet.EntityAssetName);
-            // Assume entity to have a Transform component
-
-            var transform = entity.GetComponent<TransformComponent>();
-            transform.Position = new CoordinateVector(this.Packet.TileAlignedPosition.X, this.Packet.TileAlignedPosition.Y);
-
-            server.EnqueuePacket(new PlaceEntityAcceptPacket(Packet.ClientSideEntityID, entity.ID), this.Connection, true, false);
-        });
-    }
-}
-
 public class RespondToInventoryRequestAction : IServerTickAction
 {
     Connection Connection { get; set; }
@@ -162,6 +136,45 @@ public class ExecuteSpawnEntityDefinitionsAction : IServerTickAction
                     transform.Position = new CoordinateVector(entity.TileAlignedPosition.X, entity.TileAlignedPosition.Y);
                 }
             }
+        });
+    }
+}
+
+public class HarvestEntityAction : IServerTickAction
+{
+    public int EntityID { get; set; }
+
+    public HarvestEntityAction(int entityId)
+    {
+        this.EntityID = entityId;
+    }
+
+    public void Tick(GameServer server)
+    {
+        server.PerformOnECS((ecs) =>
+        {
+            var entity = ecs.GetEntityFromID(EntityID);
+            var transform = entity.GetComponent<TransformComponent>();
+            var harvestable = entity.GetComponent<HarvestableComponent>();
+
+            foreach (var yield in harvestable.Yields)
+            {
+                var item = yield.Item;
+
+                int amount = Utilities.GetRandomInt(yield.MinAmount, yield.MaxAmount);
+
+                for (int i = 0; i < amount; i++)
+                {
+                    var newEntity = ecs.CreateEntityFromAsset("default.entity.ground_item");
+
+                    var newPos = transform.Position + new CoordinateVector(Utilities.GetRandomFloat(-2f, 2f), Utilities.GetRandomFloat(-2f, 2f));
+
+                    newEntity.GetComponent<TransformComponent>().Position = newPos;
+                    newEntity.GetComponent<GroundItemComponent>().Item = item;
+                }
+            }
+
+            ecs.DestroyEntity(entity.ID);
         });
     }
 }

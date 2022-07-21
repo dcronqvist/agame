@@ -23,6 +23,9 @@ public class UserCommand : Packet
     public int MouseTileX { get; set; }
     public int MouseTileY { get; set; }
 
+    [PacketPropIgnore]
+    public bool HasBeenRun { get; set; }
+
     public UserCommand()
     {
 
@@ -302,16 +305,11 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             Task.Run(() => new SendChunkToClientAction(connection, packet.X, packet.Y).Tick(this));
         });
 
-        base.AddPacketHandler<PlaceEntityPacket>((packet, connection) =>
-        {
-            Logging.Log(LogLevel.Debug, $"Server: Received entity placement from {connection.RemoteEndPoint} for {packet.EntityAssetName}");
-            this.PerformActionNextTick(new PlaceEntityAction(packet, connection));
-        });
-
         base.AddPacketHandler<RequestInventoryContentPacket>((packet, connection) =>
         {
             this.PerformActionNextTick(new RespondToInventoryRequestAction(packet, connection));
         });
+
     }
 
     private void SendChunksToClient(Connection connection)

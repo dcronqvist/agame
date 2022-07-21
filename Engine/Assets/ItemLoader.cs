@@ -57,6 +57,8 @@ public class ItemConverter : JsonConverter<ItemDescription>
                 return document.Deserialize<EquipableDescription>(opts);
             case ItemType.Placeable:
                 return document.Deserialize<PlaceableDescription>(opts);
+            case ItemType.Resource:
+                return document.Deserialize<ResourceDescription>(opts);
         }
 
         return null;

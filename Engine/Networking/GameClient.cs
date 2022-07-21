@@ -257,13 +257,6 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             this._nextTickActions.LockedAction((q) => q.Enqueue(new ClientUpdateChunkAction(packet.X, packet.Y, packet.Chunk)));
         });
 
-        base.AddPacketHandler<PlaceEntityAcceptPacket>((packet) =>
-        {
-            Entity clientSide = this._ecs.GetEntityFromID(packet.ClientSideEntityID);
-            this._serverEntityIDToClientEntity.Add(packet.ServerSideEntityID, clientSide);
-            Logging.Log(LogLevel.Debug, $"Client: Server accepted entity {packet.ClientSideEntityID} and gave it ID {packet.ServerSideEntityID}");
-        });
-
         base.AddPacketHandler<SetInventoryContentPacket>((packet) =>
         {
             Logging.Log(LogLevel.Debug, $"Client: Received inventory content packet");
@@ -478,15 +471,6 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             playerEntity.ApplyInput(command, this._world, this._ecs);
             this._pendingCommands.Add(command);
         }
-    }
-
-    public void PlaceEntity(string assetName, Vector2i tileAlignedPos)
-    {
-        Entity e = this._ecs.CreateEntityFromAsset(assetName);
-        e.GetComponent<TransformComponent>().Position = new CoordinateVector(tileAlignedPos.X, tileAlignedPos.Y);
-
-        this.EnqueuePacket(new PlaceEntityPacket(assetName, tileAlignedPos, e.ID, this._lastSentCommand.CommandNumber), true, false);
-        Logging.Log(LogLevel.Debug, $"Client: Placing entity default.entity.placeable with ID {e.ID}");
     }
 
     public void Update(bool allowInput, Vector2i mouseTilePos)

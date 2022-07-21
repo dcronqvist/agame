@@ -4,6 +4,7 @@
     "itemType": "tool",
     "maxStack": 1,
     "durability": 1000,
-    "onUse": "default.script.no_use_tool",
-    "reach": 2
+    "onUse": "default.script.rock_tool",
+    "reach": 2,
+    "useTime": 2.0
 }
