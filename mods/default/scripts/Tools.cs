@@ -38,9 +38,11 @@ namespace DefaultMod
 
             tool.CreateEntity("default.entity.ground_item", ecs, (e) =>
             {
-                e.GetComponent<TransformComponent>().Position = new CoordinateVector(mouseWorldPosition.X, mouseWorldPosition.Y) + new CoordinateVector(1, 1);
+                e.GetComponent<TransformComponent>().Position = new CoordinateVector(mouseWorldPosition.X, mouseWorldPosition.Y);
                 e.GetComponent<GroundItemComponent>().Item = "default.item.pebble";
             });
+
+            tool.PlayAudio("default.audio.click", ecs, 1f);
         }
     }
 }

@@ -9,6 +9,7 @@ public static class ItemManager
 
     public static void Initialize(GameServer gameServer, GameClient gameClient)
     {
+        _items.Clear();
         var descriptions = ModManager.GetAssetsOfType<ItemDescription>();
 
         foreach (var description in descriptions)

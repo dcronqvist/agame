@@ -6,13 +6,14 @@ using System.Numerics;
 using System.Reflection;
 using System.Text;
 using AGame.Engine.ECSys;
+using AGame.Engine.Items;
 using AGame.Engine.Networking;
 using AGame.Engine.World;
 using GameUDPProtocol;
 
 namespace AGame.Engine
 {
-    static class Utilities
+    public static class Utilities
     {
         static Random RNG;
 
@@ -331,6 +332,32 @@ namespace AGame.Engine
             }
 
             return null;
+        }
+
+        public static CoordinateVector ToCoordinateVector(this Vector2 v)
+        {
+            return new CoordinateVector(v.X, v.Y) / TileGrid.TILE_SIZE;
+        }
+
+        public static bool Contains(this RectangleF rec, Vector2 v)
+        {
+            return rec.Contains(v.X, v.Y);
+        }
+
+        public static Vector2 Max(Vector2 a, Vector2 b)
+        {
+            return new Vector2(Math.Max(a.X, b.X), Math.Max(a.Y, b.Y));
+        }
+
+        public static IEnumerable<ContainerSlot> CreateSlotGrid(int spacing, int columns, int rows)
+        {
+            for (int y = 0; y < rows; y++)
+            {
+                for (int x = 0; x < columns; x++)
+                {
+                    yield return new ContainerSlot(new Vector2(x * (ContainerSlot.WIDTH + spacing) + spacing, y * (ContainerSlot.HEIGHT + spacing) + spacing));
+                }
+            }
         }
 
         public static List<EntityUpdate> GetPackedEntityUpdatesMaxByteSize(IByteEncoder encoder, List<(Entity, Component)> updates, int maxByteSize, out List<(Entity, Component)> usedUpdates)

@@ -65,12 +65,12 @@ public class EquipableDescription : ItemDescription
 
 public class PlaceableDescription : ItemDescription
 {
-    public string PlaceEntity { get; set; }
+    public string PlacesEntity { get; set; }
     public bool ConsumesOnPlace { get; set; }
 
     public override Item CreateItem(GameServer gameServer, GameClient gameClient)
     {
-        return new Placeable(this.Name, ItemName, ModManager.GetAsset<Texture2D>(Texture), ItemType, MaxStack, PlaceEntity, ConsumesOnPlace, gameServer, gameClient);
+        return new Placeable(this.Name, ItemName, ModManager.GetAsset<Texture2D>(Texture), ItemType, MaxStack, PlacesEntity, ConsumesOnPlace, gameServer, gameClient);
     }
 }
 

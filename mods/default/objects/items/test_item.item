@@ -1,6 +1,6 @@
 {
     "itemName": "Item Name",
-    "texture": "default.tex.chest",
+    "texture": "default.tex.test_item",
     "itemType": "tool",
     "maxStack": 1,
     "durability": 1000,

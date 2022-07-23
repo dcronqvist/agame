@@ -32,7 +32,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
     List<Packet> _receivedPackets = new List<Packet>();
 
     bool _paused = false;
-    bool _showingInventory = false;
+    ContainerInteractionGUI _currentContainerInteraction;
 
     public override void Initialize()
     {
@@ -70,6 +70,8 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
                 ScreenManager.GoToScreen<ScreenMainMenu, EnterMainMenuArgs>(new EnterMainMenuArgs());
             });
         };
+
+        _currentContainerInteraction = null;
     }
 
     public override async void OnLeave()
@@ -142,12 +144,51 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             var offset = animator.GetAnimator().GetCurrentAnimation().GetMiddleOfCurrentFrameScaled();
 
             this.SetCameraPosition(position + new CoordinateVector(offset.X / TileGrid.TILE_SIZE, offset.Y / TileGrid.TILE_SIZE), false);
-            this.RenderPlayerHotbar();
+
+            this.RenderHotbar(this._client.GetPlayerEntity());
         }
 
-        if (_showingInventory)
+        _currentContainerInteraction?.Render(0f);
+    }
+
+    private void RenderHotbar(Entity playerEntity)
+    {
+        var container = playerEntity.GetComponent<ContainerComponent>();
+        var hotbar = playerEntity.GetComponent<HotbarComponent>();
+
+        var slots = container.GetContainer().GetSlots(hotbar.ContainerSlots.ToArray()).ToList();
+
+        var width = slots.Count * (ContainerSlot.WIDTH + 5);
+        var middleOfScreen = DisplayManager.GetWindowSizeInPixels() / 2f;
+
+        var bottomMiddle = new Vector2(middleOfScreen.X, DisplayManager.GetWindowSizeInPixels().Y);
+        var hotbarTopLeft = new Vector2(bottomMiddle.X - width / 2f, bottomMiddle.Y - ContainerSlot.HEIGHT - 10);
+
+        var selectedSlot = hotbar.SelectedSlot;
+
+        var font = ModManager.GetAsset<Font>("default.font.rainyhearts");
+
+        for (int i = 0; i < slots.Count; i++)
         {
-            this.RenderPlayerInventory();
+            var slot = slots[i];
+
+            var color = ColorF.Black;
+
+            if (i == selectedSlot)
+            {
+                Renderer.Primitive.RenderRectangle(new RectangleF(hotbarTopLeft.X + i * (ContainerSlot.WIDTH + 5), hotbarTopLeft.Y, ContainerSlot.WIDTH + 10, ContainerSlot.HEIGHT + 10), ColorF.LightGray * 0.8f);
+            }
+
+            Renderer.Primitive.RenderRectangle(new RectangleF(hotbarTopLeft.X + i * (ContainerSlot.WIDTH + 5) + 5, hotbarTopLeft.Y + 5, ContainerSlot.WIDTH, ContainerSlot.HEIGHT), color * 0.6f);
+
+            if (slot.Item != null && slot.Item != "")
+            {
+                var item = slot.GetItem();
+
+                Renderer.Texture.Render(item.Texture, new Vector2(hotbarTopLeft.X + i * (ContainerSlot.WIDTH + 5) + 5, hotbarTopLeft.Y + 5), Vector2.One * 4f, 0f, ColorF.White);
+
+                Renderer.Text.RenderText(font, slot.Count.ToString(), new Vector2(hotbarTopLeft.X + i * (ContainerSlot.WIDTH + 5) + 5, hotbarTopLeft.Y + 5) + new Vector2(ContainerSlot.WIDTH / 1.5f - 4, ContainerSlot.HEIGHT / 2f), 2f, ColorF.White, Renderer.Camera);
+            }
         }
     }
 
@@ -159,7 +200,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
         //this._server?.Update();
         Vector2 pos = Input.GetMousePosition(this.Camera);
         WorldVector wv = new WorldVector(pos.X, pos.Y);
-        this._client.Update(!this._paused && !this._showingInventory, wv.ToCoordinateVector().ToTileAligned());
+        this._client.Update(!this._paused && this._currentContainerInteraction == null, wv.ToCoordinateVector().ToTileAligned());
 
         if (Input.IsKeyPressed(GLFW.Keys.Escape))
         {
@@ -168,39 +209,34 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
 
         if (Input.IsKeyPressed(GLFW.Keys.E))
         {
-            if (!this._showingInventory)
+            if (this._currentContainerInteraction == null)
             {
-                this._client.RequestPlayerInventory();
-                this._showingInventory = true;
+                var playerContainer = this._client.GetPlayerEntity().GetComponent<ContainerComponent>();
+                //this._currentContainerInteraction = new ContainerInteractionGUI(this._client.GetPlayerEntity(), (playerContainer.GetContainer(), this._client.GetPlayerEntity().ID, Vector2.One * 200));
             }
             else
             {
-                this._showingInventory = false;
+                this._currentContainerInteraction = null;
             }
         }
-    }
 
-    public void RenderPlayerInventory()
-    {
-        Entity player = this._client.GetPlayerEntity();
-        Inventory inventory = player.GetComponent<InventoryComponent>().GetInventory();
+        if (this._client.ReceivedEntityOpenContainer != -1)
+        {
+            this._currentContainerInteraction = new ContainerInteractionGUI(this._client.GetPlayerEntity(), this._client.GetECS().GetEntityFromID(this._client.ReceivedEntityOpenContainer));
+            this._client.ReceivedEntityOpenContainer = -1;
+        }
 
-        Vector2 middleOfScreen = DisplayManager.GetWindowSizeInPixels() / 2f;
-        Vector2 inventorySize = inventory.GetRenderSize();
+        this._currentContainerInteraction?.UpdateInteract(this._client, 0f);
 
-        inventory.Render(middleOfScreen - inventorySize / 2f);
-    }
+        if (Input.IsKeyPressed(GLFW.Keys.F))
+        {
+            if (this._currentContainerInteraction != null)
+            {
+                this._client.CloseCurrentContainer();
+            }
 
-    public void RenderPlayerHotbar()
-    {
-        Entity player = this._client.GetPlayerEntity();
-        HotbarComponent hotbar = player.GetComponent<HotbarComponent>();
-        Inventory inventory = player.GetComponent<InventoryComponent>().GetInventory();
-
-        float inventoryWidth = inventory.GetRenderSize().X;
-        Vector2 middleOfScreen = new Vector2(DisplayManager.GetWindowSizeInPixels().X / 2f - inventoryWidth / 2f, DisplayManager.GetWindowSizeInPixels().Y - 74);
-
-        hotbar.Render(middleOfScreen, inventory);
+            this._client.RequestOpenContainer(Utilities.ChooseUniform(this._client.GetECS().GetAllEntities(e => e.HasComponent<PlayerStateComponent>()).ToArray()).ID);
+        }
     }
 
     public async Task ExitWorld()

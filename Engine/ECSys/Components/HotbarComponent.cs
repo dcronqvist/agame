@@ -25,15 +25,15 @@ public class HotbarComponent : Component
         }
     }
 
-    private float _useTime;
-    public float UseTime
+    private int[] _containerSlots;
+    public int[] ContainerSlots
     {
-        get => _useTime;
+        get => _containerSlots;
         set
         {
-            if (_useTime != value)
+            if (_containerSlots != value)
             {
-                _useTime = value;
+                _containerSlots = value;
                 this.NotifyPropertyChanged();
             }
         }
@@ -45,23 +45,23 @@ public class HotbarComponent : Component
         scrollDir = command.IsInputDown(UserCommand.MOUSE_SCROLL_UP) ? -1 : scrollDir;
 
         // Get inventoryComponent of parentEntity
-        InventoryComponent inventoryComponent = parentEntity.GetComponent<InventoryComponent>();
-
         this.SelectedSlot = (this.SelectedSlot + scrollDir);
 
         if (this.SelectedSlot < 0)
         {
-            this.SelectedSlot = inventoryComponent.Width - 1;
+            this.SelectedSlot = this.ContainerSlots.Length - 1;
         }
-        else if (this.SelectedSlot >= inventoryComponent.Width)
+        else if (this.SelectedSlot >= this.ContainerSlots.Length)
         {
             this.SelectedSlot = 0;
         }
 
-        InventorySlot slot = inventoryComponent.GetInventory().GetSlot(this.SelectedSlot, 2);
+        var container = parentEntity.GetComponent<ContainerComponent>();
         var state = parentEntity.GetComponent<PlayerStateComponent>();
 
-        if (slot != null)
+        var slot = container.GetContainer().GetSlot(this.ContainerSlots[this.SelectedSlot]);
+
+        if (slot.Item != null && slot.Item != "")
         {
             if (command.IsInputDown(UserCommand.USE_ITEM))
             {
@@ -69,6 +69,15 @@ public class HotbarComponent : Component
                 if (!working)
                 {
                     state.ItemUsedTime = 0;
+                }
+
+                if (!command.HasBeenRun)
+                {
+                    if (slot.GetItem().ShouldBeConsumed)
+                    {
+                        slot.GetItem().ShouldBeConsumed = false;
+                        container.GetContainer().RemoveItem(this.ContainerSlots[this.SelectedSlot], 1);
+                    }
                 }
             }
         }
@@ -78,7 +87,8 @@ public class HotbarComponent : Component
     {
         return new HotbarComponent()
         {
-            SelectedSlot = this.SelectedSlot
+            SelectedSlot = this.SelectedSlot,
+            ContainerSlots = this.ContainerSlots
         };
     }
 
@@ -91,18 +101,34 @@ public class HotbarComponent : Component
     {
         HotbarComponent toHotbar = (HotbarComponent)to;
         this.SelectedSlot = toHotbar.SelectedSlot;
+        this.ContainerSlots = toHotbar.ContainerSlots;
     }
 
     public override int Populate(byte[] data, int offset)
     {
+        int start = offset;
         this.SelectedSlot = BitConverter.ToInt32(data, offset);
-        return sizeof(int);
+        offset += sizeof(int);
+        int len = BitConverter.ToInt32(data, offset);
+        offset += sizeof(int);
+        this.ContainerSlots = new int[len];
+        for (int i = 0; i < len; i++)
+        {
+            this.ContainerSlots[i] = BitConverter.ToInt32(data, offset);
+            offset += sizeof(int);
+        }
+        return offset - start;
     }
 
     public override byte[] ToBytes()
     {
         List<byte> bytes = new List<byte>();
         bytes.AddRange(BitConverter.GetBytes(this.SelectedSlot));
+        bytes.AddRange(BitConverter.GetBytes(this.ContainerSlots.Length));
+        foreach (var slot in this.ContainerSlots)
+        {
+            bytes.AddRange(BitConverter.GetBytes(slot));
+        }
         return bytes.ToArray();
     }
 
@@ -115,25 +141,6 @@ public class HotbarComponent : Component
     {
         HotbarComponent newHotbar = (HotbarComponent)newComponent;
         this.SelectedSlot = newHotbar.SelectedSlot;
-    }
-
-    public void Render(Vector2 topLeftStart, Inventory inventory)
-    {
-        InventorySlot[] bottomRow = inventory.GetRow(2);
-
-        int slotSize = 64;
-        int slotSpacing = 10;
-
-        for (int i = 0; i < bottomRow.Length; i++)
-        {
-            InventorySlot slot = bottomRow[i];
-            ColorF color = this.SelectedSlot == i ? ColorF.LightGray : ColorF.DarkGray;
-            Renderer.Primitive.RenderRectangle(new RectangleF(topLeftStart.X + i * (slotSize + slotSpacing), topLeftStart.Y, slotSize, slotSize), color * 0.8f);
-
-            if (slot != null)
-            {
-                Renderer.Texture.Render(slot.GetItem().Texture, new Vector2(topLeftStart.X + i * (slotSize + slotSpacing), topLeftStart.Y), new Vector2(slotSize / slot.GetItem().Texture.Width, slotSize / slot.GetItem().Texture.Height), 0f, ColorF.White);
-            }
-        }
+        this.ContainerSlots = newHotbar.ContainerSlots;
     }
 }

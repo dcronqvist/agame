@@ -1,10 +1,12 @@
 using System.Diagnostics;
+using System.Numerics;
 using AGame.Engine.Assets;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
 using AGame.Engine.ECSys.Components;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
+using AGame.Engine.Items;
 using AGame.Engine.World;
 using GameUDPProtocol;
 
@@ -96,6 +98,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     private ThreadSafe<Queue<IServerTickAction>> _nextTickActions;
     private ThreadSafe<Dictionary<Connection, List<ChunkAddress>>> _connectionsLoadedChunks;
     private Dictionary<Connection, List<Entity>> _connectionsLoadedEntities;
+    private ThreadSafe<Dictionary<Connection, List<Entity>>> _connectionsViewingContainerInEntity;
 
     // Server tick
     private int _serverTick = 0;
@@ -117,6 +120,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         this._ecs = new ThreadSafe<ECS>(ecs);
         this._connectionsLoadedEntities = new Dictionary<Connection, List<Entity>>();
         this._updatedComponents = new List<(Entity, Component)>();
+        this._connectionsViewingContainerInEntity = new ThreadSafe<Dictionary<Connection, List<Entity>>>(new Dictionary<Connection, List<Entity>>());
 
         this.RegisterServerEventHandlers();
         this.RegisterPacketHandlers();
@@ -148,13 +152,15 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 {
                     Entity entity = ecs.CreateEntityFromAsset("default.entity.player");
                     entity.GetComponent<CharacterComponent>().Name = e.RequestPacket.Name;
+                    entity.GetComponent<ContainerComponent>().GetContainer().AddItemsToContainer("default.item.test_item", 1, out int remaining);
+                    entity.GetComponent<ContainerComponent>().GetContainer().AddItemsToContainer("default.item.pebble", 8, out remaining);
 
-                    int runs = Utilities.GetRandomInt(5, 10);
-                    for (int i = 0; i < runs; i++)
-                    {
-                        string item = Utilities.ChooseUniform("default.item.test_item", "default.item.test_item_2");
-                        entity.GetComponent<InventoryComponent>().GetInventory().AddItem(item, 1);
-                    }
+                    // int runs = Utilities.GetRandomInt(5, 10);
+                    // for (int i = 0; i < runs; i++)
+                    // {
+                    //     string item = Utilities.ChooseUniform("default.item.test_item", "default.item.test_item_2");
+                    //     entity.GetComponent<InventoryComponent>().GetInventory().AddItem(item, 1);
+                    // }
 
 
                     return entity;
@@ -168,6 +174,11 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 this._lastProcessedCommand.LockedAction((lastProcessedCommand) =>
                 {
                     lastProcessedCommand.Add(e.RequestConnection, new UserCommand());
+                });
+
+                this._connectionsViewingContainerInEntity.LockedAction((connectionsViewingContainerInEntity) =>
+                {
+                    connectionsViewingContainerInEntity.Add(e.RequestConnection, new List<Entity>() { entity }); // Player should always be "viewing" itself
                 });
 
                 e.Accept(new ConnectResponse() { PlayerEntityID = entity.ID, ServerTickSpeed = this._configuration.TickRate, PlayerChunkX = 0, PlayerChunkY = 0 });
@@ -242,11 +253,6 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         };
     }
 
-    private void SpawnEntity(SpawnEntityDefinition definition)
-    {
-
-    }
-
     private void PerformActionNextTick(IServerTickAction action)
     {
         this._nextTickActions.LockedAction((actions) =>
@@ -271,6 +277,20 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         });
     }
 
+    public void SendContainerContentsToViewers(Entity entity)
+    {
+        this._connectionsViewingContainerInEntity.LockedAction((view) =>
+        {
+            foreach (var connection in view.Keys)
+            {
+                if (view[connection].Contains(entity))
+                {
+                    this.EnqueuePacket(new SetContainerContentPacket(entity.ID, entity.GetComponent<ContainerComponent>().GetContainer(), false), connection, true, false);
+                }
+            }
+        });
+    }
+
     private void RegisterPacketHandlers()
     {
         base.AddPacketHandler<UserCommand>((packet, connection) =>
@@ -284,6 +304,15 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         base.AddPacketHandler<ConnectReadyForData>((packet, connection) =>
         {
             //this.BroadcastEntireECS(connection);
+            var playerID = this._connectionToPlayerId.LockedAction((connectionToPlayerId) =>
+            {
+                return connectionToPlayerId[connection];
+            });
+            var playerContainer = this._ecs.LockedAction((ecs) =>
+            {
+                return ecs.GetEntityFromID(playerID).GetComponent<ContainerComponent>().GetContainer();
+            });
+            this.EnqueuePacket(new SetContainerContentPacket(playerID, playerContainer, false), connection, true, false);
         });
 
         base.AddPacketHandler<ReceivedChunkPacket>((packet, connection) =>
@@ -305,11 +334,79 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             Task.Run(() => new SendChunkToClientAction(connection, packet.X, packet.Y).Tick(this));
         });
 
-        base.AddPacketHandler<RequestInventoryContentPacket>((packet, connection) =>
+        base.AddPacketHandler<ClickContainerSlotPacket>((packet, connection) =>
         {
-            this.PerformActionNextTick(new RespondToInventoryRequestAction(packet, connection));
+            var entityID = packet.EntityID;
+
+            this._ecs.LockedAction((ecs) =>
+            {
+                var entity = ecs.GetEntityFromID(entityID);
+
+                var container = entity.GetComponent<ContainerComponent>().GetContainer();
+
+                ContainerSlot mouseSlot = new ContainerSlot(new Vector2(0, 0));
+
+                var player = ecs.GetEntityFromID(this._connectionToPlayerId.LockedAction((connectionToPlayerId) =>
+                {
+                    return connectionToPlayerId[connection];
+                }));
+                var playerState = player.GetComponent<PlayerStateComponent>();
+
+                mouseSlot.Item = playerState.ItemOnMouse;
+                mouseSlot.Count = playerState.ItemOnMouseCount;
+
+                container.ClickSlot(packet.SlotID, ref mouseSlot);
+
+                playerState.ItemOnMouse = mouseSlot.Item;
+                playerState.ItemOnMouseCount = mouseSlot.Count;
+
+                this.SendContainerContentsToViewers(entity);
+            });
         });
 
+        base.AddPacketHandler<RequestViewContainerPacket>((packet, connection) =>
+        {
+            var entityID = packet.EntityID;
+
+            var entity = this._ecs.LockedAction((ecs) =>
+            {
+                return ecs.GetEntityFromID(entityID);
+            });
+
+            this._connectionsViewingContainerInEntity.LockedAction((view) =>
+            {
+                view[connection].Add(entity);
+            });
+
+            // TODO: Whether or not the client is allowed to open the container should come from the container's provider
+            this.EnqueuePacket(new SetContainerContentPacket(entityID, entity.GetComponent<ContainerComponent>().GetContainer(), true), connection, true, false);
+        });
+
+        base.AddPacketHandler<CloseContainerPacket>((packet, connection) =>
+        {
+            var entityID = packet.EntityID;
+
+            var entity = this._ecs.LockedAction((ecs) =>
+            {
+                return ecs.GetEntityFromID(entityID);
+            });
+
+            var playerID = this._connectionToPlayerId.LockedAction((connectionToPlayerId) =>
+            {
+                return connectionToPlayerId[connection];
+            });
+
+            if (entityID == playerID)
+            {
+                // DO not remove the player's own entity from it's view list.
+                return;
+            }
+
+            this._connectionsViewingContainerInEntity.LockedAction((view) =>
+            {
+                view[connection].Remove(entity);
+            });
+        });
     }
 
     private void SendChunksToClient(Connection connection)

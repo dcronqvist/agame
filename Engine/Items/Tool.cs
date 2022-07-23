@@ -83,15 +83,6 @@ public class Tool : Item
                 {
                     // Only run this once on the client.
                     this.OnUseTick(playerEntity, mouseTilePos, ecs);
-
-                    if (ecs.IsRunner(SystemRunner.Client))
-                    {
-                        Audio.Play("default.audio.click");
-                    }
-                    else if (ecs.IsRunner(SystemRunner.Server))
-                    {
-                        // Tell other clients to play the sound.
-                    }
                 }
                 return false;
             }
@@ -108,7 +99,7 @@ public class Tool : Item
 
         if (this.CanReach(middleOfTilePos, playerPos) && this.OnUse.CanUse(this, playerEntity, mouseWorldPosition, ecs))
         {
-            Renderer.Primitive.RenderLine(playerPos2, middleOfTilePos.ToWorldVector().ToVector2(), 2, ColorF.Green * (totalTimeHeld / this.UseTime));
+            Renderer.Primitive.RenderLine(playerPos2, middleOfTilePos.ToWorldVector().ToVector2(), 2, ColorF.Lerp(ColorF.Red, ColorF.Green, (totalTimeHeld / this.UseTime)));
         }
     }
 

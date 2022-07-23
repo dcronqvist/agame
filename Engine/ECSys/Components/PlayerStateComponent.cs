@@ -77,6 +77,34 @@ public class PlayerStateComponent : Component
         }
     }
 
+    private string _itemOnMouse;
+    public string ItemOnMouse
+    {
+        get => _itemOnMouse ?? "";
+        set
+        {
+            if (_itemOnMouse != value)
+            {
+                _itemOnMouse = value;
+                this.NotifyPropertyChanged();
+            }
+        }
+    }
+
+    private int _itemOnMouseCount;
+    public int ItemOnMouseCount
+    {
+        get => _itemOnMouseCount;
+        set
+        {
+            if (_itemOnMouseCount != value)
+            {
+                _itemOnMouseCount = value;
+                this.NotifyPropertyChanged();
+            }
+        }
+    }
+
     public override void ApplyInput(Entity parentEntity, UserCommand command, WorldContainer world, ECS ecs)
     {
         this.HoldingUseItem = command.IsInputDown(UserCommand.USE_ITEM);
@@ -100,7 +128,9 @@ public class PlayerStateComponent : Component
             HoldingUseItem = this.HoldingUseItem,
             HoldingItem = this.HoldingItem,
             MouseTileX = this.MouseTileX,
-            MouseTileY = this.MouseTileY
+            MouseTileY = this.MouseTileY,
+            ItemUsedTime = this.ItemUsedTime,
+            ItemOnMouse = this.ItemOnMouse,
         };
     }
 
@@ -119,6 +149,8 @@ public class PlayerStateComponent : Component
         this.MouseTileX = (int)Math.Round(Utilities.Lerp(fromC.MouseTileX, toC.MouseTileX, amt));
         this.MouseTileY = (int)Math.Round(Utilities.Lerp(fromC.MouseTileY, toC.MouseTileY, amt));
         this.ItemUsedTime = Utilities.Lerp(fromC.ItemUsedTime, toC.ItemUsedTime, amt);
+        this.ItemOnMouse = toC.ItemOnMouse;
+        this.ItemOnMouseCount = toC.ItemOnMouseCount;
     }
 
     public override int Populate(byte[] data, int offset)
@@ -136,6 +168,12 @@ public class PlayerStateComponent : Component
         offset += sizeof(int);
         this.ItemUsedTime = BitConverter.ToSingle(data, offset);
         offset += sizeof(float);
+        len = BitConverter.ToInt32(data, offset);
+        offset += sizeof(int);
+        this.ItemOnMouse = Encoding.UTF8.GetString(data, offset, len);
+        offset += len;
+        this.ItemOnMouseCount = BitConverter.ToInt32(data, offset);
+        offset += sizeof(int);
         return offset - start;
     }
 
@@ -148,6 +186,9 @@ public class PlayerStateComponent : Component
         bytes.AddRange(BitConverter.GetBytes(this.MouseTileX));
         bytes.AddRange(BitConverter.GetBytes(this.MouseTileY));
         bytes.AddRange(BitConverter.GetBytes(this.ItemUsedTime));
+        bytes.AddRange(BitConverter.GetBytes(this.ItemOnMouse.Length));
+        bytes.AddRange(Encoding.UTF8.GetBytes(this.ItemOnMouse));
+        bytes.AddRange(BitConverter.GetBytes(this.ItemOnMouseCount));
         return bytes.ToArray();
     }
 
@@ -164,5 +205,7 @@ public class PlayerStateComponent : Component
         this.MouseTileX = newC.MouseTileX;
         this.MouseTileY = newC.MouseTileY;
         this.ItemUsedTime = newC.ItemUsedTime;
+        this.ItemOnMouse = newC.ItemOnMouse;
+        this.ItemOnMouseCount = newC.ItemOnMouseCount;
     }
 }

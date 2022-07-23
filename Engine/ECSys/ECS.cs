@@ -307,17 +307,6 @@ public class ECS
         }
     }
 
-    public void InterpolateProperties()
-    {
-        foreach (Entity e in this.GetAllEntities())
-        {
-            foreach (Component c in e.Components)
-            {
-                //c.InterpolateProperties();
-            }
-        }
-    }
-
     public void Update(WorldContainer gameWorld, float deltaTime)
     {
         bool destroying = this._entitiesToDestroy.Count > 0;

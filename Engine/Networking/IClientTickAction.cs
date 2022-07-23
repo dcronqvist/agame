@@ -60,11 +60,11 @@ public class ClientDestroyClientSideEntity : IClientTickAction
     }
 }
 
-public class ClientSetInventoryContentAction : IClientTickAction
+public class ClientSetContainerContentAction : IClientTickAction
 {
-    public SetInventoryContentPacket Packet { get; set; }
+    public SetContainerContentPacket Packet { get; set; }
 
-    public ClientSetInventoryContentAction(SetInventoryContentPacket packet)
+    public ClientSetContainerContentAction(SetContainerContentPacket packet)
     {
         this.Packet = packet;
     }
@@ -75,18 +75,20 @@ public class ClientSetInventoryContentAction : IClientTickAction
 
         if (client.TryGetClientSideEntity(serverSideEntity, out Entity entity))
         {
-            var inventory = entity.GetComponent<InventoryComponent>();
+            var container = entity.GetComponent<ContainerComponent>();
+            var infos = Packet.Slots;
 
-            for (int i = 0; i < Packet.Width; i++)
+            foreach (var info in infos)
             {
-                for (int j = 0; j < Packet.Height; j++)
-                {
-                    if (Packet.Slots[i, j] != null)
-                    {
-                        inventory.GetInventory().SetItem(i, j, Packet.Slots[i, j]);
-                    }
-                }
+                container.GetContainer().SetSlotData(info.SlotID, info.ItemID, info.ItemCount);
+            }
+
+            if (Packet.OpenInteract)
+            {
+                // The client should open up an interaction window between the player's inventory and the received container.
+                client.ReceivedEntityOpenContainer = entity.ID;
             }
         }
+
     }
 }

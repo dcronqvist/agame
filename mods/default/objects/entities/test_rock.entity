@@ -57,6 +57,10 @@
                     "item": "default.item.pebble"
                 }
             ]
+        },
+        {
+            "componentType": "Container",
+            "containerProvider": "default.script.container_test_provider"
         }
     ]
 }

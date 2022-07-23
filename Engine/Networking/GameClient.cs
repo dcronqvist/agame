@@ -108,6 +108,8 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
     private int _renderDistance = 4;
 
+    public int ReceivedEntityOpenContainer { get; set; }
+
     public GameClient(string hostname, int port, int reliableMillisBeforeResend, int timeoutMillis) : base(hostname, port, reliableMillisBeforeResend, timeoutMillis, new TestEncoder())
     {
         this._ecs = new ECS();
@@ -124,6 +126,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         this._sentPackets = new ThreadSafe<Queue<Packet>>(new Queue<Packet>());
         this._playerId = -1;
         this._nextTickActions = new ThreadSafe<Queue<IClientTickAction>>(new Queue<IClientTickAction>());
+        this.ReceivedEntityOpenContainer = -1;
 
         this.RegisterClientEventHandlers();
         this.RegisterPacketHandlers();
@@ -257,10 +260,10 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             this._nextTickActions.LockedAction((q) => q.Enqueue(new ClientUpdateChunkAction(packet.X, packet.Y, packet.Chunk)));
         });
 
-        base.AddPacketHandler<SetInventoryContentPacket>((packet) =>
+        base.AddPacketHandler<SetContainerContentPacket>((packet) =>
         {
             Logging.Log(LogLevel.Debug, $"Client: Received inventory content packet");
-            this._nextTickActions.LockedAction((q) => q.Enqueue(new ClientSetInventoryContentAction(packet)));
+            this._nextTickActions.LockedAction((q) => q.Enqueue(new ClientSetContainerContentAction(packet)));
         });
     }
 
@@ -282,7 +285,6 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                 await Task.Delay(1);
             }
 
-            this.EnqueuePacket(new RequestInventoryContentPacket() { EntityID = this._playerId }, true, false);
             this.StartLatencyChecking();
             return true;
         }
@@ -524,9 +526,14 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         this._ecs.Render(this._world);
     }
 
-    public void RequestPlayerInventory()
+    public void RequestOpenContainer(int localEntityID)
     {
-        // Request the inventory for this entity
-        this.EnqueuePacket(new RequestInventoryContentPacket() { EntityID = this._playerId }, true, false);
+        var remoteID = this.GetRemoteIDForEntity(localEntityID);
+        base.EnqueuePacket(new RequestViewContainerPacket() { EntityID = remoteID }, true, false);
+    }
+
+    public void CloseCurrentContainer()
+    {
+        base.EnqueuePacket(new CloseContainerPacket(), true, false);
     }
 }

@@ -4,7 +4,7 @@ using AGame.Engine.World;
 
 namespace AGame.Engine.ECSys.Systems;
 
-[SystemRunsOn(SystemRunner.Client)]
+[SystemRunsOn(SystemRunner.Server)]
 public class PlayerCollectItemSystem : BaseSystem
 {
     public override void Initialize()
@@ -19,24 +19,42 @@ public class PlayerCollectItemSystem : BaseSystem
 
         foreach (var entity in entities)
         {
-            // Get closest player that is at most 2 blocks away from this entity
-            var player = players.Where(e =>
-            {
-                var playerTransform = e.GetComponent<TransformComponent>();
-                var middleOfPlayer = (playerTransform.Position + new CoordinateVector(0.5f, 1f));
-                var itemTransform = entity.GetComponent<TransformComponent>();
-                var middleOfItem = (itemTransform.Position + new CoordinateVector(0.5f, 0.5f));
-                return middleOfPlayer.DistanceTo(middleOfItem) <= 1f;
-            }).FirstOrDefault();
+            var itemTransform = entity.GetComponent<TransformComponent>();
+            var middleOfItem = (itemTransform.Position + new CoordinateVector(0.5f, 0.5f));
 
-            // Pick up item
-            if (player != null)
+            if (entity.GetComponent<GroundItemComponent>().PickedUpBy == -1)
             {
-                var inventory = player.GetComponent<InventoryComponent>();
-                inventory.GetInventory().AddItem(entity.GetComponent<GroundItemComponent>().Item, 1);
-                this.ParentECS.DestroyEntity(entity.ID);
+                // Get closest player that is at most 2 blocks away from this entity
+                var player = players.Where(e =>
+                {
+                    var playerTransform = e.GetComponent<TransformComponent>();
+                    var middleOfPlayer = (playerTransform.Position + new CoordinateVector(0.5f, 1f));
+                    return middleOfPlayer.DistanceTo(middleOfItem) <= 1.5f;
+                }).FirstOrDefault();
+
+                if (player != null)
+                {
+                    entity.GetComponent<GroundItemComponent>().PickedUpBy = player.ID;
+                }
+            }
+
+            if (entity.GetComponent<GroundItemComponent>().PickedUpBy != -1)
+            {
+                var pickedUpBy = ParentECS.GetEntityFromID(entity.GetComponent<GroundItemComponent>().PickedUpBy);
+                var pickedUpByTransform = pickedUpBy.GetComponent<TransformComponent>();
+                var middleOfPickedUpBy = pickedUpByTransform.Position + pickedUpBy.GetComponent<AnimatorComponent>().GetAnimator().GetCurrentAnimation().GetMiddleOfCurrentFrameScaled().ToCoordinateVector();
+
+                var container = pickedUpBy.GetComponent<ContainerComponent>();
+                if (container.GetContainer().AddItemsToContainer(entity.GetComponent<GroundItemComponent>().Item, 1, out int remaining))
+                {
+                    ParentECS.DestroyEntity(entity.ID);
+                    this.GameServer.SendContainerContentsToViewers(pickedUpBy);
+                }
+                else
+                {
+                    entity.GetComponent<GroundItemComponent>().PickedUpBy = -1;
+                }
             }
         }
-
     }
 }

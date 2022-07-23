@@ -19,6 +19,8 @@ public abstract class Item
     private GameServer _gameServer;
     private GameClient _gameClient;
 
+    public bool ShouldBeConsumed { get; set; }
+
     public Item(string itemID, string itemName, Texture2D texture, ItemType itemType, int maxStack, GameServer gameServer, GameClient gameClient)
     {
         this.ItemID = itemID;
@@ -28,6 +30,7 @@ public abstract class Item
         MaxStack = maxStack;
         _gameServer = gameServer;
         _gameClient = gameClient;
+        this.ShouldBeConsumed = false;
     }
 
     public abstract bool OnHoldLeftClick(UserCommand originatingCommand, Entity playerEntity, Vector2i mouseWorldPosition, ECS ecs, float deltaTime, float totalTimeHeld);
@@ -36,7 +39,14 @@ public abstract class Item
 
     public void PlayAudio(string audio, ECS ecs, float pitch)
     {
-
+        if (ecs.IsRunner(SystemRunner.Client))
+        {
+            this.PlayAudioSelfClient(audio, pitch);
+        }
+        else if (ecs.IsRunner(SystemRunner.Server))
+        {
+            this.PlayAudioBroadcastToClients(audio, pitch);
+        }
     }
 
     private void PlayAudioSelfClient(string audio, float pitch)
@@ -46,7 +56,7 @@ public abstract class Item
 
     private void PlayAudioBroadcastToClients(string audio, float pitch)
     {
-
+        // TODO: Broadcast to other clients
     }
 
     public void CreateEntity(string entity, ECS ecs, Action<Entity> onCreate)
@@ -61,6 +71,18 @@ public abstract class Item
                 onCreate.Invoke(e);
             });
         }
+
+        // However if we are client, we kinda should predict the created entity and then let the server dictate if it can stay or not
+        // TODO: Implement this
+    }
+
+    public Entity GetEntityAtTileAlignedPos(Vector2i tilePosition, ECS ecs)
+    {
+        var pos = new CoordinateVector(tilePosition.X, tilePosition.Y);
+
+        var entities = ecs.GetAllEntities(e => e.HasComponent<TransformComponent>());
+
+        return entities.FirstOrDefault(e => e.GetComponent<TransformComponent>().Position.Equals(pos), null);
     }
 }
 
@@ -134,6 +156,44 @@ public class Placeable : Item
 
     public override bool OnHoldLeftClick(UserCommand originatingCommand, Entity playerEntity, Vector2i mouseWorldPosition, ECS ecs, float deltaTime, float totalTimeHeld)
     {
+        if (totalTimeHeld > 0.05f)
+        {
+            var playerPos = playerEntity.GetComponent<TransformComponent>().Position;
+            var tilePos = new CoordinateVector(mouseWorldPosition.X, mouseWorldPosition.Y);
+
+            var distance = playerPos.DistanceTo(tilePos);
+
+            if (distance > 2)
+            {
+                return false;
+            }
+
+            var entityAtMouse = this.GetEntityAtTileAlignedPos(mouseWorldPosition, ecs);
+
+            if (entityAtMouse != null)
+            {
+                // There is an entity at the mouse position, so we can't place the item.
+                return false;
+            }
+
+            // There is no entity at the mouse position, so we can place the item.
+
+            if (!originatingCommand.HasBeenRun)
+            {
+                this.CreateEntity(this.PlacesEntity, ecs, (entity) =>
+                {
+                    var transform = entity.GetComponent<TransformComponent>();
+                    transform.Position = new CoordinateVector(mouseWorldPosition.X, mouseWorldPosition.Y);
+                });
+
+                if (this.ConsumesOnPlace)
+                {
+                    this.ShouldBeConsumed = true;
+                }
+            }
+            return false;
+        }
+
         return true;
     }
 

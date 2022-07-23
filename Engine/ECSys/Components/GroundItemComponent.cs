@@ -21,6 +21,25 @@ public class GroundItemComponent : Component
         }
     }
 
+    private int _pickedUpBy;
+    public int PickedUpBy
+    {
+        get => _pickedUpBy;
+        set
+        {
+            if (_pickedUpBy != value)
+            {
+                _pickedUpBy = value;
+                this.NotifyPropertyChanged();
+            }
+        }
+    }
+
+    public GroundItemComponent()
+    {
+        _pickedUpBy = -1;
+    }
+
     public override void ApplyInput(Entity parentEntity, UserCommand command, WorldContainer world, ECS ecs)
     {
         // Do nothing
@@ -30,19 +49,21 @@ public class GroundItemComponent : Component
     {
         return new GroundItemComponent()
         {
-            Item = this.Item
+            Item = this.Item,
+            PickedUpBy = this.PickedUpBy
         };
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(this.Item);
+        return HashCode.Combine(this.Item, this.PickedUpBy);
     }
 
     public override void InterpolateProperties(Component from, Component to, float amt)
     {
         GroundItemComponent toComp = (GroundItemComponent)to;
         this.Item = toComp.Item;
+        this.PickedUpBy = toComp.PickedUpBy;
     }
 
     public override int Populate(byte[] data, int offset)
@@ -52,6 +73,8 @@ public class GroundItemComponent : Component
         offset += sizeof(int);
         this.Item = Encoding.UTF8.GetString(data, offset, len);
         offset += len;
+        this.PickedUpBy = BitConverter.ToInt32(data, offset);
+        offset += sizeof(int);
         return offset - start;
     }
 
@@ -60,6 +83,7 @@ public class GroundItemComponent : Component
         List<byte> bytes = new List<byte>();
         bytes.AddRange(BitConverter.GetBytes(this.Item.Length));
         bytes.AddRange(Encoding.UTF8.GetBytes(this.Item));
+        bytes.AddRange(BitConverter.GetBytes(this.PickedUpBy));
         return bytes.ToArray();
     }
 
@@ -72,5 +96,6 @@ public class GroundItemComponent : Component
     {
         GroundItemComponent newComp = (GroundItemComponent)newComponent;
         this.Item = newComp.Item;
+        this.PickedUpBy = newComp.PickedUpBy;
     }
 }

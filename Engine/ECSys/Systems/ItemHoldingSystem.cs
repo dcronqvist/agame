@@ -9,7 +9,7 @@ public class ItemHoldingSystem : BaseSystem
 {
     public override void Initialize()
     {
-        this.RegisterComponentType<InventoryComponent>();
+        this.RegisterComponentType<ContainerComponent>();
         this.RegisterComponentType<HotbarComponent>();
         this.RegisterComponentType<PlayerStateComponent>();
     }
@@ -18,13 +18,13 @@ public class ItemHoldingSystem : BaseSystem
     {
         foreach (var entity in entities)
         {
-            var inventory = entity.GetComponent<InventoryComponent>();
+            var container = entity.GetComponent<ContainerComponent>();
             var hotbar = entity.GetComponent<HotbarComponent>();
             var playerState = entity.GetComponent<PlayerStateComponent>();
 
-            InventorySlot slot = inventory.GetInventory().GetSlot(hotbar.SelectedSlot, 2);
+            var slot = container.GetContainer().GetSlot(hotbar.SelectedSlot);
 
-            if (slot != null)
+            if (slot.Item != null && slot.Item != "")
             {
                 playerState.HoldingItem = slot.Item;
             }

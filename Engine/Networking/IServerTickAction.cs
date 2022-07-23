@@ -83,29 +83,6 @@ public class TellClientToUnloadChunkAction : IServerTickAction
     }
 }
 
-public class RespondToInventoryRequestAction : IServerTickAction
-{
-    Connection Connection { get; set; }
-    RequestInventoryContentPacket Packet { get; set; }
-
-    public RespondToInventoryRequestAction(RequestInventoryContentPacket packet, Connection connection)
-    {
-        this.Packet = packet;
-        this.Connection = connection;
-    }
-
-    public void Tick(GameServer server)
-    {
-        var inventory = server.PerformOnECS((ecs) =>
-        {
-            return ecs.GetEntityFromID(Packet.EntityID).GetComponent<InventoryComponent>().GetInventory();
-        });
-
-        server.EnqueuePacket(new SetInventoryContentPacket(Packet.EntityID, inventory), this.Connection, true, false);
-        Logging.Log(LogLevel.Debug, $"Server: Sent InventoryContentPacket to client {this.Connection.RemoteEndPoint}");
-    }
-}
-
 public class ExecuteSpawnEntityDefinitionsAction : IServerTickAction
 {
     EntityDistributionDefinition Definition { get; set; }
