@@ -59,7 +59,7 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
     public new abstract string ToString();
     public abstract void UpdateComponent(Component newComponent);
     public abstract void InterpolateProperties(Component from, Component to, float amt);
-    public new abstract int GetHashCode();
+    public abstract ulong GetHash();
     public abstract void ApplyInput(Entity parentEntity, UserCommand command, WorldContainer world, ECS ecs);
 
     public ComponentNetworkingAttribute GetCNAttrib()

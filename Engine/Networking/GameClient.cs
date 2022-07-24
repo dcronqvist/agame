@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -56,35 +57,35 @@ public class TestEncoder : IByteEncoder
     // {
     //     return Utilities.RunLengthEncode(buffer);
     // }
-    public byte[] Decode(byte[] buffer)
-    {
-        MemoryStream input = new MemoryStream(buffer);
-        MemoryStream output = new MemoryStream();
-        using (DeflateStream dstream = new DeflateStream(input, CompressionMode.Decompress))
-        {
-            dstream.CopyTo(output);
-        }
-        return output.ToArray();
-    }
-
-    public byte[] Encode(byte[] buffer)
-    {
-        MemoryStream output = new MemoryStream();
-        using (DeflateStream dstream = new DeflateStream(output, CompressionLevel.Fastest))
-        {
-            dstream.Write(buffer, 0, buffer.Length);
-        }
-        return output.ToArray();
-    }
     // public byte[] Decode(byte[] buffer)
     // {
-    //     return buffer;
+    //     MemoryStream input = new MemoryStream(buffer);
+    //     MemoryStream output = new MemoryStream();
+    //     using (DeflateStream dstream = new DeflateStream(input, CompressionMode.Decompress))
+    //     {
+    //         dstream.CopyTo(output);
+    //     }
+    //     return output.ToArray();
     // }
 
     // public byte[] Encode(byte[] buffer)
     // {
-    //     return buffer;
+    //     MemoryStream output = new MemoryStream();
+    //     using (DeflateStream dstream = new DeflateStream(output, CompressionLevel.Fastest))
+    //     {
+    //         dstream.Write(buffer, 0, buffer.Length);
+    //     }
+    //     return output.ToArray();
     // }
+    public byte[] Decode(byte[] buffer)
+    {
+        return buffer;
+    }
+
+    public byte[] Encode(byte[] buffer)
+    {
+        return buffer;
+    }
 }
 public class GameClient : Client<ConnectRequest, ConnectResponse>
 {
@@ -100,6 +101,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     private ThreadSafe<Queue<Packet>> _sentPackets;
     private ThreadSafe<Queue<int>> _latency;
     private ThreadSafe<Queue<IClientTickAction>> _nextTickActions;
+    private ThreadSafe<Dictionary<ulong, Entity>> _clientPredictedEntities;
 
     private Dictionary<int, Entity> _serverEntityIDToClientEntity;
 
@@ -131,6 +133,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         this._playerId = -1;
         this._nextTickActions = new ThreadSafe<Queue<IClientTickAction>>(new Queue<IClientTickAction>());
         this.ReceivedEntityOpenContainer = -1;
+        this._clientPredictedEntities = new ThreadSafe<Dictionary<ulong, Entity>>(new Dictionary<ulong, Entity>());
 
         this.RegisterClientEventHandlers();
         this.RegisterPacketHandlers();
@@ -269,6 +272,15 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             Logging.Log(LogLevel.Debug, $"Client: Received inventory content packet");
             this._nextTickActions.LockedAction((q) => q.Enqueue(new ClientSetContainerContentAction(packet)));
         });
+
+        base.AddPacketHandler<AcknowledgeClientSideEntityPacket>((packet) =>
+        {
+            this._clientPredictedEntities.LockedAction((cpe) =>
+            {
+                Logging.Log(LogLevel.Debug, $"Client: Received acknowledgement for client side {cpe[packet.Hash].ID}, with server side hash = {packet.Hash}, server side ID = {packet.EntityID}");
+                this._serverEntityIDToClientEntity.Add(packet.EntityID, cpe[packet.Hash]);
+            });
+        });
     }
 
     public async Task<bool> ConnectAsync(string clientName)
@@ -353,8 +365,15 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                 this._serverLastProcessedCommand = packet.LastProcessedCommand;
                 this._lastProcessedServerTick = packet.ServerTick;
 
+                if (packet.Updates.Length > 0)
+                {
+                    Logging.Log(LogLevel.Debug, $"Client: Received updates for {packet.Updates.Length} entities");
+                }
+
                 foreach (EntityUpdate update in packet.Updates)
                 {
+                    Logging.Log(LogLevel.Debug, $"Client: Received update for server side entity {update.EntityID}");
+
                     if (!TryGetClientSideEntity(update.EntityID, out Entity clientEntity))
                     {
                         clientEntity = this._ecs.CreateEntity();
@@ -539,5 +558,20 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     public void CloseCurrentContainer()
     {
         base.EnqueuePacket(new CloseContainerPacket(), true, false);
+    }
+
+    public void AttemptCreateEntity(string assetName, Action<Entity> onCreated)
+    {
+        this._clientPredictedEntities.LockedAction((cpe) =>
+        {
+            var entity = this._ecs.CreateEntityFromAsset(assetName);
+
+            onCreated.Invoke(entity);
+
+            ulong hash = entity.GetHash();
+
+            cpe.Add(hash, entity);
+            Logging.Log(LogLevel.Debug, $"Client: Created predicted entity with ID {entity.ID}, hash {hash}, waiting for acknowledgement from server...");
+        });
     }
 }

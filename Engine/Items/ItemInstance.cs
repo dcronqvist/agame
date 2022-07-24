@@ -1,29 +1,33 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text.Json.Serialization;
 using AGame.Engine.Assets;
 using AGame.Engine.Assets.Scripting;
+using AGame.Engine.ECSys;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
+using AGame.Engine.Networking;
 
 namespace AGame.Engine.Items;
 
 public class ItemInstance
 {
-    public string ItemID { get; set; }
-    public string Name { get; set; }
-    public int MaxStack { get; set; }
-    public string Texture { get; set; }
+    public ItemDefinition Definition { get; set; }
     public List<ItemComponent> Components { get; set; }
 
-    public ItemInstance(string itemID, string name, int maxStack, string texture, IEnumerable<ItemComponent> comps)
+    public ItemInstance(ItemDefinition definition, IEnumerable<ItemComponent> comps)
     {
-        this.ItemID = itemID;
-        this.Name = name;
-        this.MaxStack = maxStack;
-        this.Texture = texture;
+        this.Definition = definition;
         this.Components = new List<ItemComponent>(comps);
+    }
+
+    public ulong GetHash()
+    {
+        return Utilities.CombineHash(
+            this.Components.Select(c => c.GetHash()).ToArray()
+        );
     }
 
     public bool HasComponent<T>() where T : ItemComponent
@@ -55,10 +59,10 @@ public class ItemInstance
 
     public Texture2D GetTexture()
     {
-        return ModManager.GetAsset<Texture2D>(this.Texture);
+        return ModManager.GetAsset<Texture2D>(this.Definition.Texture);
     }
 
-    public void Render(Vector2 position)
+    public void RenderInSlot(Vector2 position)
     {
         var itemTargetSize = new Vector2(ContainerSlot.WIDTH, ContainerSlot.HEIGHT);
         var itemTextureSize = new Vector2(this.GetTexture().Width, this.GetTexture().Height);
@@ -66,7 +70,56 @@ public class ItemInstance
 
         Renderer.Texture.Render(this.GetTexture(), position, itemScale, 0f, ColorF.White);
     }
+
+    public bool OnUse(Entity playerEntity, UserCommand userCommand, ItemInstance item, ECS ecs, float deltaTime, float totalTimeUsed)
+    {
+        bool beingUsed = false;
+        foreach (var component in this.Components)
+        {
+            if (component.OnUse(playerEntity, userCommand, item, ecs, deltaTime, totalTimeUsed))
+            {
+                beingUsed = true;
+            }
+        }
+        return beingUsed;
+    }
+
+    public bool ShouldItemBeConsumed()
+    {
+        foreach (var component in this.Components)
+        {
+            if (component.ShouldItemBeConsumed())
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void OnConsumed(Entity playerEntity, ItemInstance item, ECS ecs)
+    {
+        foreach (var component in this.Components)
+        {
+            component.OnConsumed(playerEntity, item, ecs);
+        }
+    }
+
+    // API STUFF
+    public void CreateEntity(Entity playerEntity, ECS ecs, string entity, Action<Entity> onCreate)
+    {
+        if (ecs.IsRunner(SystemRunner.Server))
+        {
+            // IF WE ARE ON THE SERVER
+            this.Definition._gameServer.CreateEntityAsClient(playerEntity.ID, entity, onCreate);
+        }
+        else if (ecs.IsRunner(SystemRunner.Client))
+        {
+            // IF WE ARE ON THE CLIENT
+            this.Definition._gameClient.AttemptCreateEntity(entity, onCreate);
+        }
+    }
 }
+
 
 /*
 {

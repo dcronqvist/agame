@@ -130,7 +130,8 @@ public class PlayerStateComponent : Component
 
         if (this.HoldingUseItem)
         {
-            this.ItemUsedTime += command.DeltaTime;
+            if (!command.HasBeenRun)
+                this.ItemUsedTime += command.DeltaTime;
         }
         else
         {
@@ -153,9 +154,9 @@ public class PlayerStateComponent : Component
         };
     }
 
-    public override int GetHashCode()
+    public override ulong GetHash()
     {
-        return HashCode.Combine(this.HoldingUseItem, this.HoldingItem, this.MouseTileX, this.MouseTileY, this.ItemUsedTime, this.ItemOnMouse, this.ItemOnMouseCount, this.MouseSlot);
+        return Utilities.Hash(this.ToBytes());
     }
 
     public override void InterpolateProperties(Component from, Component to, float amt)

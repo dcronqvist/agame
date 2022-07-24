@@ -20,6 +20,11 @@ public class PackedItem : IPacketable
         this.Instance = instance;
     }
 
+    public ulong GetHash()
+    {
+        return this.Instance.GetHash();
+    }
+
     public int Populate(byte[] data, int offset)
     {
         this.Instance = null;
@@ -72,8 +77,8 @@ public class PackedItem : IPacketable
         {
             bytes.Add((byte)1);
 
-            bytes.AddRange(BitConverter.GetBytes(this.Instance.ItemID.Length));
-            bytes.AddRange(Encoding.UTF8.GetBytes(this.Instance.ItemID));
+            bytes.AddRange(BitConverter.GetBytes(this.Instance.Definition.ItemID.Length));
+            bytes.AddRange(Encoding.UTF8.GetBytes(this.Instance.Definition.ItemID));
 
             bytes.AddRange(BitConverter.GetBytes(this.Instance.Components.Count));
 

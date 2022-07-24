@@ -70,9 +70,9 @@ public class ColliderComponent : Component
         };
     }
 
-    public override int GetHashCode()
+    public override ulong GetHash()
     {
-        return HashCode.Combine(this.Box, this.TransformOffset, this.Solid);
+        return Utilities.Hash(this.ToBytes());
     }
 
     public override void InterpolateProperties(Component from, Component to, float amt)

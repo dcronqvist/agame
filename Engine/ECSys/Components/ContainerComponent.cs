@@ -49,9 +49,9 @@ public class ContainerComponent : Component
         };
     }
 
-    public override int GetHashCode()
+    public override ulong GetHash()
     {
-        return this.ContainerProvider.GetHashCode();
+        return Utilities.Hash(this.ToBytes());
     }
 
     public override void InterpolateProperties(Component from, Component to, float amt)

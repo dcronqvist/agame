@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Numerics;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
@@ -67,20 +68,17 @@ public class HotbarComponent : Component
         {
             if (command.IsInputDown(UserCommand.USE_ITEM))
             {
-                // bool working = slot.GetItem().OnHoldLeftClick(command, parentEntity, new Vector2i(state.MouseTileX, state.MouseTileY), ecs, command.DeltaTime, state.ItemUsedTime);
-                // if (!working)
-                // {
-                //     state.ItemUsedTime = 0;
-                // }
+                bool working = slot.Item.OnUse(parentEntity, command, slot.Item, ecs, command.DeltaTime, state.ItemUsedTime);
+                if (!working)
+                {
+                    state.ItemUsedTime = 0;
+                }
 
-                // if (!command.HasBeenRun)
-                // {
-                //     if (slot.GetItem().ShouldBeConsumed)
-                //     {
-                //         slot.GetItem().ShouldBeConsumed = false;
-                //         container.GetContainer().RemoveItem(this.ContainerSlots[this.SelectedSlot], 1);
-                //     }
-                // }
+                if (slot.Item.ShouldItemBeConsumed())
+                {
+                    slot.Item.OnConsumed(parentEntity, slot.Item, ecs);
+                    container.GetContainer().RemoveItem(this.ContainerSlots[this.SelectedSlot]);
+                }
             }
         }
     }
@@ -94,9 +92,9 @@ public class HotbarComponent : Component
         };
     }
 
-    public override int GetHashCode()
+    public override ulong GetHash()
     {
-        return this.SelectedSlot.GetHashCode();
+        return Utilities.Hash(this.ToBytes());
     }
 
     public override void InterpolateProperties(Component from, Component to, float amt)

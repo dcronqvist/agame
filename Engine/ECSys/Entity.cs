@@ -18,6 +18,22 @@ public class Entity
         this.Components = new List<Component>();
     }
 
+    public override int GetHashCode()
+    {
+        HashCode hash = new HashCode();
+        for (int i = 0; i < this.Components.Count; i++)
+        {
+            hash.Add(this.Components[i].GetHashCode());
+        }
+        return hash.ToHashCode();
+    }
+
+    public ulong GetHash()
+    {
+        ulong[] componentHashes = this.Components.Select(c => c.GetHash()).ToArray();
+        return Utilities.CombineHash(componentHashes);
+    }
+
     private void AddComponent(Component c)
     {
         ECS.Instance.Value.AddComponentToEntity(this, c);

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using AGame.Engine.Assets;
+using AGame.Engine.Networking;
 
 namespace AGame.Engine.Items;
 
@@ -10,6 +11,9 @@ public class ItemDefinition : Asset
     public int MaxStack { get; set; }
     public string Texture { get; set; }
     public List<ItemComponentDefinition> Definitions { get; set; }
+
+    internal GameServer _gameServer;
+    internal GameClient _gameClient;
 
     public ItemDefinition(string name, List<ItemComponentDefinition> definitions)
     {
@@ -26,7 +30,7 @@ public class ItemDefinition : Asset
             components.Add(def.CreateComponent());
         }
 
-        return new ItemInstance(this.ItemID, this.ItemName, this.MaxStack, this.Texture, components);
+        return new ItemInstance(this, components);
     }
 
     public override bool InitOpenGL()

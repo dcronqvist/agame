@@ -50,6 +50,11 @@ public class ContainerSlotInfo : IPacketable
         bytes.AddRange(this.Item.ToBytes());
         return bytes.ToArray();
     }
+
+    public ulong GetHash()
+    {
+        return Utilities.CombineHash(this.SlotID.Hash(), this.ItemCount.Hash(), this.Item.GetHash());
+    }
 }
 
 public class ContainerSlot
@@ -116,7 +121,7 @@ public class Container
         {
             var cslot = this._slots[slot];
 
-            if (cslot.Item is not null && cslot.Item.ItemID == item.ItemID && (cslot.Count + 1 <= cslot.Item.MaxStack))
+            if (cslot.Item is not null && cslot.Item.Definition.ItemID == item.Definition.ItemID && (cslot.Count + 1 <= cslot.Item.Definition.MaxStack))
             {
                 return slot;
             }
@@ -224,7 +229,7 @@ public class Container
             }
 
             Renderer.Primitive.RenderRectangle(rec, color * 0.5f);
-            slot.Value.Item?.Render(position);
+            slot.Value.Item?.RenderInSlot(position);
 
             // Render count
             if (slot.Value.Item is not null)
@@ -251,7 +256,7 @@ public class Container
 
         if (hoveredSlot is not null && hoveredSlot.Item is not null)
         {
-            Renderer.Text.RenderText(font, hoveredSlot.Item.Name, Input.GetMousePositionInWindow(), 2f, ColorF.White, Renderer.Camera);
+            Renderer.Text.RenderText(font, hoveredSlot.Item.Definition.Name, Input.GetMousePositionInWindow(), 2f, ColorF.White, Renderer.Camera);
         }
     }
 

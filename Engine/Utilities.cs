@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using AGame.Engine.ECSys;
 using AGame.Engine.Items;
@@ -481,6 +482,69 @@ namespace AGame.Engine
             // f(x) = a*x^2 + b*x + c
 
             return a * x * x + b * x + c;
+        }
+
+        public static ulong Hash(byte[] input)
+        {
+            using (MD5 md5 = MD5.Create())
+            {
+                return BitConverter.ToUInt64(md5.ComputeHash(input), 0);
+            }
+        }
+
+        public static ulong Hash(this int input)
+        {
+            return Hash(BitConverter.GetBytes(input));
+        }
+
+        public static ulong Hash(this string input)
+        {
+            return Hash(Encoding.UTF8.GetBytes(input));
+        }
+
+        public static ulong Hash(this ulong input)
+        {
+            return Hash(BitConverter.GetBytes(input));
+        }
+
+        public static ulong Hash(this long input)
+        {
+            return Hash(BitConverter.GetBytes(input));
+        }
+
+        public static ulong Hash(this uint input)
+        {
+            return Hash(BitConverter.GetBytes(input));
+        }
+
+        public static ulong Hash(this float input)
+        {
+            return Hash(BitConverter.GetBytes(input));
+        }
+
+        public static ulong Hash(this double input)
+        {
+            return Hash(BitConverter.GetBytes(input));
+        }
+
+        public static ulong Hash(this bool input)
+        {
+            return Hash(BitConverter.GetBytes(input));
+        }
+
+        public static ulong Hash(this byte input)
+        {
+            return Hash(new byte[] { input });
+        }
+
+        public static ulong CombineHash(params ulong[] hashes)
+        {
+            ulong hash = 0;
+            foreach (ulong h in hashes)
+            {
+                hash = Hash(hash ^ h);
+            }
+            return hash;
         }
     }
 

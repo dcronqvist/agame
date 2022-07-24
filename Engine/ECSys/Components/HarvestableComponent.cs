@@ -96,9 +96,9 @@ public class HarvestableComponent : Component
         };
     }
 
-    public override int GetHashCode()
+    public override ulong GetHash()
     {
-        return HashCode.Combine(this.Yields, this.Tags);
+        return Utilities.Hash(this.ToBytes());
     }
 
     public override void InterpolateProperties(Component from, Component to, float amt)

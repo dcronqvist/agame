@@ -25,6 +25,8 @@ public static class ItemManager
 
     private static void RegisterItem(ItemDefinition definition, GameServer gameServer, GameClient gameClient)
     {
+        definition._gameClient = gameClient;
+        definition._gameServer = gameServer;
         _items.Add(definition.ItemID, definition);
     }
 

@@ -149,9 +149,9 @@ public class TransformComponent : Component
         this.Speed = Utilities.Lerp(fromTC.Speed, toTC.Speed, amt);
     }
 
-    public override int GetHashCode()
+    public override ulong GetHash()
     {
-        return HashCode.Combine(this.Position);
+        return Utilities.Hash(this.ToBytes());
     }
 
     public override void ApplyInput(Entity parentEntity, UserCommand command, WorldContainer world, ECS ecs)

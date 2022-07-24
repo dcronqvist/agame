@@ -186,7 +186,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
 
             Renderer.Primitive.RenderRectangle(new RectangleF(hotbarTopLeft.X + i * (ContainerSlot.WIDTH + 5) + 5, hotbarTopLeft.Y + 5, ContainerSlot.WIDTH, ContainerSlot.HEIGHT), color * 0.6f);
 
-            slot.Item?.Render(position);
+            slot.Item?.RenderInSlot(position);
             var size = slot.GetSize();
 
             // Render count
@@ -198,17 +198,17 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
                 var textPosition = position + new Vector2(size.X - textSize.X, size.Y - textSize.Y);
                 Renderer.Text.RenderText(font, text, textPosition, scale, ColorF.White, Renderer.Camera);
 
-                // If has tool component, render durability
-                // if (slot.Item.TryGetComponent<DefaultMod.Tool>(out DefaultMod.Tool t))
-                // {
-                //     var durability = t.Definition.Durability;
-                //     var currDur = t.CurrentDurability;
-                //     var perc = ((float)currDur / durability).ToString("0.00");
+                //If has tool component, render durability
+                if (slot.Item.TryGetComponent<DefaultMod.Tool>(out DefaultMod.Tool t))
+                {
+                    var durability = t.Definition.Durability;
+                    var currDur = t.CurrentDurability;
+                    var perc = ((float)currDur / durability).ToString("0.00");
 
-                //     var durabilitySize = font.MeasureString(perc, scale);
-                //     var durabilityPosition = position + new Vector2(size.X - durabilitySize.X, size.Y - durabilitySize.Y - textSize.Y);
-                //     Renderer.Text.RenderText(font, perc, durabilityPosition, scale, ColorF.White, Renderer.Camera);
-                // }
+                    var durabilitySize = font.MeasureString(perc, scale);
+                    var durabilityPosition = position + new Vector2(size.X - durabilitySize.X, size.Y - durabilitySize.Y - textSize.Y);
+                    Renderer.Text.RenderText(font, perc, durabilityPosition, scale, ColorF.White, Renderer.Camera);
+                }
             }
         }
     }
