@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Text;
 using AGame.Engine.Assets.Scripting;
 using AGame.Engine.Items;

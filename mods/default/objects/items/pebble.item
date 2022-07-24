@@ -1,8 +1,15 @@
 {
     "itemName": "Pebble",
+    "maxStack": 1,
     "texture": "default.tex.pebble",
-    "itemType": "placeable",
-    "maxStack": 256,
-    "consumesOnPlace": false,
-    "placesEntity": "default.entity.test_rock"
+    "definitions": [
+        {
+            "type": "default.item_component.resource",
+            "quality": 5
+        },
+        {
+            "type": "default.item_component.tool",
+            "durability": 1337
+        }
+    ]
 }

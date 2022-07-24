@@ -1,3 +1,4 @@
+using System;
 using System.Drawing;
 using System.Numerics;
 using AGame.Engine.Assets;
@@ -25,17 +26,29 @@ public class ContainerInteractionGUI
 
     public Vector2 GetTotalSize()
     {
-        var otherContainer = this._otherEntity.GetComponent<ContainerComponent>();
-        var playerContainer = this._playerEntity.GetComponent<ContainerComponent>();
+        if (_otherEntity is null)
+        {
+            var playerContainer = this._playerEntity.GetComponent<ContainerComponent>();
 
-        var otherSize = otherContainer.GetContainer().Provider.GetRenderSize();
-        var playerSize = playerContainer.GetContainer().Provider.GetRenderSize();
+            var playerSize = playerContainer.GetContainer().Provider.GetRenderSize();
 
-        // Stacking containers above each other
-        var totalHeight = otherSize.Y + playerSize.Y;
-        var totalWidth = Math.Max(otherSize.X, playerSize.X);
+            // Stacking containers above each other
+            return playerSize;
+        }
+        else
+        {
+            var otherContainer = this._otherEntity.GetComponent<ContainerComponent>();
+            var playerContainer = this._playerEntity.GetComponent<ContainerComponent>();
 
-        return new Vector2(totalWidth, totalHeight);
+            var otherSize = otherContainer.GetContainer().Provider.GetRenderSize();
+            var playerSize = playerContainer.GetContainer().Provider.GetRenderSize();
+
+            // Stacking containers above each other
+            var totalHeight = otherSize.Y + playerSize.Y;
+            var totalWidth = Math.Max(otherSize.X, playerSize.X);
+
+            return new Vector2(totalWidth, totalHeight);
+        }
     }
 
     public Vector2 MiddleOfWindow()
@@ -46,63 +59,108 @@ public class ContainerInteractionGUI
 
     public void UpdateInteract(GameClient client, float deltaTime)
     {
-        var playerState = this._playerEntity.GetComponent<PlayerStateComponent>();
-        _mouseSlot.Item = playerState.ItemOnMouse;
-        _mouseSlot.Count = playerState.ItemOnMouseCount;
+        if (this._otherEntity is null)
+        {
+            var playerState = this._playerEntity.GetComponent<PlayerStateComponent>();
+            _mouseSlot.Item = playerState.MouseSlot.Item.Instance;
+            _mouseSlot.Count = playerState.MouseSlot.ItemCount;
 
-        var middleOfWindow = this.MiddleOfWindow();
-        var totalSize = this.GetTotalSize();
+            var middleOfWindow = this.MiddleOfWindow();
+            var totalSize = this.GetTotalSize();
 
-        // Render other container
-        var otherContainer = this._otherEntity.GetComponent<ContainerComponent>();
-        var otherSize = otherContainer.GetContainer().Provider.GetRenderSize();
+            var playerContainer = this._playerEntity.GetComponent<ContainerComponent>();
+            var playerSize = playerContainer.GetContainer().Provider.GetRenderSize();
 
-        var otherContainerStartPos = new Vector2(middleOfWindow.X - otherSize.X / 2f, middleOfWindow.Y - totalSize.Y / 2f);
-        otherContainer.GetContainer().UpdateInteract(ref _mouseSlot, _otherEntity.ID, client, otherContainerStartPos, deltaTime);
+            var playerContainerStartPos = new Vector2(middleOfWindow.X - playerSize.X / 2f, middleOfWindow.Y - playerSize.Y / 2f);
+            playerContainer.GetContainer().UpdateInteract(ref _mouseSlot, _playerEntity.ID, client, playerContainerStartPos, deltaTime);
 
-        // Render player container
-        var playerContainer = this._playerEntity.GetComponent<ContainerComponent>();
-        var playerSize = playerContainer.GetContainer().Provider.GetRenderSize();
+            playerState.MouseSlot = _mouseSlot.ToSlotInfo(0);
+        }
+        else
+        {
+            var playerState = this._playerEntity.GetComponent<PlayerStateComponent>();
+            _mouseSlot.Item = playerState.MouseSlot.Item.Instance;
+            _mouseSlot.Count = playerState.MouseSlot.ItemCount;
 
-        var playerContainerStartPos = new Vector2(middleOfWindow.X - playerSize.X / 2f, otherContainerStartPos.Y + otherSize.Y);
-        playerContainer.GetContainer().UpdateInteract(ref _mouseSlot, _playerEntity.ID, client, playerContainerStartPos, deltaTime);
+            var middleOfWindow = this.MiddleOfWindow();
+            var totalSize = this.GetTotalSize();
 
-        playerState.ItemOnMouse = _mouseSlot.Item;
-        playerState.ItemOnMouseCount = _mouseSlot.Count;
+            // Render other container
+            var otherContainer = this._otherEntity.GetComponent<ContainerComponent>();
+            var otherSize = otherContainer.GetContainer().Provider.GetRenderSize();
+
+            var otherContainerStartPos = new Vector2(middleOfWindow.X - otherSize.X / 2f, middleOfWindow.Y - totalSize.Y / 2f);
+            otherContainer.GetContainer().UpdateInteract(ref _mouseSlot, _otherEntity.ID, client, otherContainerStartPos, deltaTime);
+
+            // Render player container
+            var playerContainer = this._playerEntity.GetComponent<ContainerComponent>();
+            var playerSize = playerContainer.GetContainer().Provider.GetRenderSize();
+
+            var playerContainerStartPos = new Vector2(middleOfWindow.X - playerSize.X / 2f, otherContainerStartPos.Y + otherSize.Y);
+            playerContainer.GetContainer().UpdateInteract(ref _mouseSlot, _playerEntity.ID, client, playerContainerStartPos, deltaTime);
+
+            playerState.MouseSlot = _mouseSlot.ToSlotInfo(0);
+        }
     }
 
     public void Render(float deltaTime)
     {
-        var middleOfWindow = this.MiddleOfWindow();
-        var totalSize = this.GetTotalSize();
-        var topLeft = middleOfWindow - totalSize / 2f;
-
-        Renderer.Primitive.RenderRectangle(new RectangleF(topLeft.X, topLeft.Y, totalSize.X, totalSize.Y), ColorF.Green * 0.2f);
-
-        // Render other container
-        var otherContainer = this._otherEntity.GetComponent<ContainerComponent>();
-        var otherSize = otherContainer.GetContainer().Provider.GetRenderSize();
-
-        var otherContainerStartPos = new Vector2(middleOfWindow.X - otherSize.X / 2f, middleOfWindow.Y - totalSize.Y / 2f);
-        otherContainer.GetContainer().Render(otherContainerStartPos);
-
-        // Render player container
-        var playerContainer = this._playerEntity.GetComponent<ContainerComponent>();
-        var playerSize = playerContainer.GetContainer().Provider.GetRenderSize();
-
-        var playerContainerStartPos = new Vector2(middleOfWindow.X - playerSize.X / 2f, otherContainerStartPos.Y + otherSize.Y);
-        playerContainer.GetContainer().Render(playerContainerStartPos);
-
-        var mousePos = Input.GetMousePositionInWindow();
-
-        var playerState = this._playerEntity.GetComponent<PlayerStateComponent>();
-        _mouseSlot.Item = playerState.ItemOnMouse;
-        _mouseSlot.Count = playerState.ItemOnMouseCount;
-
-        if (_mouseSlot.Item != "")
+        if (this._otherEntity is null)
         {
-            var item = ItemManager.GetItem(_mouseSlot.Item);
-            Renderer.Texture.Render(item.Texture, mousePos, Vector2.One * 2f, 0f, ColorF.White);
+            var middleOfWindow = this.MiddleOfWindow();
+            var totalSize = this.GetTotalSize();
+            var topLeft = middleOfWindow - totalSize / 2f;
+
+            Renderer.Primitive.RenderRectangle(new RectangleF(topLeft.X, topLeft.Y, totalSize.X, totalSize.Y), ColorF.Green * 0.2f);
+
+            // Render player container
+            var playerContainer = this._playerEntity.GetComponent<ContainerComponent>();
+            var playerSize = playerContainer.GetContainer().Provider.GetRenderSize();
+
+            var playerContainerStartPos = new Vector2(middleOfWindow.X - playerSize.X / 2f, middleOfWindow.Y - playerSize.Y / 2f);
+            playerContainer.GetContainer().Render(playerContainerStartPos);
+
+            var mousePos = Input.GetMousePositionInWindow();
+
+            var playerState = this._playerEntity.GetComponent<PlayerStateComponent>();
+
+            if (playerState.MouseSlot.Item.Instance != null)
+            {
+                var item = playerState.MouseSlot.Item.Instance;
+                Renderer.Texture.Render(item.GetTexture(), mousePos, Vector2.One * 2f, 0f, ColorF.White);
+            }
+        }
+        else
+        {
+            var middleOfWindow = this.MiddleOfWindow();
+            var totalSize = this.GetTotalSize();
+            var topLeft = middleOfWindow - totalSize / 2f;
+
+            Renderer.Primitive.RenderRectangle(new RectangleF(topLeft.X, topLeft.Y, totalSize.X, totalSize.Y), ColorF.Green * 0.2f);
+
+            // Render other container
+            var otherContainer = this._otherEntity.GetComponent<ContainerComponent>();
+            var otherSize = otherContainer.GetContainer().Provider.GetRenderSize();
+
+            var otherContainerStartPos = new Vector2(middleOfWindow.X - otherSize.X / 2f, middleOfWindow.Y - totalSize.Y / 2f);
+            otherContainer.GetContainer().Render(otherContainerStartPos);
+
+            // Render player container
+            var playerContainer = this._playerEntity.GetComponent<ContainerComponent>();
+            var playerSize = playerContainer.GetContainer().Provider.GetRenderSize();
+
+            var playerContainerStartPos = new Vector2(middleOfWindow.X - playerSize.X / 2f, otherContainerStartPos.Y + otherSize.Y);
+            playerContainer.GetContainer().Render(playerContainerStartPos);
+
+            var mousePos = Input.GetMousePositionInWindow();
+
+            var playerState = this._playerEntity.GetComponent<PlayerStateComponent>();
+
+            if (playerState.MouseSlot.Item.Instance != null)
+            {
+                var item = playerState.MouseSlot.Item.Instance;
+                Renderer.Texture.Render(item.GetTexture(), mousePos, Vector2.One * 2f, 0f, ColorF.White);
+            }
         }
     }
 }

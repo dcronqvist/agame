@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Numerics;
 using AGame.Engine.Graphics;
@@ -61,24 +63,24 @@ public class HotbarComponent : Component
 
         var slot = container.GetContainer().GetSlot(this.ContainerSlots[this.SelectedSlot]);
 
-        if (slot.Item != null && slot.Item != "")
+        if (slot.Item != null)
         {
             if (command.IsInputDown(UserCommand.USE_ITEM))
             {
-                bool working = slot.GetItem().OnHoldLeftClick(command, parentEntity, new Vector2i(state.MouseTileX, state.MouseTileY), ecs, command.DeltaTime, state.ItemUsedTime);
-                if (!working)
-                {
-                    state.ItemUsedTime = 0;
-                }
+                // bool working = slot.GetItem().OnHoldLeftClick(command, parentEntity, new Vector2i(state.MouseTileX, state.MouseTileY), ecs, command.DeltaTime, state.ItemUsedTime);
+                // if (!working)
+                // {
+                //     state.ItemUsedTime = 0;
+                // }
 
-                if (!command.HasBeenRun)
-                {
-                    if (slot.GetItem().ShouldBeConsumed)
-                    {
-                        slot.GetItem().ShouldBeConsumed = false;
-                        container.GetContainer().RemoveItem(this.ContainerSlots[this.SelectedSlot], 1);
-                    }
-                }
+                // if (!command.HasBeenRun)
+                // {
+                //     if (slot.GetItem().ShouldBeConsumed)
+                //     {
+                //         slot.GetItem().ShouldBeConsumed = false;
+                //         container.GetContainer().RemoveItem(this.ContainerSlots[this.SelectedSlot], 1);
+                //     }
+                // }
             }
         }
     }

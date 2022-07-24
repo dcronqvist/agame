@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace AGame.Engine.Items;
@@ -10,10 +11,9 @@ public interface IContainerProvider
 
     // Good practice to use yield etc. in this method.
     IEnumerable<ContainerSlot> GetSlots();
+    IEnumerable<int> GetSlotSeekOrder();
 
     // Return true when an update inside the container has occured
     bool Update(float deltaTime);
-    bool AddItems(string item, int amount, out int remaining);
-    void RemoveItem(int slot, int amount);
     Vector2 GetRenderSize();
 }

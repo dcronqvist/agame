@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 using AGame.Engine.Assets;
@@ -12,7 +15,7 @@ namespace AGame.Engine.Items;
 public class ContainerSlotInfo : IPacketable
 {
     public int SlotID { get; set; }
-    public string ItemID { get; set; }
+    public PackedItem Item { get; set; }
     public int ItemCount { get; set; }
 
     public ContainerSlotInfo()
@@ -20,10 +23,10 @@ public class ContainerSlotInfo : IPacketable
 
     }
 
-    public ContainerSlotInfo(int slotID, string itemID, int itemCount)
+    public ContainerSlotInfo(int slotID, ItemInstance item, int itemCount)
     {
         this.SlotID = slotID;
-        this.ItemID = itemID;
+        this.Item = new PackedItem(item);
         this.ItemCount = itemCount;
     }
 
@@ -32,12 +35,10 @@ public class ContainerSlotInfo : IPacketable
         int start = offset;
         this.SlotID = BitConverter.ToInt32(data, offset);
         offset += sizeof(int);
-        int itemIDLength = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-        this.ItemID = Encoding.UTF8.GetString(data, offset, itemIDLength);
-        offset += itemIDLength;
         this.ItemCount = BitConverter.ToInt32(data, offset);
         offset += sizeof(int);
+        this.Item = new PackedItem();
+        offset += this.Item.Populate(data, offset);
         return offset - start;
     }
 
@@ -45,9 +46,8 @@ public class ContainerSlotInfo : IPacketable
     {
         List<byte> bytes = new List<byte>();
         bytes.AddRange(BitConverter.GetBytes(this.SlotID));
-        bytes.AddRange(BitConverter.GetBytes(this.ItemID.Length));
-        bytes.AddRange(Encoding.UTF8.GetBytes(this.ItemID));
         bytes.AddRange(BitConverter.GetBytes(this.ItemCount));
+        bytes.AddRange(this.Item.ToBytes());
         return bytes.ToArray();
     }
 }
@@ -58,15 +58,13 @@ public class ContainerSlot
     public const int HEIGHT = 64;
 
     public Vector2 Position { get; set; }
-    public string Item { get; set; }
+    public ItemInstance Item { get; set; }
     public int Count { get; set; }
 
     public ContainerSlot(Vector2 position)
     {
         this.Position = position;
     }
-
-    public Item GetItem() => ItemManager.GetItem(Item);
 
     public Vector2 GetSize() => new Vector2(WIDTH, HEIGHT);
 
@@ -97,7 +95,7 @@ public class Container
             }
             else
             {
-                yield return new ContainerSlotInfo(slot.Key, "", 0);
+                yield return new ContainerSlotInfo(slot.Key, null, 0);
             }
         }
     }
@@ -110,28 +108,88 @@ public class Container
         }
     }
 
-    public IEnumerable<(string, int)> GetAllItemsInContainer()
+    private int FindSlotWithSameItem(ItemInstance item)
     {
-        foreach (var slot in this._slots)
+        List<int> slots = this.Provider.GetSlotSeekOrder().ToList();
+
+        foreach (int slot in slots)
         {
-            if (slot.Value.Item != null)
+            var cslot = this._slots[slot];
+
+            if (cslot.Item is not null && cslot.Item.ItemID == item.ItemID && (cslot.Count + 1 <= cslot.Item.MaxStack))
             {
-                yield return (slot.Value.Item, slot.Value.Count);
+                return slot;
+            }
+        }
+
+        return -1;
+    }
+
+    private int FindNextEmptySlot()
+    {
+        List<int> slots = this.Provider.GetSlotSeekOrder().ToList();
+
+        foreach (int slot in slots)
+        {
+            var cslot = this._slots[slot];
+
+            if (cslot.Item is null)
+            {
+                return slot;
+            }
+        }
+
+        return -1;
+    }
+
+    public bool AddItem(ItemInstance item)
+    {
+        int sameItemSlot = this.FindSlotWithSameItem(item);
+
+        if (sameItemSlot != -1)
+        {
+            var foundSlot = this._slots[sameItemSlot];
+            foundSlot.Count += 1;
+            return true;
+        }
+        else
+        {
+            int emptySlot = this.FindNextEmptySlot();
+
+            if (emptySlot != -1)
+            {
+                var foundSlot = this._slots[emptySlot];
+                foundSlot.Item = item;
+                foundSlot.Count = 1;
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
     }
 
-    public bool AddItemsToContainer(string item, int amount, out int remaining)
+    public void SetItemInSlot(int slot, ItemInstance item, int amount)
     {
-        return this.Provider.AddItems(item, amount, out remaining);
+        var foundSlot = this._slots[slot];
+        foundSlot.Item = item;
+        foundSlot.Count = amount;
     }
 
-    public void RemoveItem(int slot, int amount)
+    public ItemInstance RemoveItem(int slot)
     {
-        this.Provider.RemoveItem(slot, amount);
+        var item = this._slots[slot].Item;
+        this._slots[slot].Count -= 1;
+        if (this._slots[slot].Count <= 0)
+        {
+            this._slots[slot].Item = null;
+        }
+
+        return item;
     }
 
-    public void SetSlotData(int slot, string item, int count)
+    public void SetSlotData(int slot, ItemInstance item, int count)
     {
         this._slots[slot].Item = item;
         this._slots[slot].Count = count;
@@ -149,6 +207,9 @@ public class Container
 
     public void Render(Vector2 topLeft)
     {
+        ContainerSlot hoveredSlot = null;
+        var font = ModManager.GetAsset<Font>("default.font.rainyhearts");
+
         foreach (KeyValuePair<int, ContainerSlot> slot in this._slots)
         {
             // Render slot
@@ -163,17 +224,34 @@ public class Container
             }
 
             Renderer.Primitive.RenderRectangle(rec, color * 0.5f);
+            slot.Value.Item?.Render(position);
 
-            if (slot.Value.Item != "" && slot.Value.Item != null)
+            // Render count
+            if (slot.Value.Item is not null)
             {
-                var item = ItemManager.GetItem(slot.Value.Item);
-                var itemSize = Vector2.One * 4f;
+                float scale = 1f;
+                var text = slot.Value.Count.ToString();
+                var textSize = font.MeasureString(text, scale);
+                var textPosition = position + new Vector2(size.X - textSize.X, size.Y - textSize.Y);
+                Renderer.Text.RenderText(font, text, textPosition, scale, ColorF.White, Renderer.Camera);
 
-                Renderer.Texture.Render(item.Texture, position, itemSize, 0f, ColorF.White);
+                // If has tool component, render durability
+                if (slot.Value.Item.TryGetComponent<DefaultMod.Tool>(out DefaultMod.Tool t))
+                {
+                    var durability = t.Definition.Durability;
+                    var currDur = t.CurrentDurability;
+                    var perc = ((float)currDur / durability).ToString("0.00");
 
-                var font = ModManager.GetAsset<Font>("default.font.rainyhearts");
-                Renderer.Text.RenderText(font, slot.Value.Count.ToString(), position + new Vector2(32, 32), 1f, ColorF.White, Renderer.Camera);
+                    var durabilitySize = font.MeasureString(perc, scale);
+                    var durabilityPosition = position + new Vector2(size.X - durabilitySize.X, size.Y - durabilitySize.Y - textSize.Y);
+                    Renderer.Text.RenderText(font, perc, durabilityPosition, scale, ColorF.White, Renderer.Camera);
+                }
             }
+        }
+
+        if (hoveredSlot is not null && hoveredSlot.Item is not null)
+        {
+            Renderer.Text.RenderText(font, hoveredSlot.Item.Name, Input.GetMousePositionInWindow(), 2f, ColorF.White, Renderer.Camera);
         }
     }
 

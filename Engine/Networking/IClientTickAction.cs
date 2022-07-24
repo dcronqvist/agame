@@ -80,7 +80,7 @@ public class ClientSetContainerContentAction : IClientTickAction
 
             foreach (var info in infos)
             {
-                container.GetContainer().SetSlotData(info.SlotID, info.ItemID, info.ItemCount);
+                container.GetContainer().SetItemInSlot(info.SlotID, info.Item.Instance, info.ItemCount);
             }
 
             if (Packet.OpenInteract)

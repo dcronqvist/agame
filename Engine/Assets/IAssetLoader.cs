@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace AGame.Engine.Assets
 {
     public interface IAssetLoader

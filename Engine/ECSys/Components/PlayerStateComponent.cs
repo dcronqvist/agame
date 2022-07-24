@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Text;
+using AGame.Engine.Items;
 using AGame.Engine.Networking;
 using AGame.Engine.World;
 
@@ -105,6 +108,20 @@ public class PlayerStateComponent : Component
         }
     }
 
+    private ContainerSlotInfo _mouseSlot;
+    public ContainerSlotInfo MouseSlot
+    {
+        get => _mouseSlot ?? (_mouseSlot = new ContainerSlotInfo(0, null, 0));
+        set
+        {
+            if (_mouseSlot != value)
+            {
+                _mouseSlot = value;
+                this.NotifyPropertyChanged();
+            }
+        }
+    }
+
     public override void ApplyInput(Entity parentEntity, UserCommand command, WorldContainer world, ECS ecs)
     {
         this.HoldingUseItem = command.IsInputDown(UserCommand.USE_ITEM);
@@ -131,12 +148,14 @@ public class PlayerStateComponent : Component
             MouseTileY = this.MouseTileY,
             ItemUsedTime = this.ItemUsedTime,
             ItemOnMouse = this.ItemOnMouse,
+            ItemOnMouseCount = this.ItemOnMouseCount,
+            MouseSlot = this.MouseSlot
         };
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(this.HoldingUseItem, this.HoldingItem, this.MouseTileX, this.MouseTileY);
+        return HashCode.Combine(this.HoldingUseItem, this.HoldingItem, this.MouseTileX, this.MouseTileY, this.ItemUsedTime, this.ItemOnMouse, this.ItemOnMouseCount, this.MouseSlot);
     }
 
     public override void InterpolateProperties(Component from, Component to, float amt)
@@ -151,6 +170,7 @@ public class PlayerStateComponent : Component
         this.ItemUsedTime = Utilities.Lerp(fromC.ItemUsedTime, toC.ItemUsedTime, amt);
         this.ItemOnMouse = toC.ItemOnMouse;
         this.ItemOnMouseCount = toC.ItemOnMouseCount;
+        this.MouseSlot = toC.MouseSlot;
     }
 
     public override int Populate(byte[] data, int offset)
@@ -174,6 +194,8 @@ public class PlayerStateComponent : Component
         offset += len;
         this.ItemOnMouseCount = BitConverter.ToInt32(data, offset);
         offset += sizeof(int);
+        this.MouseSlot = new ContainerSlotInfo();
+        offset += this.MouseSlot.Populate(data, offset);
         return offset - start;
     }
 
@@ -189,6 +211,7 @@ public class PlayerStateComponent : Component
         bytes.AddRange(BitConverter.GetBytes(this.ItemOnMouse.Length));
         bytes.AddRange(Encoding.UTF8.GetBytes(this.ItemOnMouse));
         bytes.AddRange(BitConverter.GetBytes(this.ItemOnMouseCount));
+        bytes.AddRange(this.MouseSlot.ToBytes());
         return bytes.ToArray();
     }
 
@@ -207,5 +230,6 @@ public class PlayerStateComponent : Component
         this.ItemUsedTime = newC.ItemUsedTime;
         this.ItemOnMouse = newC.ItemOnMouse;
         this.ItemOnMouseCount = newC.ItemOnMouseCount;
+        this.MouseSlot = newC.MouseSlot;
     }
 }

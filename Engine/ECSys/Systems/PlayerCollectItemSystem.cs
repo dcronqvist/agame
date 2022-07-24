@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using AGame.Engine.ECSys.Components;
 using AGame.Engine.World;
@@ -45,15 +47,15 @@ public class PlayerCollectItemSystem : BaseSystem
                 var middleOfPickedUpBy = pickedUpByTransform.Position + pickedUpBy.GetComponent<AnimatorComponent>().GetAnimator().GetCurrentAnimation().GetMiddleOfCurrentFrameScaled().ToCoordinateVector();
 
                 var container = pickedUpBy.GetComponent<ContainerComponent>();
-                if (container.GetContainer().AddItemsToContainer(entity.GetComponent<GroundItemComponent>().Item, 1, out int remaining))
-                {
-                    ParentECS.DestroyEntity(entity.ID);
-                    this.GameServer.SendContainerContentsToViewers(pickedUpBy);
-                }
-                else
-                {
-                    entity.GetComponent<GroundItemComponent>().PickedUpBy = -1;
-                }
+                // if (container.GetContainer().AddItemsToContainer(entity.GetComponent<GroundItemComponent>().Item, 1, out int remaining))
+                // {
+                //     ParentECS.DestroyEntity(entity.ID);
+                //     this.GameServer.SendContainerContentsToViewers(pickedUpBy);
+                // }
+                // else
+                // {
+                //     entity.GetComponent<GroundItemComponent>().PickedUpBy = -1;
+                // }
             }
         }
     }

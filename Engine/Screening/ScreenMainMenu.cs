@@ -1,5 +1,11 @@
+using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Numerics;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using AGame.Engine.Assets;
 using AGame.Engine.Assets.Scripting;
 using AGame.Engine.Configuration;
@@ -28,6 +34,7 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
 
     public override void Initialize()
     {
+
     }
 
     public override void OnEnter(EnterMainMenuArgs args)

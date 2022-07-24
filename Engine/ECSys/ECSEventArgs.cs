@@ -1,3 +1,4 @@
+using System;
 using AGame.Engine.Networking;
 
 namespace AGame.Engine.ECSys;

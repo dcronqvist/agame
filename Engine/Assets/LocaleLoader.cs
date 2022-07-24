@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using AGame.Engine.Graphics.Rendering;
 using System.Text.Json;
+using System.Collections.Generic;
 
 namespace AGame.Engine.Assets;
 

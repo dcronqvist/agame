@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Numerics;
 using AGame.Engine.Assets;
 using AGame.Engine.Configuration;
@@ -91,12 +93,12 @@ public class RenderSystem : BaseSystem
 
             if (state.HoldingItem != "")
             {
-                var item = ItemManager.GetItem(state.HoldingItem);
-                if (state.HoldingUseItem)
-                {
-                    Renderer.Text.RenderText(ModManager.GetAsset<Font>("default.font.rainyhearts"), "using...", transform.Position.ToWorldVector().ToVector2(), 1f, ColorF.DeepBlue, Renderer.Camera);
-                    item.OnHoldLeftClickRender(entity, new Vector2i(state.MouseTileX, state.MouseTileY), ParentECS, state.ItemUsedTime);
-                }
+                // var item = ItemManager.GetItem(state.HoldingItem);
+                // if (state.HoldingUseItem)
+                // {
+                //     Renderer.Text.RenderText(ModManager.GetAsset<Font>("default.font.rainyhearts"), "using...", transform.Position.ToWorldVector().ToVector2(), 1f, ColorF.DeepBlue, Renderer.Camera);
+                //     item.OnHoldLeftClickRender(entity, new Vector2i(state.MouseTileX, state.MouseTileY), ParentECS, state.ItemUsedTime);
+                // }
             }
         }
 
@@ -109,10 +111,10 @@ public class RenderSystem : BaseSystem
         if (entity.HasComponent<GroundItemComponent>())
         {
             var itemComponent = entity.GetComponent<GroundItemComponent>();
-            var itemID = itemComponent.Item;
-            var item = ItemManager.GetItem(itemID);
+            // var itemID = itemComponent.Item;
+            // var item = ItemManager.GetItem(itemID);
 
-            Renderer.Texture.Render(item.Texture, transform.Position.ToWorldVector().ToVector2(), Vector2.One * 2f, 0f, ColorF.White);
+            // Renderer.Texture.Render(item.Texture, transform.Position.ToWorldVector().ToVector2(), Vector2.One * 2f, 0f, ColorF.White);
         }
     }
 }

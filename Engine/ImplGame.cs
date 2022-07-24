@@ -82,6 +82,7 @@ namespace AGame.Engine
                 Logging.Log(LogLevel.Info, "Screen manager initialized!");
 
                 bool success = Localization.Init(Settings.GetSetting<string>("locale"));
+                ItemManager.RegisterComponentTypes();
 
                 if (!success)
                 {

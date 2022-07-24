@@ -1,5 +1,9 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 using AGame.Engine.Assets;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
@@ -152,8 +156,14 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 {
                     Entity entity = ecs.CreateEntityFromAsset("default.entity.player");
                     entity.GetComponent<CharacterComponent>().Name = e.RequestPacket.Name;
-                    entity.GetComponent<ContainerComponent>().GetContainer().AddItemsToContainer("default.item.test_item", 1, out int remaining);
-                    entity.GetComponent<ContainerComponent>().GetContainer().AddItemsToContainer("default.item.pebble", 8, out remaining);
+                    ItemInstance ii = ItemManager.GetItemDef("default.item.pebble").CreateItem();
+                    ii.GetComponent<DefaultMod.Tool>().CurrentDurability = 500;
+
+                    entity.GetComponent<ContainerComponent>().GetContainer().AddItem(ii);
+
+                    ii = ItemManager.GetItemDef("default.item.pebble").CreateItem();
+                    ii.GetComponent<DefaultMod.Tool>().CurrentDurability = 100;
+                    entity.GetComponent<ContainerComponent>().GetContainer().AddItem(ii);
 
                     // int runs = Utilities.GetRandomInt(5, 10);
                     // for (int i = 0; i < runs; i++)
@@ -352,13 +362,12 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 }));
                 var playerState = player.GetComponent<PlayerStateComponent>();
 
-                mouseSlot.Item = playerState.ItemOnMouse;
-                mouseSlot.Count = playerState.ItemOnMouseCount;
+                mouseSlot.Item = playerState.MouseSlot.Item.Instance;
+                mouseSlot.Count = playerState.MouseSlot.ItemCount;
 
                 container.ClickSlot(packet.SlotID, ref mouseSlot);
 
-                playerState.ItemOnMouse = mouseSlot.Item;
-                playerState.ItemOnMouseCount = mouseSlot.Count;
+                playerState.MouseSlot = mouseSlot.ToSlotInfo(0);
 
                 this.SendContainerContentsToViewers(entity);
             });

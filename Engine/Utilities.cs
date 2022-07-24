@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Reflection;
@@ -349,13 +351,13 @@ namespace AGame.Engine
             return new Vector2(Math.Max(a.X, b.X), Math.Max(a.Y, b.Y));
         }
 
-        public static IEnumerable<ContainerSlot> CreateSlotGrid(int spacing, int columns, int rows)
+        public static IEnumerable<ContainerSlot> CreateSlotGrid(int spacing, int columns, int rows, Vector2 offset = default(Vector2))
         {
             for (int y = 0; y < rows; y++)
             {
                 for (int x = 0; x < columns; x++)
                 {
-                    yield return new ContainerSlot(new Vector2(x * (ContainerSlot.WIDTH + spacing) + spacing, y * (ContainerSlot.HEIGHT + spacing) + spacing));
+                    yield return new ContainerSlot(new Vector2(x * (ContainerSlot.WIDTH + spacing) + spacing, y * (ContainerSlot.HEIGHT + spacing) + spacing) + offset);
                 }
             }
         }

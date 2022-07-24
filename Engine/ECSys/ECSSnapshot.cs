@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace AGame.Engine.ECSys;
 
 public class ECSSnapshot

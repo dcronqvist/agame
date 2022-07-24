@@ -1,5 +1,9 @@
+using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 using AGame.Engine.Assets;
 using AGame.Engine.ECSys;
 using AGame.Engine.ECSys.Components;
@@ -29,9 +33,8 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
     public Camera2D Camera { get; set; }
     private Vector2 _cameraTargetPosition;
 
-    List<Packet> _receivedPackets = new List<Packet>();
-
     bool _paused = false;
+    bool _showingInventory = false;
     ContainerInteractionGUI _currentContainerInteraction;
 
     public override void Initialize()
@@ -174,6 +177,8 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
 
             var color = ColorF.Black;
 
+            var position = new Vector2(hotbarTopLeft.X + i * (ContainerSlot.WIDTH + 5) + 5, hotbarTopLeft.Y + 5);
+
             if (i == selectedSlot)
             {
                 Renderer.Primitive.RenderRectangle(new RectangleF(hotbarTopLeft.X + i * (ContainerSlot.WIDTH + 5), hotbarTopLeft.Y, ContainerSlot.WIDTH + 10, ContainerSlot.HEIGHT + 10), ColorF.LightGray * 0.8f);
@@ -181,13 +186,29 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
 
             Renderer.Primitive.RenderRectangle(new RectangleF(hotbarTopLeft.X + i * (ContainerSlot.WIDTH + 5) + 5, hotbarTopLeft.Y + 5, ContainerSlot.WIDTH, ContainerSlot.HEIGHT), color * 0.6f);
 
-            if (slot.Item != null && slot.Item != "")
+            slot.Item?.Render(position);
+            var size = slot.GetSize();
+
+            // Render count
+            if (slot.Item is not null)
             {
-                var item = slot.GetItem();
+                float scale = 1f;
+                var text = slot.Count.ToString();
+                var textSize = font.MeasureString(text, scale);
+                var textPosition = position + new Vector2(size.X - textSize.X, size.Y - textSize.Y);
+                Renderer.Text.RenderText(font, text, textPosition, scale, ColorF.White, Renderer.Camera);
 
-                Renderer.Texture.Render(item.Texture, new Vector2(hotbarTopLeft.X + i * (ContainerSlot.WIDTH + 5) + 5, hotbarTopLeft.Y + 5), Vector2.One * 4f, 0f, ColorF.White);
+                // If has tool component, render durability
+                // if (slot.Item.TryGetComponent<DefaultMod.Tool>(out DefaultMod.Tool t))
+                // {
+                //     var durability = t.Definition.Durability;
+                //     var currDur = t.CurrentDurability;
+                //     var perc = ((float)currDur / durability).ToString("0.00");
 
-                Renderer.Text.RenderText(font, slot.Count.ToString(), new Vector2(hotbarTopLeft.X + i * (ContainerSlot.WIDTH + 5) + 5, hotbarTopLeft.Y + 5) + new Vector2(ContainerSlot.WIDTH / 1.5f - 4, ContainerSlot.HEIGHT / 2f), 2f, ColorF.White, Renderer.Camera);
+                //     var durabilitySize = font.MeasureString(perc, scale);
+                //     var durabilityPosition = position + new Vector2(size.X - durabilitySize.X, size.Y - durabilitySize.Y - textSize.Y);
+                //     Renderer.Text.RenderText(font, perc, durabilityPosition, scale, ColorF.White, Renderer.Camera);
+                // }
             }
         }
     }
@@ -212,7 +233,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             if (this._currentContainerInteraction == null)
             {
                 var playerContainer = this._client.GetPlayerEntity().GetComponent<ContainerComponent>();
-                //this._currentContainerInteraction = new ContainerInteractionGUI(this._client.GetPlayerEntity(), (playerContainer.GetContainer(), this._client.GetPlayerEntity().ID, Vector2.One * 200));
+                this._currentContainerInteraction = new ContainerInteractionGUI(this._client.GetPlayerEntity(), null);
             }
             else
             {

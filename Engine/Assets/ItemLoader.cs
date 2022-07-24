@@ -1,5 +1,8 @@
+using System;
+using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using AGame.Engine.Items;
 
 namespace AGame.Engine.Assets;
 
@@ -23,48 +26,34 @@ public class ItemLoader : IAssetLoader
         using (StreamReader sr = new StreamReader(fileStream))
         {
             string json = sr.ReadToEnd();
-            ItemDescription ed = JsonSerializer.Deserialize<ItemDescription>(json, options);
+            ItemDefinition ed = JsonSerializer.Deserialize<ItemDefinition>(json, options);
             return ed;
         }
     }
 }
 
-public class ItemConverter : JsonConverter<ItemDescription>
+public class ItemConverter : JsonConverter<ItemComponentDefinition>
 {
     public override bool CanConvert(Type typeToConvert)
     {
-        return typeof(ItemDescription).IsAssignableFrom(typeToConvert);
+        return typeof(ItemComponentDefinition).IsAssignableFrom(typeToConvert);
     }
 
-    public override ItemDescription Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override ItemComponentDefinition Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         JsonDocument document = JsonDocument.ParseValue(ref reader);
-        document.RootElement.TryGetProperty("itemType", out JsonElement ct);
+        document.RootElement.TryGetProperty("type", out JsonElement ct);
 
         string s = ct.GetString();
-        ItemType type = Enum.Parse<ItemType>(s, true);
+        Type componentType = ItemManager.GetComponentTypeByName(s);
 
         JsonSerializerOptions opts = new JsonSerializerOptions(options);
         opts.Converters.Remove(this);
 
-        switch (type)
-        {
-            case ItemType.Tool:
-                return document.Deserialize<ToolDescription>(opts);
-            case ItemType.Consumable:
-                return document.Deserialize<ConsumableDescription>(opts);
-            case ItemType.Equipable:
-                return document.Deserialize<EquipableDescription>(opts);
-            case ItemType.Placeable:
-                return document.Deserialize<PlaceableDescription>(opts);
-            case ItemType.Resource:
-                return document.Deserialize<ResourceDescription>(opts);
-        }
-
-        return null;
+        return document.Deserialize(componentType, opts) as ItemComponentDefinition;
     }
 
-    public override void Write(Utf8JsonWriter writer, ItemDescription value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, ItemComponentDefinition value, JsonSerializerOptions options)
     {
         writer.WriteRawValue(JsonSerializer.Serialize(value, options));
     }

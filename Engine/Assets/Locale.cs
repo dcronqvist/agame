@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace AGame.Engine.Assets;
 
 public class Locale : Asset

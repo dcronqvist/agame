@@ -1,3 +1,5 @@
+using System;
+
 namespace AGame.Engine.Networking;
 
 [AttributeUsage(AttributeTargets.Class)]

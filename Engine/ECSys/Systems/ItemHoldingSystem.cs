@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using AGame.Engine.ECSys.Components;
 using AGame.Engine.Items;
 using AGame.Engine.World;
@@ -24,14 +25,14 @@ public class ItemHoldingSystem : BaseSystem
 
             var slot = container.GetContainer().GetSlot(hotbar.SelectedSlot);
 
-            if (slot.Item != null && slot.Item != "")
-            {
-                playerState.HoldingItem = slot.Item;
-            }
-            else
-            {
-                playerState.HoldingItem = "";
-            }
+            // if (slot.Item != null && slot.Item != "")
+            // {
+            //     playerState.HoldingItem = slot.Item;
+            // }
+            // else
+            // {
+            //     playerState.HoldingItem = "";
+            // }
         }
     }
 }
