@@ -103,7 +103,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     private ThreadSafe<Dictionary<Connection, List<ChunkAddress>>> _connectionsLoadedChunks;
     private Dictionary<Connection, List<Entity>> _connectionsLoadedEntities;
     private ThreadSafe<Dictionary<Connection, List<Entity>>> _connectionsViewingContainerInEntity;
-    private Dictionary<Connection, List<(ulong, int)>> _connectionsCreatedEntities;
+    private ThreadSafe<Dictionary<Connection, List<(ulong, int)>>> _connectionsCreatedEntities;
 
     // Server tick
     private int _serverTick = 0;
@@ -126,7 +126,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         this._connectionsLoadedEntities = new Dictionary<Connection, List<Entity>>();
         this._updatedComponents = new List<(Entity, Component)>();
         this._connectionsViewingContainerInEntity = new ThreadSafe<Dictionary<Connection, List<Entity>>>(new Dictionary<Connection, List<Entity>>());
-        this._connectionsCreatedEntities = new Dictionary<Connection, List<(ulong, int)>>();
+        this._connectionsCreatedEntities = new ThreadSafe<Dictionary<Connection, List<(ulong, int)>>>(new Dictionary<Connection, List<(ulong, int)>>());
 
         this.RegisterServerEventHandlers();
         this.RegisterPacketHandlers();
@@ -193,7 +193,10 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                     connectionsViewingContainerInEntity.Add(e.RequestConnection, new List<Entity>() { entity }); // Player should always be "viewing" itself
                 });
 
-                this._connectionsCreatedEntities.Add(e.RequestConnection, new List<(ulong, int)>());
+                this._connectionsCreatedEntities.LockedAction((cce) =>
+                {
+                    cce.Add(e.RequestConnection, new List<(ulong, int)>());
+                });
 
                 e.Accept(new ConnectResponse() { PlayerEntityID = entity.ID, ServerTickSpeed = this._configuration.TickRate, PlayerChunkX = 0, PlayerChunkY = 0 });
             }
@@ -420,6 +423,15 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 view[connection].Remove(entity);
             });
         });
+
+        base.AddPacketHandler<AcknowledgeServerSideEntityPacket>((packet, connection) =>
+        {
+            this._connectionsCreatedEntities.LockedAction((cce) =>
+            {
+                (ulong hash, int id) = cce[connection].Find(x => x.Item2 == packet.ServerSideEntityID);
+                cce[connection].Remove((hash, id));
+            });
+        });
     }
 
     private void SendChunksToClient(Connection connection)
@@ -562,13 +574,17 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             onCreated.Invoke(entity);
 
             // Now we save the entity like this: Connection -> (HashCode, EntityID)
-            if (!this._connectionsCreatedEntities.ContainsKey(connection))
-            {
-                this._connectionsCreatedEntities[connection] = new List<(ulong, int)>();
-            }
 
-            this._connectionsCreatedEntities[connection].Add((entity.GetHash(), entity.ID));
-            Logging.Log(LogLevel.Debug, $"Server: Created entity with id {entity.ID} and hash {entity.GetHash()} as client {connection.RemoteEndPoint}.");
+            this._connectionsCreatedEntities.LockedAction((cce) =>
+            {
+                if (!cce.ContainsKey(connection))
+                {
+                    cce[connection] = new List<(ulong, int)>();
+                }
+
+                cce[connection].Add((entity.GetHash(), entity.ID));
+            });
+
         });
     }
 
@@ -635,7 +651,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
                 List<Entity> lastEntitiesInRange = this._connectionsLoadedEntities[conn];
                 List<Entity> entitiesInRange = this.GetEntitiesInRangeOfPlayer(conn);
-                List<Entity> selfCreatedEntities = this._connectionsCreatedEntities[conn].Select((kvp) => this._ecs.LockedAction((ecs) => ecs.GetEntityFromID(kvp.Item2))).ToList();
+                List<Entity> selfCreatedEntities = this._connectionsCreatedEntities.LockedAction((cce) => cce[conn].Select((kvp) => this._ecs.LockedAction((ecs) => ecs.GetEntityFromID(kvp.Item2))).ToList());
 
                 this._connectionsLoadedEntities[conn] = entitiesInRange;
 
@@ -655,11 +671,13 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 int[] entityIDsToRemove = entitiesToRemove.Select(e => e.ID).ToArray();
 
                 // Send packets to the client telling it which server side entity ID the client side entity ID has been given
-                foreach ((var hash, var entityID) in this._connectionsCreatedEntities[conn])
+                this._connectionsCreatedEntities.LockedAction((cce) =>
                 {
-                    this.EnqueuePacket(new AcknowledgeClientSideEntityPacket() { Hash = hash, EntityID = entityID }, conn, true, false);
-                }
-                this._connectionsCreatedEntities[conn].Clear();
+                    foreach ((var hash, var entityID) in cce[conn])
+                    {
+                        this.EnqueuePacket(new AcknowledgeClientSideEntityPacket() { Hash = hash, EntityID = entityID }, conn, true, false);
+                    }
+                });
 
                 this.SendECSUpdate(conn, updatesToSend.Concat(newEntityUpdates).ToList(), this._serverTick, entityIDsToRemove);
             }

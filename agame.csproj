@@ -7,7 +7,6 @@
     <RootNamespace>AGame</RootNamespace>
     <DefaultItemExcludes>$(DefaultItemExcludes);$(ProjectDir)\res\**\*.*</DefaultItemExcludes>
     <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
-    <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
