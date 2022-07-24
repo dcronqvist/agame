@@ -111,10 +111,10 @@ public class RenderSystem : BaseSystem
         if (entity.HasComponent<GroundItemComponent>())
         {
             var itemComponent = entity.GetComponent<GroundItemComponent>();
-            // var itemID = itemComponent.Item;
-            // var item = ItemManager.GetItem(itemID);
+            var itemID = itemComponent.Item;
+            var item = ItemManager.GetItemDef(itemID);
 
-            // Renderer.Texture.Render(item.Texture, transform.Position.ToWorldVector().ToVector2(), Vector2.One * 2f, 0f, ColorF.White);
+            Renderer.Texture.Render(ModManager.GetAsset<Texture2D>(item.Texture), transform.Position.ToWorldVector().ToVector2(), Vector2.One * 2f, 0f, ColorF.White);
         }
     }
 }

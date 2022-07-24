@@ -6,9 +6,11 @@ using System.Text.Json.Serialization;
 using AGame.Engine.Assets;
 using AGame.Engine.Assets.Scripting;
 using AGame.Engine.ECSys;
+using AGame.Engine.ECSys.Components;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
 using AGame.Engine.Networking;
+using AGame.Engine.World;
 
 namespace AGame.Engine.Items;
 
@@ -117,6 +119,30 @@ public class ItemInstance
             // IF WE ARE ON THE CLIENT
             this.Definition._gameClient.AttemptCreateEntity(entity, onCreate);
         }
+    }
+
+    public void DestroyEntity(Entity playerEntity, ECS ecs, Entity otherEntity)
+    {
+        if (ecs.IsRunner(SystemRunner.Server))
+        {
+            // IF WE ARE ON THE SERVER
+            this.Definition._gameServer.DestroyEntity(otherEntity.ID);
+        }
+        else if (ecs.IsRunner(SystemRunner.Client))
+        {
+            // IF WE ARE ON THE CLIENT
+            this.Definition._gameClient.AttemptDestroyEntity(otherEntity.ID);
+        }
+    }
+
+    public IEnumerable<Entity> FindEntities(ECS ecs, Predicate<Entity> predicate)
+    {
+        return ecs.GetAllEntities((entity) => predicate(entity));
+    }
+
+    public Entity GetEntityAtPosition(ECS ecs, Vector2i tilePosition)
+    {
+        return this.FindEntities(ecs, (entity) => entity.TryGetComponent<TransformComponent>(out var transform) && transform.Position.Equals(new CoordinateVector(tilePosition.X, tilePosition.Y))).FirstOrDefault();
     }
 }
 

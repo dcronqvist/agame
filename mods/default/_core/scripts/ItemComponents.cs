@@ -49,21 +49,48 @@ namespace DefaultMod
 
         public override bool OnUse(Entity playerEntity, UserCommand userCommand, ItemInstance item, ECS ecs, float deltaTime, float totalTimeUsed)
         {
-            if (totalTimeUsed > 1f)
+            Entity entity = item.GetEntityAtPosition(ecs, new Vector2i(userCommand.MouseTileX, userCommand.MouseTileY));
+
+            if (entity is null)
             {
-                if (!userCommand.HasBeenRun)
-                {
-                    this.CurrentDurability -= 20;
-                    item.CreateEntity(playerEntity, ecs, "default.entity.test_rock", (entity) =>
-                    {
-                        Vector2i tilepos = playerEntity.GetComponent<TransformComponent>().Position.ToTileAligned();
-                        entity.GetComponent<TransformComponent>().Position = new CoordinateVector(tilepos.X, tilepos.Y);
-                    });
-                }
                 return false;
             }
+            else
+            {
+                if (entity.TryGetComponent<HarvestableComponent>(out var harvest))
+                {
+                    if (harvest.HasTag("rock"))
+                    {
+                        if (totalTimeUsed > 1f)
+                        {
+                            if (!userCommand.HasBeenRun)
+                            {
+                                this.CurrentDurability -= 20;
+                                item.DestroyEntity(playerEntity, ecs, entity);
 
-            return true;
+
+                                foreach (var def in harvest.Yields)
+                                {
+                                    int amount = Utilities.GetRandomInt(def.MinAmount, def.MaxAmount);
+                                    string newItem = def.Item;
+
+                                    item.CreateEntity(playerEntity, ecs, "default.entity.ground_item", (entity) =>
+                                    {
+                                        entity.GetComponent<TransformComponent>().Position = new CoordinateVector(userCommand.MouseTileX, userCommand.MouseTileY);
+                                        entity.GetComponent<GroundItemComponent>().Item = newItem;
+                                    });
+                                }
+
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    }
+                }
+
+                return false;
+            }
         }
 
         public override bool ShouldItemBeConsumed()

@@ -34,6 +34,12 @@ public class Entity
         return Utilities.CombineHash(componentHashes);
     }
 
+    public bool TryGetComponent<T>(out T component) where T : Component
+    {
+        component = (T)this.Components.FirstOrDefault(c => c is T);
+        return component != null;
+    }
+
     private void AddComponent(Component c)
     {
         ECS.Instance.Value.AddComponentToEntity(this, c);

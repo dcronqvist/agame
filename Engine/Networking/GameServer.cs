@@ -104,6 +104,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     private Dictionary<Connection, List<Entity>> _connectionsLoadedEntities;
     private ThreadSafe<Dictionary<Connection, List<Entity>>> _connectionsViewingContainerInEntity;
     private ThreadSafe<Dictionary<Connection, List<(ulong, int)>>> _connectionsCreatedEntities;
+    private ThreadSafe<Dictionary<Connection, List<int>>> _connectionsDestroyedEntities;
 
     // Server tick
     private int _serverTick = 0;
@@ -127,6 +128,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         this._updatedComponents = new List<(Entity, Component)>();
         this._connectionsViewingContainerInEntity = new ThreadSafe<Dictionary<Connection, List<Entity>>>(new Dictionary<Connection, List<Entity>>());
         this._connectionsCreatedEntities = new ThreadSafe<Dictionary<Connection, List<(ulong, int)>>>(new Dictionary<Connection, List<(ulong, int)>>());
+        this._connectionsDestroyedEntities = new ThreadSafe<Dictionary<Connection, List<int>>>(new Dictionary<Connection, List<int>>());
 
         this.RegisterServerEventHandlers();
         this.RegisterPacketHandlers();
@@ -600,6 +602,36 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         {
             ecs.DestroyEntity(entityId);
         });
+    }
+
+    public void DestroyEntityAsClient(int playerEntityID, int entityId)
+    {
+        var playerConnection = this._connectionToPlayerId.LockedAction((ctp) =>
+        {
+            return ctp.FirstOrDefault((kvp) => kvp.Value == playerEntityID).Key;
+        });
+
+        if (playerConnection == null)
+        {
+            return;
+        }
+
+        this.DestroyEntityAsClient(playerConnection, entityId);
+    }
+
+    public void DestroyEntityAsClient(Connection connection, int entityID)
+    {
+        this._connectionsDestroyedEntities.LockedAction((cde) =>
+        {
+            if (!cde.ContainsKey(connection))
+            {
+                cde[connection] = new List<int>();
+            }
+
+            cde[connection].Add(entityID);
+        });
+
+        this.DestroyEntity(entityID);
     }
 
     private List<Entity> GetEntitiesInRangeOfPlayer(Connection conn)

@@ -101,7 +101,8 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     private ThreadSafe<Queue<Packet>> _sentPackets;
     private ThreadSafe<Queue<int>> _latency;
     private ThreadSafe<Queue<IClientTickAction>> _nextTickActions;
-    private ThreadSafe<Dictionary<ulong, Entity>> _clientPredictedEntities;
+    private ThreadSafe<Dictionary<ulong, Entity>> _clientPredictedCreatedEntities;
+    private ThreadSafe<List<Entity>> _clientPredictedDestroyedEntities;
 
     private Dictionary<int, Entity> _serverEntityIDToClientEntity;
 
@@ -133,7 +134,8 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         this._playerId = -1;
         this._nextTickActions = new ThreadSafe<Queue<IClientTickAction>>(new Queue<IClientTickAction>());
         this.ReceivedEntityOpenContainer = -1;
-        this._clientPredictedEntities = new ThreadSafe<Dictionary<ulong, Entity>>(new Dictionary<ulong, Entity>());
+        this._clientPredictedCreatedEntities = new ThreadSafe<Dictionary<ulong, Entity>>(new Dictionary<ulong, Entity>());
+        this._clientPredictedDestroyedEntities = new ThreadSafe<List<Entity>>(new List<Entity>());
 
         this.RegisterClientEventHandlers();
         this.RegisterPacketHandlers();
@@ -275,7 +277,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
         base.AddPacketHandler<AcknowledgeClientSideEntityPacket>((packet) =>
         {
-            this._clientPredictedEntities.LockedAction((cpe) =>
+            this._clientPredictedCreatedEntities.LockedAction((cpe) =>
             {
                 this._serverEntityIDToClientEntity.Add(packet.EntityID, cpe[packet.Hash]);
                 cpe.Remove(packet.Hash);
@@ -421,6 +423,10 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                         this._ecs.DestroyEntity(clientEntity.ID);
                         this._serverEntityIDToClientEntity.Remove(serverSideEntity);
                     }
+                    else
+                    {
+                        Logging.Log(LogLevel.Debug, $"Client: Received delete entity packet for {serverSideEntity} from server, but didn't exist locally, probably deleted as of prediction.");
+                    }
                 }
 
                 return false;
@@ -557,7 +563,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
 
     public void AttemptCreateEntity(string assetName, Action<Entity> onCreated)
     {
-        ulong hash = this._clientPredictedEntities.LockedAction((cpe) =>
+        ulong hash = this._clientPredictedCreatedEntities.LockedAction((cpe) =>
         {
             var entity = this._ecs.CreateEntityFromAsset(assetName);
 
@@ -583,5 +589,17 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         //         }
         //     });
         // });
+    }
+
+    public void AttemptDestroyEntity(int localEntityID)
+    {
+        var localEntity = this._ecs.GetEntityFromID(localEntityID);
+
+        this._clientPredictedDestroyedEntities.LockedAction((cpd) =>
+        {
+            cpd.Add(localEntity);
+        });
+
+        this._ecs.DestroyEntity(localEntityID);
     }
 }

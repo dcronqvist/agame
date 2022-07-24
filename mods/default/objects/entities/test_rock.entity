@@ -52,8 +52,8 @@
             "tags": ["rock"],
             "yields": [
                 {
-                    "minAmount": 2,
-                    "maxAmount": 4,
+                    "minAmount": 1,
+                    "maxAmount": 1,
                     "item": "default.item.pebble"
                 }
             ]
