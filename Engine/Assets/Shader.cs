@@ -131,6 +131,20 @@ namespace AGame.Engine.Assets
             glUniform1fv(glGetUniformLocation(ProgramID, uniformName), values.Length, values);
         }
 
+        public void SetMatrix4x4Array(string uniformName, Matrix4x4[] values)
+        {
+            float[] values2 = new float[values.Length * 16];
+            for (int i = 0; i < values.Length; i++)
+            {
+                Matrix4x4 mat = values[i];
+                for (int j = 0; j < 16; j++)
+                {
+                    values2[i * 16 + j] = mat.M11;
+                }
+            }
+            glUniformMatrix4fv(glGetUniformLocation(ProgramID, uniformName), values.Length, false, values2);
+        }
+
         public void SetBool(string uniformName, bool val)
         {
             glUniform1i(glGetUniformLocation(ProgramID, uniformName), Convert.ToInt32(val));

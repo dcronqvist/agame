@@ -32,10 +32,13 @@ namespace AGame.Engine.Graphics.Rendering
             glBindBuffer(GL_ARRAY_BUFFER, fontVBO);
 
             // Add data to VBO that is NULL, nothing
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 8, NULL, GL_STREAM_DRAW);
             // Enable the data
             glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 4, GL_FLOAT, false, 4 * sizeof(float), (void*)0);
+            glVertexAttribPointer(0, 4, GL_FLOAT, false, 8 * sizeof(float), (void*)0);
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 4, GL_FLOAT, false, 8 * sizeof(float), (void*)(4 * sizeof(float))); // YOU WERE WORKING ON THIS ONE, INCLUDING COLOR DATA IN
+            // VBO INSTEAD OF UNIFORM 
 
             // Unbind VBO
             glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -68,8 +71,12 @@ namespace AGame.Engine.Graphics.Rendering
             float x = position.X;
             float y = position.Y;
 
-            foreach (char c in s)
+            float[] data = new float[6 * 8 * s.Length];
+
+            for (int i = 0; i < s.Length; i++)
             {
+                char c = s[i];
+
                 FontCharacter ch = f.Characters[c];
 
                 float xPos = x + ch.Bearing.X * scale;
@@ -78,32 +85,42 @@ namespace AGame.Engine.Graphics.Rendering
                 float w = ch.Size.X * scale;
                 float h = ch.Size.Y * scale;
 
-                float[] vertices = new float[]
+                float uvXLeft = ch.Rectangle.X / f.AtlasWidth;
+                float uvXRight = (ch.Rectangle.X + ch.Rectangle.Width) / f.AtlasWidth;
+                float uvYTop = ch.Rectangle.Y / f.AtlasHeight;
+                float uvYBottom = (ch.Rectangle.Y + ch.Rectangle.Height) / f.AtlasHeight;
+
+                float[] verticesForCharacter = new float[]
                 {
-                xPos + w, yPos, 1, 0,
-                xPos, yPos, 0, 0,
-                xPos, yPos + h, 0, 1,
+                    xPos + w, yPos, uvXRight, uvYTop, color.R, color.G, color.B, color.A, // top right
+                    xPos, yPos, uvXLeft, uvYTop, color.R, color.G, color.B, color.A, // top left
+                    xPos, yPos + h, uvXLeft, uvYBottom, color.R, color.G, color.B, color.A, // bottom left
 
-
-                xPos + w, yPos + h, 1, 1,
-                xPos + w, yPos, 1, 0,
-                xPos, yPos + h, 0, 1,
+                    xPos + w, yPos + h, uvXRight, uvYBottom, color.R, color.G, color.B, color.A, // bottom right
+                    xPos + w, yPos, uvXRight, uvYTop, color.R, color.G, color.B, color.A, // top right
+                    xPos, yPos + h, uvXLeft, uvYBottom, color.R, color.G, color.B, color.A, // bottom left
                 };
 
-                GLSM.BindTexture(GL_TEXTURE_2D, ch.TextureID);
-
-                glBindBuffer(GL_ARRAY_BUFFER, fontVBO);
-
-                fixed (float* vert = &vertices[0])
+                for (int j = 0; j < 8 * 6; j++)
                 {
-                    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * vertices.Length, vert);
+                    data[i * 8 * 6 + j] = verticesForCharacter[j];
                 }
 
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
-                glDrawArrays(GL_TRIANGLES, 0, 6);
                 x += ch.Advance * scale;
             }
 
+            glBindBuffer(GL_ARRAY_BUFFER, fontVBO);
+
+            fixed (float* vert = &data[0])
+            {
+                glBufferData(GL_ARRAY_BUFFER, sizeof(float) * data.Length, vert, GL_STREAM_DRAW);
+            }
+
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+            GLSM.BindTexture(GL_TEXTURE_2D, f.TextureID);
+
+            glDrawArrays(GL_TRIANGLES, 0, 6 * s.Length);
             glBindVertexArray(0);
             GLSM.BindTexture(GL_TEXTURE_2D, 0);
         }
@@ -129,14 +146,18 @@ namespace AGame.Engine.Graphics.Rendering
             Stack<ColorF> colorStack = new Stack<ColorF>();
             colorStack.Push(color);
 
+            float[] vertexData = new float[6 * 8 * ft.Text.Length];
+            int counter = 0;
+
             foreach (FormattedText.FTToken token in tokens)
             {
                 if (token.type == FormattedText.FTTokenType.Text)
                 {
                     ColorF col = colorStack.Peek();
-                    this.shader.SetVec4("textColor", col.R, col.G, col.B, col.A);
-                    foreach (char c in token.value)
+
+                    for (int i = 0; i < token.value.Length; i++)
                     {
+                        char c = token.value[i];
                         FontCharacter ch = f.Characters[c];
 
                         float xPos = x + ch.Bearing.X * scale;
@@ -145,29 +166,28 @@ namespace AGame.Engine.Graphics.Rendering
                         float w = ch.Size.X * scale;
                         float h = ch.Size.Y * scale;
 
-                        float[] vertices = new float[]
+                        float uvXLeft = ch.Rectangle.X / f.AtlasWidth;
+                        float uvXRight = (ch.Rectangle.X + ch.Rectangle.Width) / f.AtlasWidth;
+                        float uvYTop = ch.Rectangle.Y / f.AtlasHeight;
+                        float uvYBottom = (ch.Rectangle.Y + ch.Rectangle.Height) / f.AtlasHeight;
+
+                        float[] verticesForCharacter = new float[]
                         {
-                        xPos + w, yPos, 1, 0,
-                        xPos, yPos, 0, 0,
-                        xPos, yPos + h, 0, 1,
+                            xPos + w, yPos, uvXRight, uvYTop, col.R, col.G, col.B, col.A, // top right
+                            xPos, yPos, uvXLeft, uvYTop, col.R, col.G, col.B, col.A, // top left
+                            xPos, yPos + h, uvXLeft, uvYBottom, col.R, col.G, col.B, col.A, // bottom left
 
-
-                        xPos + w, yPos + h, 1, 1,
-                        xPos + w, yPos, 1, 0,
-                        xPos, yPos + h, 0, 1,
+                            xPos + w, yPos + h, uvXRight, uvYBottom, col.R, col.G, col.B, col.A, // bottom right
+                            xPos + w, yPos, uvXRight, uvYTop, col.R, col.G, col.B, col.A, // top right
+                            xPos, yPos + h, uvXLeft, uvYBottom, col.R, col.G, col.B, col.A, // bottom left
                         };
 
-                        GLSM.BindTexture(GL_TEXTURE_2D, ch.TextureID);
-
-                        glBindBuffer(GL_ARRAY_BUFFER, fontVBO);
-
-                        fixed (float* vert = &vertices[0])
+                        for (int j = 0; j < 8 * 6; j++)
                         {
-                            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * vertices.Length, vert);
+                            vertexData[counter] = verticesForCharacter[j];
+                            counter++;
                         }
 
-                        glBindBuffer(GL_ARRAY_BUFFER, 0);
-                        glDrawArrays(GL_TRIANGLES, 0, 6);
                         x += ch.Advance * scale;
                     }
                 }
@@ -188,6 +208,21 @@ namespace AGame.Engine.Graphics.Rendering
                 }
 
             }
+
+            glBindBuffer(GL_ARRAY_BUFFER, fontVBO);
+
+            fixed (float* vert = &vertexData[0])
+            {
+                glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertexData.Length, vert, GL_STREAM_DRAW);
+            }
+
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+            GLSM.BindTexture(GL_TEXTURE_2D, f.TextureID);
+
+            glDrawArrays(GL_TRIANGLES, 0, 6 * ft.Text.Length);
+            glBindVertexArray(0);
+            GLSM.BindTexture(GL_TEXTURE_2D, 0);
 
             glBindVertexArray(0);
             GLSM.BindTexture(GL_TEXTURE_2D, 0);

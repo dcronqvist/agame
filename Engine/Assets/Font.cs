@@ -9,16 +9,19 @@ using System.Diagnostics;
 using AGame.Engine.Assets;
 using System.Threading;
 using AGame.Engine.OpenGL;
+using AGame.Engine.Graphics.Rendering;
+using System.Linq;
+using System.Drawing;
 
 namespace AGame.Engine.Assets
 {
     public struct FontCharacter
     {
         public string Chara { get; set; }
-        public uint TextureID { get; set; }
         public Vector2 Size { get; set; }
         public Vector2 Bearing { get; set; }
         public int Advance { get; set; }
+        public RectangleF Rectangle { get; set; }
     }
 
     public class Font : Asset
@@ -57,6 +60,10 @@ namespace AGame.Engine.Assets
 
         public byte[] Data { get; private set; }
 
+        public uint TextureID { get; private set; }
+        public int AtlasWidth { get; private set; }
+        public int AtlasHeight { get; private set; }
+
         public Font(byte[] data, uint size, FontFilter magFilter, FontFilter minFilter)
         {
             this.Characters = new Dictionary<char, FontCharacter>();
@@ -72,9 +79,6 @@ namespace AGame.Engine.Assets
             // Have to init the freetype2 lib.
             this.Lib = new FreeTypeLibrary();
 
-            // Then make sure to use correct byte alignment.
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
             // Create empty pointer for the font.
             IntPtr aFace;
 
@@ -89,6 +93,9 @@ namespace AGame.Engine.Assets
             // Then create facade for getting all the data.
             FreeTypeFaceFacade ftff = new FreeTypeFaceFacade(Lib, aFace);
 
+            uint width = 0;
+            uint height = 0;
+
             // Loop 128 times, first 128 characters for this font
             for (uint i = 0; i < 256; i++)
             {
@@ -101,45 +108,99 @@ namespace AGame.Engine.Assets
                     continue;
                 }
 
+                width += ftff.GlyphBitmap.width;
+                height = Math.Max(height, ftff.GlyphBitmap.rows);
+
                 // Create new texture
-                uint textureId = glGenTexture();
-                // Bind it
-                GLSM.BindTexture(GL_TEXTURE_2D, textureId);
-                // Fill texture with data from font
-                glTexImage2D(GL_TEXTURE_2D,
-                            0,
-                            GL_RED,
-                            (int)ftff.GlyphBitmap.width,
-                            (int)ftff.GlyphBitmap.rows,
-                            0,
-                            GL_RED,
-                            GL_UNSIGNED_BYTE,
-                            ftff.GlyphBitmap.buffer);
+                // uint textureId = glGenTexture();
+                // // Bind it
+                // GLSM.BindTexture(GL_TEXTURE_2D, textureId);
+                // // Fill texture with data from font
+                // glTexImage2D(GL_TEXTURE_2D,
+                //             0,
+                //             GL_RED,
+                //             (int)ftff.GlyphBitmap.width,
+                //             (int)ftff.GlyphBitmap.rows,
+                //             0,
+                //             GL_RED,
+                //             GL_UNSIGNED_BYTE,
+                //             ftff.GlyphBitmap.buffer);
 
-                // Simple texture parameters.
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (int)MinFilter);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (int)MagFilter);
+                // // Simple texture parameters.
+                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (int)MinFilter);
+                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (int)MagFilter);
 
-                // Init the character struct
+                // // Init the character struct
+                // FontCharacter character = new FontCharacter()
+                // {
+                //     TextureID = textureId,
+                //     Size = new Vector2(ftff.GlyphBitmap.width, ftff.GlyphBitmap.rows),
+                //     Bearing = new Vector2(ftff.GlyphBitmapLeft, ftff.GlyphBitmapTop),
+                //     Advance = ftff.GlyphMetricHorizontalAdvance,
+                //     Chara = ((char)i).ToString(),
+                // };
+
+                // if (character.Size.Y > MaxY)
+                // {
+                //     this.MaxY = character.Size.Y;
+                // }
+
+                // // Add it to the character dictionary
+                // Characters.Add((char)i, character);
+            }
+
+            int atlasWidth = (int)width;
+            this.AtlasWidth = atlasWidth;
+            int atlasHeight = (int)height;
+            this.AtlasHeight = atlasHeight;
+
+            // Create the atlas texture.
+            this.TextureID = glGenTexture();
+            glBindTexture(GL_TEXTURE_2D, this.TextureID);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, atlasWidth, atlasHeight, 0, GL_RED, GL_UNSIGNED_BYTE, IntPtr.Zero);
+
+            uint x = 0;
+            this.MaxY = height;
+
+            for (uint i = 0; i < 256; i++)
+            {
+                // Check if the character exists for this font.
+                FT_Error error = FT_Load_Char(aFace, i, FT_LOAD_RENDER);
+                if (error != FT_Error.FT_Err_Ok)
+                {
+                    // TODO: Fix this shit man, should use integrated console when that is done.
+                    //Debug.WriteLine("FREETYPE ERROR: FAILED TO LOAD GLYPH FOR INDEX: " + i);
+                    continue;
+                }
+
+                glTexSubImage2D(GL_TEXTURE_2D, 0, (int)x, 0, (int)ftff.GlyphBitmap.width, (int)ftff.GlyphBitmap.rows, GL_RED, GL_UNSIGNED_BYTE, ftff.GlyphBitmap.buffer);
+
                 FontCharacter character = new FontCharacter()
                 {
-                    TextureID = textureId,
                     Size = new Vector2(ftff.GlyphBitmap.width, ftff.GlyphBitmap.rows),
                     Bearing = new Vector2(ftff.GlyphBitmapLeft, ftff.GlyphBitmapTop),
                     Advance = ftff.GlyphMetricHorizontalAdvance,
                     Chara = ((char)i).ToString(),
+                    Rectangle = new Rectangle((int)x, 0, (int)ftff.GlyphBitmap.width, (int)ftff.GlyphBitmap.rows)
                 };
-
-                if (character.Size.Y > MaxY)
-                {
-                    this.MaxY = character.Size.Y;
-                }
 
                 // Add it to the character dictionary
                 Characters.Add((char)i, character);
+
+                x += ftff.GlyphBitmap.width;
             }
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (int)MinFilter);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (int)MagFilter);
+
+            // Unbind the texture.
+            glBindTexture(GL_TEXTURE_2D, 0);
 
             FT_Done_Face(aFace);
             FT_Done_FreeType(Lib.Native);

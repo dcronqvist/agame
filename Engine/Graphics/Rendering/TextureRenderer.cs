@@ -42,6 +42,11 @@ public class TextureRenderer
 
     public unsafe void Render(Texture2D texture, Vector2 position, Vector2 scale, float rotation, ColorF color, Vector2 origin, RectangleF sourceRectangle, TextureRenderEffects effects)
     {
+        this.Render(texture.ID, texture.Width, texture.Height, position, scale, rotation, color, origin, sourceRectangle, effects);
+    }
+
+    public unsafe void Render(uint textureID, int textureWidth, int textureHeight, Vector2 position, Vector2 scale, float rotation, ColorF color, Vector2 origin, RectangleF sourceRectangle, TextureRenderEffects effects)
+    {
         shader.Use();
 
         Matrix4x4 modelMatrix = Utilities.CreateModelMatrixFromPosition(position, rotation, origin, scale * new Vector2(sourceRectangle.Width, sourceRectangle.Height));
@@ -49,23 +54,23 @@ public class TextureRenderer
         shader.SetMatrix4x4("projection", Renderer.Camera.GetProjectionMatrix());
         shader.SetVec4("textureColor", color.R, color.G, color.B, color.A);
         shader.SetInt("image", 0);
-        shader.SetFloatArray("uvCoords", GetUVCoordinateData(texture, sourceRectangle, effects));
+        shader.SetFloatArray("uvCoords", GetUVCoordinateData(textureWidth, textureHeight, sourceRectangle, effects));
         shader.SetMatrix4x4("model", modelMatrix);
 
         glActiveTexture(GL_TEXTURE0);
-        GLSM.BindTexture(GL_TEXTURE_2D, texture.ID);
+        GLSM.BindTexture(GL_TEXTURE_2D, textureID);
 
         glBindVertexArray(quadVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
     }
 
-    private float[] GetUVCoordinateData(Texture2D texture, RectangleF rec, TextureRenderEffects effects)
+    private float[] GetUVCoordinateData(int textureWith, int textureHeight, RectangleF rec, TextureRenderEffects effects)
     {
-        float sourceX = rec.X / texture.Width;
-        float sourceY = rec.Y / texture.Height;
-        float sourceWidth = rec.Width / texture.Width;
-        float sourceHeight = rec.Height / texture.Height;
+        float sourceX = rec.X / textureWith;
+        float sourceY = rec.Y / textureHeight;
+        float sourceWidth = rec.Width / textureWith;
+        float sourceHeight = rec.Height / textureHeight;
 
         float[] data = { 
             // tex

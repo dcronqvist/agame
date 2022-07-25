@@ -42,6 +42,16 @@ namespace AGame.Engine.Graphics.Rendering
             GLSM.BindTexture(GL_TEXTURE_2D, 0);
         }
 
+        public unsafe ColorF ReadPixel(int x, int y)
+        {
+            byte[] pixelData = new byte[4];
+            fixed (byte* pix = &pixelData[0])
+            {
+                glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pix);
+            }
+            return new ColorF(pixelData[0], pixelData[1], pixelData[2], pixelData[3]);
+        }
+
         public unsafe void InitRenderData(int width, int height)
         {
             this.framebuffer = glGenFramebuffer();
