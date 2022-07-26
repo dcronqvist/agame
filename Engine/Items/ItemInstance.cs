@@ -105,45 +105,6 @@ public class ItemInstance
             component.OnConsumed(playerEntity, item, ecs);
         }
     }
-
-    // API STUFF
-    public void CreateEntity(Entity playerEntity, ECS ecs, string entity, Action<Entity> onCreate)
-    {
-        if (ecs.IsRunner(SystemRunner.Server))
-        {
-            // IF WE ARE ON THE SERVER
-            this.Definition._gameServer.CreateEntityAsClient(playerEntity.ID, entity, onCreate);
-        }
-        else if (ecs.IsRunner(SystemRunner.Client))
-        {
-            // IF WE ARE ON THE CLIENT
-            this.Definition._gameClient.AttemptCreateEntity(entity, onCreate);
-        }
-    }
-
-    public void DestroyEntity(Entity playerEntity, ECS ecs, Entity otherEntity)
-    {
-        if (ecs.IsRunner(SystemRunner.Server))
-        {
-            // IF WE ARE ON THE SERVER
-            this.Definition._gameServer.DestroyEntity(otherEntity.ID);
-        }
-        else if (ecs.IsRunner(SystemRunner.Client))
-        {
-            // IF WE ARE ON THE CLIENT
-            this.Definition._gameClient.AttemptDestroyEntity(otherEntity.ID);
-        }
-    }
-
-    public IEnumerable<Entity> FindEntities(ECS ecs, Predicate<Entity> predicate)
-    {
-        return ecs.GetAllEntities((entity) => predicate(entity));
-    }
-
-    public Entity GetEntityAtPosition(ECS ecs, Vector2i tilePosition)
-    {
-        return this.FindEntities(ecs, (entity) => entity.TryGetComponent<TransformComponent>(out var transform) && transform.Position.Equals(new CoordinateVector(tilePosition.X, tilePosition.Y))).FirstOrDefault();
-    }
 }
 
 

@@ -40,7 +40,10 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
 
     public override void OnEnter(EnterMainMenuArgs args)
     {
+        ECS ecs = new ECS();
+        ecs.Initialize(SystemRunner.Client);
 
+        var e = ecs.CreateEntityFromAsset("default.entity.test_rock");
     }
 
     public override void OnLeave()
@@ -72,7 +75,6 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
 
                         WorldContainer wc = await world.GetAsContainerAsync(false);
                         List<Entity> entities = await world.GetEntitiesAsync();
-
 
                         GameServerConfiguration config = new GameServerConfiguration();
                         config.SetPort(0).SetMaxConnections(1).SetOnlyAllowLocalConnections(true).SetTickRate(20);
@@ -122,6 +124,14 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
         {
             AL.Listener(ALListenerf.Gain, volume);
             _ = Settings.SetSettingAsync("volume_master", volume);
+        }
+
+        int fpsLimit = Settings.GetSetting<int>("fps_limit");
+        float f = fpsLimit / 260f;
+        if (GUI.Slider($"FPS Limit: {fpsLimit}", new Vector2(middleOfScreen.X - width / 2f, middleOfScreen.Y + height * 6 + distance * 6), new Vector2(width, height), ref f))
+        {
+            _ = Settings.SetSettingAsync("fps_limit", (int)(f * 260f));
+            DisplayManager.SetTargetFPS((int)(f * 260f));
         }
 
         Locale[] locales = Localization.GetAvailableLocales();

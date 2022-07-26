@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using AGame.Engine.Items;
 using AGame.Engine.Networking;
@@ -136,6 +137,19 @@ public class PlayerStateComponent : Component
         else
         {
             this.ItemUsedTime = 0;
+        }
+
+        if (command.IsInputDown(UserCommand.INTERACT_ENTITY) && ecs.IsRunner(SystemRunner.Server))
+        {
+            // Get entity at mouse tile position
+            var entityAtMouse = ecs.GetAllEntities(e => e.HasComponent<InteractableComponent>() && e.TryGetComponent<TransformComponent>(out var t) && t.Position.Equals(new CoordinateVector(this.MouseTileX, this.MouseTileY))).FirstOrDefault();
+
+            if (entityAtMouse is not null)
+            {
+                // Interacting with something
+                var interactable = entityAtMouse.GetComponent<InteractableComponent>();
+                interactable.GetOnInteract().OnInteract(parentEntity, entityAtMouse, command, ecs);
+            }
         }
     }
 

@@ -17,6 +17,8 @@ public class ContainerInteractionGUI
 
     private ContainerSlot _mouseSlot;
 
+    private float _interactionTitleHeight = 50f;
+
     public ContainerInteractionGUI(Entity playerEntity, Entity otherEntity)
     {
         this._playerEntity = playerEntity;
@@ -33,7 +35,7 @@ public class ContainerInteractionGUI
             var playerSize = playerContainer.GetContainer().Provider.GetRenderSize();
 
             // Stacking containers above each other
-            return playerSize;
+            return playerSize + new Vector2(0, this._interactionTitleHeight);
         }
         else
         {
@@ -47,7 +49,7 @@ public class ContainerInteractionGUI
             var totalHeight = otherSize.Y + playerSize.Y;
             var totalWidth = Math.Max(otherSize.X, playerSize.X);
 
-            return new Vector2(totalWidth, totalHeight);
+            return new Vector2(totalWidth, totalHeight) + new Vector2(0, this._interactionTitleHeight);
         }
     }
 
@@ -71,7 +73,7 @@ public class ContainerInteractionGUI
             var playerContainer = this._playerEntity.GetComponent<ContainerComponent>();
             var playerSize = playerContainer.GetContainer().Provider.GetRenderSize();
 
-            var playerContainerStartPos = new Vector2(middleOfWindow.X - playerSize.X / 2f, middleOfWindow.Y - playerSize.Y / 2f);
+            var playerContainerStartPos = new Vector2(middleOfWindow.X - playerSize.X / 2f, middleOfWindow.Y - playerSize.Y / 2f + this._interactionTitleHeight);
             playerContainer.GetContainer().UpdateInteract(ref _mouseSlot, _playerEntity.ID, client, playerContainerStartPos, deltaTime);
 
             playerState.MouseSlot = _mouseSlot.ToSlotInfo(0);
@@ -89,7 +91,7 @@ public class ContainerInteractionGUI
             var otherContainer = this._otherEntity.GetComponent<ContainerComponent>();
             var otherSize = otherContainer.GetContainer().Provider.GetRenderSize();
 
-            var otherContainerStartPos = new Vector2(middleOfWindow.X - otherSize.X / 2f, middleOfWindow.Y - totalSize.Y / 2f);
+            var otherContainerStartPos = new Vector2(middleOfWindow.X - otherSize.X / 2f, middleOfWindow.Y - totalSize.Y / 2f + this._interactionTitleHeight);
             otherContainer.GetContainer().UpdateInteract(ref _mouseSlot, _otherEntity.ID, client, otherContainerStartPos, deltaTime);
 
             // Render player container
@@ -117,7 +119,7 @@ public class ContainerInteractionGUI
             var playerContainer = this._playerEntity.GetComponent<ContainerComponent>();
             var playerSize = playerContainer.GetContainer().Provider.GetRenderSize();
 
-            var playerContainerStartPos = new Vector2(middleOfWindow.X - playerSize.X / 2f, middleOfWindow.Y - playerSize.Y / 2f);
+            var playerContainerStartPos = new Vector2(middleOfWindow.X - playerSize.X / 2f, middleOfWindow.Y - playerSize.Y / 2f + this._interactionTitleHeight / 2);
             playerContainer.GetContainer().Render(playerContainerStartPos);
 
             var mousePos = Input.GetMousePositionInWindow();
@@ -142,7 +144,7 @@ public class ContainerInteractionGUI
             var otherContainer = this._otherEntity.GetComponent<ContainerComponent>();
             var otherSize = otherContainer.GetContainer().Provider.GetRenderSize();
 
-            var otherContainerStartPos = new Vector2(middleOfWindow.X - otherSize.X / 2f, middleOfWindow.Y - totalSize.Y / 2f);
+            var otherContainerStartPos = new Vector2(middleOfWindow.X - otherSize.X / 2f, middleOfWindow.Y - totalSize.Y / 2f + this._interactionTitleHeight);
             otherContainer.GetContainer().Render(otherContainerStartPos);
 
             // Render player container

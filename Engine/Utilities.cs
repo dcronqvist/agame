@@ -546,6 +546,11 @@ namespace AGame.Engine
             }
             return hash;
         }
+
+        public static Vector2 PixelAlign(this Vector2 v)
+        {
+            return new Vector2(MathF.Round(v.X), MathF.Round(v.Y));
+        }
     }
 
     public struct Vector2i : IPacketable

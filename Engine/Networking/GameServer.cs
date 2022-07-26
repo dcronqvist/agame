@@ -25,6 +25,7 @@ public class UserCommand : Packet
     public ushort PreviousButtons { get; set; }
 
     public ushort Buttons { get; set; }
+    public byte HotbarButtons { get; set; }
 
     public int MouseTileX { get; set; }
     public int MouseTileY { get; set; }
@@ -56,6 +57,16 @@ public class UserCommand : Packet
         this.MouseTileY = mouseTilePos.Y;
     }
 
+    public static readonly byte HOTBAR_1 = 1;
+    public static readonly byte HOTBAR_2 = 2;
+    public static readonly byte HOTBAR_3 = 3;
+    public static readonly byte HOTBAR_4 = 4;
+    public static readonly byte HOTBAR_5 = 5;
+    public static readonly byte HOTBAR_6 = 6;
+    public static readonly byte HOTBAR_7 = 7;
+    public static readonly byte HOTBAR_8 = 8;
+    public static readonly byte HOTBAR_9 = 9;
+
     public static readonly ushort KEY_W = 1 << 0;
     public static readonly ushort KEY_A = 1 << 1;
     public static readonly ushort KEY_S = 1 << 2;
@@ -67,6 +78,7 @@ public class UserCommand : Packet
     public static readonly ushort MOUSE_SCROLL_DOWN = 1 << 7;
 
     public static readonly ushort USE_ITEM = 1 << 8;
+    public static readonly ushort INTERACT_ENTITY = 1 << 9;
 
     public void SetInputDown(ushort key)
     {
@@ -391,13 +403,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 return ecs.GetEntityFromID(entityID);
             });
 
-            this._connectionsViewingContainerInEntity.LockedAction((view) =>
-            {
-                view[connection].Add(entity);
-            });
-
-            // TODO: Whether or not the client is allowed to open the container should come from the container's provider
-            this.EnqueuePacket(new SetContainerContentPacket(entityID, entity.GetComponent<ContainerComponent>().GetContainer(), true), connection, true, false);
+            this.SendContainerContentTo(connection, entity);
         });
 
         base.AddPacketHandler<CloseContainerPacket>((packet, connection) =>
@@ -434,6 +440,27 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 cce[connection].Remove((hash, id));
             });
         });
+    }
+
+    internal void SendContainerContentTo(int playerID, Entity entity)
+    {
+        var connection = this._connectionToPlayerId.LockedAction((connectionToPlayerId) =>
+        {
+            return connectionToPlayerId.FirstOrDefault(x => x.Value == playerID).Key;
+        });
+
+        this.SendContainerContentTo(connection, entity);
+    }
+
+    internal void SendContainerContentTo(Connection playerConnection, Entity entity)
+    {
+        this._connectionsViewingContainerInEntity.LockedAction((view) =>
+        {
+            view[playerConnection].Add(entity);
+        });
+
+        // TODO: Whether or not the client is allowed to open the container should come from the container's provider
+        this.EnqueuePacket(new SetContainerContentPacket(entity.ID, entity.GetComponent<ContainerComponent>().GetContainer(), true), playerConnection, true, false);
     }
 
     private void SendChunksToClient(Connection connection)
@@ -686,11 +713,6 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 List<Entity> selfCreatedEntities = this._connectionsCreatedEntities.LockedAction((cce) => cce[conn].Select((kvp) => this._ecs.LockedAction((ecs) => ecs.GetEntityFromID(kvp.Item2))).ToList());
 
                 this._connectionsLoadedEntities[conn] = entitiesInRange;
-
-                if (selfCreatedEntities.Count > 0)
-                {
-                    int x = 2;
-                }
 
                 List<Entity> newEntities = entitiesInRange.Except(lastEntitiesInRange).Except(selfCreatedEntities).ToList();
                 // Somehow create these entities on the client

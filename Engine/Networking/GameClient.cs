@@ -453,6 +453,19 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             (GLFW.Keys.LeftShift, UserCommand.KEY_SHIFT),
         };
 
+        List<(GLFW.Keys, byte)> hotbarInputs = new List<(GLFW.Keys, byte)>()
+        {
+            (GLFW.Keys.Alpha1, UserCommand.HOTBAR_1),
+            (GLFW.Keys.Alpha2, UserCommand.HOTBAR_2),
+            (GLFW.Keys.Alpha3, UserCommand.HOTBAR_3),
+            (GLFW.Keys.Alpha4, UserCommand.HOTBAR_4),
+            (GLFW.Keys.Alpha5, UserCommand.HOTBAR_5),
+            (GLFW.Keys.Alpha6, UserCommand.HOTBAR_6),
+            (GLFW.Keys.Alpha7, UserCommand.HOTBAR_7),
+            (GLFW.Keys.Alpha8, UserCommand.HOTBAR_8),
+            (GLFW.Keys.Alpha9, UserCommand.HOTBAR_9),
+        };
+
         UserCommand command = new UserCommand();
         command.MouseTileX = mouseTilePos.X;
         command.MouseTileY = mouseTilePos.Y;
@@ -470,6 +483,14 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                 }
             }
 
+            foreach ((GLFW.Keys, byte) input in hotbarInputs)
+            {
+                if (Input.IsKeyDown(input.Item1))
+                {
+                    command.HotbarButtons = input.Item2; // Can only press one hotbar button at a time.
+                }
+            }
+
             if (Input.GetScroll() > 0)
             {
                 command.SetInputDown(UserCommand.MOUSE_SCROLL_UP);
@@ -482,6 +503,11 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             if (Input.IsMouseButtonDown(GLFW.MouseButton.Left))
             {
                 command.SetInputDown(UserCommand.USE_ITEM);
+            }
+
+            if (Input.IsMouseButtonPressed(GLFW.MouseButton.Right))
+            {
+                command.SetInputDown(UserCommand.INTERACT_ENTITY);
             }
         }
 
@@ -550,7 +576,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         this._ecs.Render(this._world);
     }
 
-    public void RequestOpenContainer(int localEntityID)
+    internal void RequestOpenContainer(int localEntityID)
     {
         var remoteID = this.GetRemoteIDForEntity(localEntityID);
         base.EnqueuePacket(new RequestViewContainerPacket() { EntityID = remoteID }, true, false);

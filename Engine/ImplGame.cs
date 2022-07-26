@@ -101,6 +101,7 @@ namespace AGame.Engine
             glViewport(0, 0, (int)DisplayManager.GetWindowSizeInPixels().X, (int)DisplayManager.GetWindowSizeInPixels().Y);
 
             Settings.LoadSettings();
+            DisplayManager.SetTargetFPS(Settings.GetSetting<int>("fps_limit"));
 
             ModManager.Init();
             _ = ModManager.LoadAllModsAsync();

@@ -141,14 +141,14 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             int remotePlayerID = this._client.GetRemoteIDForEntity(localPlayer.ID);
 
             var position = localPlayer.GetComponent<TransformComponent>().Position;
-            Renderer.Text.RenderText(f, $"X: {MathF.Round(position.X, 1)} Y: {MathF.Round(position.Y, 1)}", new Vector2(150, 80), 1f, ColorF.White, Renderer.Camera);
+            //Renderer.Text.RenderText(f, $"X: {MathF.Round(position.X, 1)} Y: {MathF.Round(position.Y, 1)}", new Vector2(150, 80), 1f, ColorF.White, Renderer.Camera);
 
             var animator = localPlayer.GetComponent<AnimatorComponent>();
             var offset = animator.GetAnimator().GetCurrentAnimation().GetMiddleOfCurrentFrameScaled();
 
-            this.SetCameraPosition(position + new CoordinateVector(offset.X / TileGrid.TILE_SIZE, offset.Y / TileGrid.TILE_SIZE), false);
 
             this.RenderHotbar(this._client.GetPlayerEntity());
+            this.SetCameraPosition(position + new CoordinateVector(offset.X / TileGrid.TILE_SIZE, offset.Y / TileGrid.TILE_SIZE), false);
         }
 
         _currentContainerInteraction?.Render(0f);
@@ -196,7 +196,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
                 var text = slot.Count.ToString();
                 var textSize = font.MeasureString(text, scale);
                 var textPosition = position + new Vector2(size.X - textSize.X, size.Y - textSize.Y);
-                Renderer.Text.RenderText(font, text, textPosition, scale, ColorF.White, Renderer.Camera);
+                Renderer.Text.RenderText(font, text, textPosition.PixelAlign(), scale, ColorF.White, Renderer.Camera);
 
                 //If has tool component, render durability
                 if (slot.Item.TryGetComponent<DefaultMod.Tool>(out DefaultMod.Tool t))
@@ -207,7 +207,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
 
                     var durabilitySize = font.MeasureString(perc, scale);
                     var durabilityPosition = position + new Vector2(size.X - durabilitySize.X, size.Y - durabilitySize.Y - textSize.Y);
-                    Renderer.Text.RenderText(font, perc, durabilityPosition, scale, ColorF.White, Renderer.Camera);
+                    Renderer.Text.RenderText(font, perc, durabilityPosition.PixelAlign(), scale, ColorF.White, Renderer.Camera);
                 }
             }
         }

@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Threading.Tasks;
 using AGame.Engine.Assets;
+using AGame.Engine.Assets.Scripting;
 using AGame.Engine.ECSys;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
@@ -24,8 +25,8 @@ public class ScreenJoinWorld : Screen<EnterJoinWorldArgs>
 
     public override void OnEnter(EnterJoinWorldArgs args)
     {
-        _ip = "";
-        _port = "";
+        _ip = "mc.dcronqvist.se";
+        _port = "28000";
     }
 
     public override void OnLeave()
@@ -56,6 +57,7 @@ public class ScreenJoinWorld : Screen<EnterJoinWorldArgs>
 
                     GameClient gameClient = new GameClient(Utilities.ResolveIPOrDomain(this._ip), int.Parse(this._port), 500, 5000);
                     ItemManager.Initialize(null, gameClient);
+                    ScriptingAPI.Initialize(null, gameClient);
                     // ServerWorldGenerator swg = new ServerWorldGenerator(gameClient);
 
                     // gameClient.SetWorld(new WorldContainer(swg));

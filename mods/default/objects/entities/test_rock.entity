@@ -57,6 +57,14 @@
                     "item": "default.item.pebble"
                 }
             ]
+        },
+        {
+            "componentType": "Interactable",
+            "onInteract": "default.script.open_container"
+        },
+        {
+            "componentType": "Container",
+            "containerProvider": "default.script.container_small"
         }
     ]
 }

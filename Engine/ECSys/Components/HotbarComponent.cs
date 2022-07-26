@@ -47,6 +47,12 @@ public class HotbarComponent : Component
         int scrollDir = command.IsInputDown(UserCommand.MOUSE_SCROLL_DOWN) ? 1 : 0;
         scrollDir = command.IsInputDown(UserCommand.MOUSE_SCROLL_UP) ? -1 : scrollDir;
 
+        if (command.HotbarButtons != 0)
+        {
+            int pressedSlot = command.HotbarButtons - 1;
+            this.SelectedSlot = pressedSlot;
+        }
+
         // Get inventoryComponent of parentEntity
         this.SelectedSlot = (this.SelectedSlot + scrollDir);
 

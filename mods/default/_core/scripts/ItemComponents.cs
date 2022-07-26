@@ -8,6 +8,7 @@ using AGame.Engine.ECSys.Components;
 using AGame.Engine.Items;
 using AGame.Engine.Networking;
 using AGame.Engine.World;
+using AGame.Engine.Assets.Scripting;
 
 namespace DefaultMod
 {
@@ -49,7 +50,7 @@ namespace DefaultMod
 
         public override bool OnUse(Entity playerEntity, UserCommand userCommand, ItemInstance item, ECS ecs, float deltaTime, float totalTimeUsed)
         {
-            Entity entity = item.GetEntityAtPosition(ecs, new Vector2i(userCommand.MouseTileX, userCommand.MouseTileY));
+            Entity entity = ScriptingAPI.GetEntityAtPosition(ecs, new Vector2i(userCommand.MouseTileX, userCommand.MouseTileY));
 
             if (entity is null)
             {
@@ -66,7 +67,7 @@ namespace DefaultMod
                             if (!userCommand.HasBeenRun)
                             {
                                 this.CurrentDurability -= 20;
-                                item.DestroyEntity(playerEntity, ecs, entity);
+                                ScriptingAPI.DestroyEntity(playerEntity, ecs, entity);
 
 
                                 foreach (var def in harvest.Yields)
@@ -74,7 +75,7 @@ namespace DefaultMod
                                     int amount = Utilities.GetRandomInt(def.MinAmount, def.MaxAmount);
                                     string newItem = def.Item;
 
-                                    item.CreateEntity(playerEntity, ecs, "default.entity.ground_item", (entity) =>
+                                    ScriptingAPI.CreateEntity(playerEntity, ecs, "default.entity.ground_item", (entity) =>
                                     {
                                         entity.GetComponent<TransformComponent>().Position = new CoordinateVector(userCommand.MouseTileX, userCommand.MouseTileY);
                                         entity.GetComponent<GroundItemComponent>().Item = newItem;
