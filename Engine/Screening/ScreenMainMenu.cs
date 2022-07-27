@@ -40,10 +40,7 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
 
     public override void OnEnter(EnterMainMenuArgs args)
     {
-        ECS ecs = new ECS();
-        ecs.Initialize(SystemRunner.Client);
 
-        var e = ecs.CreateEntityFromAsset("default.entity.test_rock");
     }
 
     public override void OnLeave()

@@ -210,15 +210,23 @@ public class Container
         return this.Provider.Update(deltaTime);
     }
 
+    public static void RenderBackground(Vector2 topLeft, Vector2 size)
+    {
+        var rect = new RectangleF(topLeft.X, topLeft.Y, size.X, size.Y);
+        Renderer.Primitive.RenderRectangle(rect, ColorF.FromString("07A8F2FF"));
+    }
+
     public void Render(Vector2 topLeft)
     {
         ContainerSlot hoveredSlot = null;
         var font = ModManager.GetAsset<Font>("default.font.rainyhearts");
 
+        this.Provider.RenderBackgroundUI(topLeft);
+
         foreach (KeyValuePair<int, ContainerSlot> slot in this._slots)
         {
             // Render slot
-            var position = slot.Value.Position + topLeft;
+            var position = (slot.Value.Position + topLeft).PixelAlign();
             var size = slot.Value.GetSize();
             var rec = new RectangleF(position.X, position.Y, size.X, size.Y);
             var color = ColorF.Black;
@@ -238,7 +246,7 @@ public class Container
                 var text = slot.Value.Count.ToString();
                 var textSize = font.MeasureString(text, scale);
                 var textPosition = position + new Vector2(size.X - textSize.X, size.Y - textSize.Y);
-                Renderer.Text.RenderText(font, text, textPosition, scale, ColorF.White, Renderer.Camera);
+                Renderer.Text.RenderText(font, text, textPosition.PixelAlign(), scale, ColorF.White, Renderer.Camera);
 
                 // If has tool component, render durability
                 if (slot.Value.Item.TryGetComponent<DefaultMod.Tool>(out DefaultMod.Tool t))
@@ -249,7 +257,7 @@ public class Container
 
                     var durabilitySize = font.MeasureString(perc, scale);
                     var durabilityPosition = position + new Vector2(size.X - durabilitySize.X, size.Y - durabilitySize.Y - textSize.Y);
-                    Renderer.Text.RenderText(font, perc, durabilityPosition, scale, ColorF.White, Renderer.Camera);
+                    Renderer.Text.RenderText(font, perc, durabilityPosition.PixelAlign(), scale, ColorF.White, Renderer.Camera);
                 }
             }
         }
@@ -300,7 +308,7 @@ public class Container
         foreach (KeyValuePair<int, ContainerSlot> slot in this._slots)
         {
             // Render slot
-            var position = slot.Value.Position + topLeft;
+            var position = (slot.Value.Position + topLeft).PixelAlign();
             var size = slot.Value.GetSize();
             var rec = new RectangleF(position.X, position.Y, size.X, size.Y);
 

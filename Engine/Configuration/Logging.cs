@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using AGame.Engine.DebugTools;
 
 namespace AGame.Engine.Configuration;
 
@@ -46,6 +47,14 @@ public class ConsoleLogger : ILogStream
     }
 }
 
+public class GameConsoleLogger : ILogStream
+{
+    public void WriteLine(string s)
+    {
+        GameConsole.WriteLine("GameConsole", s);
+    }
+}
+
 public static class Logging
 {
     private static List<ILogStream> _logStreams = new List<ILogStream>();
@@ -66,6 +75,8 @@ public static class Logging
     {
         Task.Run(() =>
         {
+            AddLogStream(new GameConsoleLogger());
+
             while (true)
             {
                 (LogLevel level, string message) = _logQueue.Receive();

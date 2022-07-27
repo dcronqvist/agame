@@ -148,7 +148,16 @@ public class PlayerStateComponent : Component
             {
                 // Interacting with something
                 var interactable = entityAtMouse.GetComponent<InteractableComponent>();
-                interactable.GetOnInteract().OnInteract(parentEntity, entityAtMouse, command, ecs);
+
+                var playerCollider = parentEntity.GetComponent<ColliderComponent>();
+                var interactableCollider = entityAtMouse.GetComponent<ColliderComponent>();
+
+                var interactBox = interactableCollider.Box.Inflate(interactable.InteractDistance * TileGrid.TILE_SIZE);
+
+                if (playerCollider.Box.IntersectsWith(interactBox))
+                {
+                    interactable.GetOnInteract().OnInteract(parentEntity, entityAtMouse, command, ecs);
+                }
             }
         }
     }

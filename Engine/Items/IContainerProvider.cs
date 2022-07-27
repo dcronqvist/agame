@@ -16,4 +16,5 @@ public interface IContainerProvider
     // Return true when an update inside the container has occured
     bool Update(float deltaTime);
     Vector2 GetRenderSize();
+    void RenderBackgroundUI(Vector2 topLeft);
 }

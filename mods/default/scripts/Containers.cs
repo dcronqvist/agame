@@ -1,28 +1,32 @@
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Numerics;
 using AGame.Engine;
+using AGame.Engine.Assets;
 using AGame.Engine.Assets.Scripting;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
 using AGame.Engine.ECSys.Components;
+using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
 using AGame.Engine.Items;
 using AGame.Engine.Networking;
+using AGame.Engine.UI;
 using AGame.Engine.World;
 
 namespace DefaultMod
 {
-    [ScriptClass(Name = "container_large")]
-    public class LargeContainerProvider : IContainerProvider
+    [ScriptClass(Name = "container_player_inventory")]
+    public class ContainerPlayerInventory : IContainerProvider
     {
-        public string Name => "Large Container";
+        public string Name => "Inventory";
 
         public bool ShowPlayerContainer => true;
 
         private List<ContainerSlot> _slots;
 
-        public LargeContainerProvider()
+        public ContainerPlayerInventory()
         {
             IEnumerable<ContainerSlot> topSlots = Utilities.CreateSlotGrid(5, 9, 3);
 
@@ -51,6 +55,11 @@ namespace DefaultMod
         public bool Update(float deltaTime)
         {
             return false;
+        }
+
+        public void RenderBackgroundUI(Vector2 topLeft)
+        {
+
         }
     }
 
@@ -91,6 +100,11 @@ namespace DefaultMod
         {
             return false;
         }
+
+        public void RenderBackgroundUI(Vector2 topLeft)
+        {
+
+        }
     }
 
     [ScriptClass(Name = "open_container")] // default.script.open_container
@@ -100,6 +114,10 @@ namespace DefaultMod
         {
             var c = ecs.IsRunner(SystemRunner.Client) ? "client: " : "server: ";
             Logging.Log(LogLevel.Debug, $"{c} {playerEntity.ID} interacting with {interactingWith.ID}");
+
+            interactingWith.GetComponent<ContainerComponent>().GetContainer().AddItem(ItemManager.GetItemDef("default.item.pebble").CreateItem());
+            ScriptingAPI.SendContainerContentsToViewers(interactingWith);
+
             ScriptingAPI.OpenContainerInteract(playerEntity, ecs, interactingWith);
         }
     }

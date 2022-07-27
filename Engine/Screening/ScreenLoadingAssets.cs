@@ -51,7 +51,7 @@ public class ScreenLoadingAssets : Screen<EnterLoadingAssetsArgs>
         {
             Audio.Init();
             ModManager.FinalizeAllAssets();
-            ScreenManager.GoToScreen<ScreenMainMenu, EnterMainMenuArgs>(new EnterMainMenuArgs());
+            ScreenManager.GoToScreen<ScreenMainMenu, EnterMainMenuArgs>(new EnterMainMenuArgs(), 1f);
         }
     }
 

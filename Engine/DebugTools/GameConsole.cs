@@ -13,12 +13,14 @@ using static AGame.Engine.OpenGL.GL;
 using AGame.Engine.GLFW;
 using System.CommandLine;
 using System.CommandLine.IO;
+using AGame.Engine.ECSys;
+using AGame.Engine.Networking;
 
 namespace AGame.Engine.DebugTools;
 
 public static class GameConsole
 {
-    public static Dictionary<string, ICommand> AvailableCommands { get; set; }
+    public static Dictionary<string, ClientSideCommand> AvailableCommands { get; set; }
     public static List<ConsoleLine> ConsoleLines { get; private set; }
 
     private static int historyIndex;
@@ -35,7 +37,7 @@ public static class GameConsole
     static GameConsole()
     {
         ConsoleLines = new List<ConsoleLine>();
-        AvailableCommands = new Dictionary<string, ICommand>();
+        AvailableCommands = new Dictionary<string, ClientSideCommand>();
         enabled = false;
     }
 
@@ -76,16 +78,16 @@ public static class GameConsole
             }
         };
 
-        // glEnable(GL_DEBUG_OUTPUT);
-        // glDebugMessageCallback((s, t, i, sev, l, msg, up) =>
-        // {
-        //     // if (t == GL_DEBUG_TYPE_ERROR)
-        //     // {
-        //     Console.WriteLine(s);
-        //     Console.WriteLine(msg);
-        //     GameConsole.WriteLine("GL", msg);
-        //     // }
-        // }, (void*)0);
+        glEnable(GL_DEBUG_OUTPUT);
+        glDebugMessageCallback((s, t, i, sev, l, msg, up) =>
+        {
+            if (t == GL_DEBUG_TYPE_ERROR)
+            {
+                Console.WriteLine(s);
+                Console.WriteLine(msg);
+                GameConsole.WriteLine("GL", msg);
+            }
+        }, (void*)0);
 
         canvas = new RenderTexture(DisplayManager.GetWindowSizeInPixels());
     }
@@ -106,45 +108,51 @@ public static class GameConsole
         ConsoleLines.Add(new ConsoleLine(sender, message));
     }
 
-    public static void LoadCommands()
+    public static void InitializeCommands(GameClient gameClient)
     {
-        Type[] commandTypes = ScriptingManager.GetAllTypesWithBaseType<ICommand>();
+        Type[] commandTypes = ScriptingManager.GetAllTypesWithBaseType<ClientSideCommand>();
 
         foreach (Type commandType in commandTypes)
         {
-            ICommand ic = ScriptingManager.CreateInstance<ICommand>(commandType.FullName);
-            //Command cc = ic.GetConfiguration();
-            //foreach (string alias in cc.Aliases)
-            //{
-            //    AvailableCommands.Add(alias, ic);
-            //}
+            ClientSideCommand ic = ScriptingManager.CreateInstanceFromRealType<ClientSideCommand>(commandType.FullName);
+            var aliases = ic.GetAliases();
+            ic.Initialize(gameClient);
+
+            foreach (string alias in aliases)
+            {
+                AvailableCommands.Add(alias, ic);
+            }
         }
     }
 
-    public static void RunLine(string line)
+    public static void RunClientSideCommand(Entity callingEntity, ECS ecs, GameClient gameClient, ClientSideCommand command, string commandLine)
+    {
+        command.GetCommand(callingEntity, ecs, gameClient).Invoke(commandLine.Split(char.Parse(" ")).Skip(1).ToArray());
+    }
+
+    public static void RunLine(Entity callingEntity, ECS ecs, GameClient gameClient, string line)
     {
         string[] splitLine = line.Split(char.Parse(" "));
         string commandHandle = splitLine[0];
 
         if (!AvailableCommands.ContainsKey(commandHandle))
         {
-            ConsoleLines.Add(new ConsoleLine("ERROR", "Command not found."));
+            // If the client doesn't have the command, then it might be a server command, send it to the server and await response
+            gameClient.EnqueuePacket(new RunServerCommandPacket() { LineToRun = line }, true, false);
             return;
         }
 
-        ICommand ic = AvailableCommands[commandHandle];
-        //Command cc = ic.GetConfiguration();
-
-        //cc.Invoke(splitLine.Skip(1).ToArray());
+        ClientSideCommand csc = AvailableCommands[commandHandle];
+        RunClientSideCommand(callingEntity, ecs, gameClient, csc, line);
     }
 
-    public static void Update()
+    public static void Update(Entity callingEntity, ECS ecs, GameClient gameClient)
     {
         if (Input.IsKeyPressed(GLFW.Keys.Enter))
         {
             if (currentLine.ToString() != "")
             {
-                RunLine(currentLine.ToString());
+                RunLine(callingEntity, ecs, gameClient, currentLine.ToString());
                 history.Add(currentLine.ToString());
                 historyIndex = history.Count;
                 currentLine.Clear();

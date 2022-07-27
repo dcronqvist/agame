@@ -29,6 +29,20 @@ public class InteractableComponent : Component
         }
     }
 
+    private int _interactDistance;
+    public int InteractDistance
+    {
+        get => _interactDistance;
+        set
+        {
+            if (_interactDistance != value)
+            {
+                _interactDistance = value;
+                this.NotifyPropertyChanged();
+            }
+        }
+    }
+
     private IOnInteract _instance;
     public IOnInteract GetOnInteract()
     {
@@ -48,7 +62,8 @@ public class InteractableComponent : Component
     {
         return new InteractableComponent()
         {
-            OnInteract = this.OnInteract
+            OnInteract = this.OnInteract,
+            InteractDistance = this.InteractDistance
         };
     }
 
@@ -62,6 +77,7 @@ public class InteractableComponent : Component
         var toC = (InteractableComponent)to;
 
         this.OnInteract = toC.OnInteract;
+        this.InteractDistance = toC.InteractDistance;
         this._instance = null;
     }
 
@@ -72,6 +88,8 @@ public class InteractableComponent : Component
         offset += sizeof(int);
         this.OnInteract = Encoding.UTF8.GetString(data, offset, len);
         offset += len;
+        this.InteractDistance = BitConverter.ToInt32(data, offset);
+        offset += sizeof(int);
         return offset - start;
     }
 
@@ -80,6 +98,7 @@ public class InteractableComponent : Component
         List<byte> bytes = new List<byte>();
         bytes.AddRange(BitConverter.GetBytes(this.OnInteract.Length));
         bytes.AddRange(Encoding.UTF8.GetBytes(this.OnInteract));
+        bytes.AddRange(BitConverter.GetBytes(this.InteractDistance));
         return bytes.ToArray();
     }
 
@@ -92,6 +111,7 @@ public class InteractableComponent : Component
     {
         var newIn = (InteractableComponent)newComponent;
         this.OnInteract = newIn.OnInteract;
+        this.InteractDistance = newIn.InteractDistance;
         this._instance = null;
     }
 }

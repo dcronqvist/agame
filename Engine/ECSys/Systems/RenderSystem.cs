@@ -100,6 +100,10 @@ public class RenderSystem : BaseSystem
                 //     item.OnHoldLeftClickRender(entity, new Vector2i(state.MouseTileX, state.MouseTileY), ParentECS, state.ItemUsedTime);
                 // }
             }
+
+            // var collider = entity.GetComponent<ColliderComponent>();
+
+            // Renderer.Primitive.RenderRectangle(collider.Box, ColorF.Blue * 0.3f);
         }
 
         if (entity.HasComponent<SpriteComponent>())
@@ -115,6 +119,15 @@ public class RenderSystem : BaseSystem
             var item = ItemManager.GetItemDef(itemID);
 
             Renderer.Texture.Render(ModManager.GetAsset<Texture2D>(item.Texture), transform.Position.ToWorldVector().ToVector2(), Vector2.One * 2f, 0f, ColorF.White);
+        }
+
+        if (entity.HasComponent<InteractableComponent>() && entity.TryGetComponent<ColliderComponent>(out var c))
+        {
+            // var interactableCollider = entity.GetComponent<ColliderComponent>();
+            // var interactable = entity.GetComponent<InteractableComponent>();
+            // var interactBox = interactableCollider.Box.Inflate(interactable.InteractDistance * TileGrid.TILE_SIZE);
+
+            // Renderer.Primitive.RenderRectangle(interactBox, ColorF.Green * 0.3f);
         }
     }
 }

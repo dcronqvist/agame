@@ -75,7 +75,14 @@ namespace AGame.Engine.Assets.Scripting
 
                         }
                     }
+
+                    if (!TypeToScript.ContainsKey(t.FullName))
+                    {
+                        TypeToScript.Add(t.FullName, script);
+                    }
                 }
+
+                Scripts.Add(script.Name, script);
             }
         }
 
@@ -87,6 +94,12 @@ namespace AGame.Engine.Assets.Scripting
         public static (Script, string) GetScriptFromType(string type)
         {
             return ScriptClassAttributeNameToScript[type];
+        }
+
+        public static T CreateInstanceFromRealType<T>(string type)
+        {
+            Script sc = TypeToScript[type];
+            return sc.CreateInstance<T>(type);
         }
 
         public static T CreateInstance<T>(string type)

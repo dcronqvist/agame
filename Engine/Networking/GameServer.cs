@@ -5,7 +5,9 @@ using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using AGame.Engine.Assets;
+using AGame.Engine.Assets.Scripting;
 using AGame.Engine.Configuration;
+using AGame.Engine.DebugTools;
 using AGame.Engine.ECSys;
 using AGame.Engine.ECSys.Components;
 using AGame.Engine.Graphics;
@@ -117,6 +119,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     private ThreadSafe<Dictionary<Connection, List<Entity>>> _connectionsViewingContainerInEntity;
     private ThreadSafe<Dictionary<Connection, List<(ulong, int)>>> _connectionsCreatedEntities;
     private ThreadSafe<Dictionary<Connection, List<int>>> _connectionsDestroyedEntities;
+    private Dictionary<string, ServerSideCommand> _availableCommands;
 
     // Server tick
     private int _serverTick = 0;
@@ -141,9 +144,11 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         this._connectionsViewingContainerInEntity = new ThreadSafe<Dictionary<Connection, List<Entity>>>(new Dictionary<Connection, List<Entity>>());
         this._connectionsCreatedEntities = new ThreadSafe<Dictionary<Connection, List<(ulong, int)>>>(new Dictionary<Connection, List<(ulong, int)>>());
         this._connectionsDestroyedEntities = new ThreadSafe<Dictionary<Connection, List<int>>>(new Dictionary<Connection, List<int>>());
+        this._availableCommands = new Dictionary<string, ServerSideCommand>();
 
         this.RegisterServerEventHandlers();
         this.RegisterPacketHandlers();
+        this.RegisterServerCommands();
     }
 
     private bool IsAllowedToConnect(Connection conn, ConnectRequest request, out string reason)
@@ -322,6 +327,28 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         });
     }
 
+    public ServerSideCommand GetCommandByAlias(string alias)
+    {
+        return this._availableCommands[alias];
+    }
+
+    private void RegisterServerCommands()
+    {
+        Type[] commandTypes = ScriptingManager.GetAllTypesWithBaseType<ServerSideCommand>();
+
+        foreach (Type commandType in commandTypes)
+        {
+            ServerSideCommand ic = ScriptingManager.CreateInstanceFromRealType<ServerSideCommand>(commandType.FullName);
+            var aliases = ic.GetAliases();
+            ic.Initialize(this);
+
+            foreach (string alias in aliases)
+            {
+                this._availableCommands.Add(alias, ic);
+            }
+        }
+    }
+
     private void RegisterPacketHandlers()
     {
         base.AddPacketHandler<UserCommand>((packet, connection) =>
@@ -439,6 +466,21 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 (ulong hash, int id) = cce[connection].Find(x => x.Item2 == packet.ServerSideEntityID);
                 cce[connection].Remove((hash, id));
             });
+        });
+
+        base.AddPacketHandler<RunServerCommandPacket>((packet, connection) =>
+        {
+            var playerID = this._connectionToPlayerId.LockedAction((connectionToPlayerId) =>
+            {
+                return connectionToPlayerId[connection];
+            });
+
+            var playerEntity = this._ecs.LockedAction((ecs) =>
+            {
+                return ecs.GetEntityFromID(playerID);
+            });
+
+            this.PerformActionNextTick(new PerformServerCommandAction(packet.LineToRun, playerEntity));
         });
     }
 

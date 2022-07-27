@@ -551,6 +551,16 @@ namespace AGame.Engine
         {
             return new Vector2(MathF.Round(v.X), MathF.Round(v.Y));
         }
+
+        public static float EaseInOutQuint(float val)
+        {
+            return val < 0.5f ? 16 * val * val * val * val * val : 1 - MathF.Pow(-2 * val + 2, 5) / 2;
+        }
+
+        public static float GetNegAbsCurve(float val)
+        {
+            return 1f - MathF.Abs(2 * val - 1f);
+        }
     }
 
     public struct Vector2i : IPacketable

@@ -60,6 +60,7 @@
         },
         {
             "componentType": "Interactable",
+            "interactDistance": 1,
             "onInteract": "default.script.open_container"
         },
         {

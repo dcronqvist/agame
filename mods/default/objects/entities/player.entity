@@ -30,7 +30,7 @@
         },
         {
             "componentType": "Container",
-            "containerProvider": "default.script.container_large"
+            "containerProvider": "default.script.container_player_inventory"
         },
         {
             "componentType": "Hotbar",

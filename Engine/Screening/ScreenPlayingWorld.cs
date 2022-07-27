@@ -5,6 +5,8 @@ using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using AGame.Engine.Assets;
+using AGame.Engine.Configuration;
+using AGame.Engine.DebugTools;
 using AGame.Engine.ECSys;
 using AGame.Engine.ECSys.Components;
 using AGame.Engine.Graphics;
@@ -35,6 +37,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
 
     bool _paused = false;
     bool _showingInventory = false;
+    bool _inConsole = false;
     ContainerInteractionGUI _currentContainerInteraction;
 
     public override void Initialize()
@@ -75,6 +78,8 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
         };
 
         _currentContainerInteraction = null;
+
+        GameConsole.InitializeCommands(this._client);
     }
 
     public override async void OnLeave()
@@ -107,9 +112,9 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
         Renderer.Clear(ColorF.Black);
         _client.Render();
 
+        GUI.Begin();
         if (_paused)
         {
-            GUI.Begin();
 
             // Render pause screen
             Renderer.SetRenderTarget(null, null);
@@ -126,7 +131,6 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
                 _ = this.ExitWorld();
             }
 
-            GUI.End();
         }
 
         Renderer.SetRenderTarget(null, null);
@@ -146,12 +150,27 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             var animator = localPlayer.GetComponent<AnimatorComponent>();
             var offset = animator.GetAnimator().GetCurrentAnimation().GetMiddleOfCurrentFrameScaled();
 
+            if (this._currentContainerInteraction is null)
+                this.RenderHotbar(this._client.GetPlayerEntity());
 
-            this.RenderHotbar(this._client.GetPlayerEntity());
             this.SetCameraPosition(position + new CoordinateVector(offset.X / TileGrid.TILE_SIZE, offset.Y / TileGrid.TILE_SIZE), false);
         }
 
+        if (_currentContainerInteraction is not null)
+        {
+            // Render large black overlay
+            var displayRect = Renderer.Camera.VisibleArea;
+            Renderer.Primitive.RenderRectangle(displayRect, ColorF.Black * 0.3f);
+        }
         _currentContainerInteraction?.Render(0f);
+
+        if (this._inConsole)
+        {
+            var rt = GameConsole.Render(ModManager.GetAsset<Font>("default.font.rainyhearts"));
+            Renderer.RenderRenderTexture(rt);
+        }
+        GUI.End();
+
     }
 
     private void RenderHotbar(Entity playerEntity)
@@ -221,42 +240,52 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
         //this._server?.Update();
         Vector2 pos = Input.GetMousePosition(this.Camera);
         WorldVector wv = new WorldVector(pos.X, pos.Y);
-        this._client.Update(!this._paused && this._currentContainerInteraction == null, wv.ToCoordinateVector().ToTileAligned());
+        this._client.Update(!this._paused && this._currentContainerInteraction == null && !this._inConsole, wv.ToCoordinateVector().ToTileAligned());
 
-        if (Input.IsKeyPressed(GLFW.Keys.Escape))
+        if (this._inConsole)
         {
-            this._paused = !this._paused;
-        }
+            GameConsole.SetEnabled(true);
+            GameConsole.Update(this._client.GetPlayerEntity(), this._client.GetECS(), this._client);
 
-        if (Input.IsKeyPressed(GLFW.Keys.E))
-        {
-            if (this._currentContainerInteraction == null)
+            if (Input.IsKeyPressed(GLFW.Keys.Escape))
             {
-                var playerContainer = this._client.GetPlayerEntity().GetComponent<ContainerComponent>();
-                this._currentContainerInteraction = new ContainerInteractionGUI(this._client.GetPlayerEntity(), null);
-            }
-            else
-            {
-                this._currentContainerInteraction = null;
+                this._inConsole = false;
             }
         }
-
-        if (this._client.ReceivedEntityOpenContainer != -1)
+        else
         {
-            this._currentContainerInteraction = new ContainerInteractionGUI(this._client.GetPlayerEntity(), this._client.GetECS().GetEntityFromID(this._client.ReceivedEntityOpenContainer));
-            this._client.ReceivedEntityOpenContainer = -1;
-        }
+            GameConsole.SetEnabled(false);
 
-        this._currentContainerInteraction?.UpdateInteract(this._client, 0f);
-
-        if (Input.IsKeyPressed(GLFW.Keys.F))
-        {
-            if (this._currentContainerInteraction != null)
+            if (Input.IsKeyPressed(GLFW.Keys.Escape))
             {
-                this._client.CloseCurrentContainer();
+                this._paused = !this._paused;
             }
 
-            this._client.RequestOpenContainer(Utilities.ChooseUniform(this._client.GetECS().GetAllEntities(e => e.HasComponent<PlayerStateComponent>()).ToArray()).ID);
+            if (Input.IsKeyPressed(GLFW.Keys.Enter))
+            {
+                this._inConsole = true;
+            }
+
+            if (Input.IsKeyPressed(GLFW.Keys.E))
+            {
+                if (this._currentContainerInteraction == null)
+                {
+                    var playerContainer = this._client.GetPlayerEntity().GetComponent<ContainerComponent>();
+                    this._currentContainerInteraction = new ContainerInteractionGUI(this._client.GetPlayerEntity(), null);
+                }
+                else
+                {
+                    this._currentContainerInteraction = null;
+                }
+            }
+
+            if (this._client.ReceivedEntityOpenContainer != -1)
+            {
+                this._currentContainerInteraction = new ContainerInteractionGUI(this._client.GetPlayerEntity(), this._client.GetECS().GetEntityFromID(this._client.ReceivedEntityOpenContainer));
+                this._client.ReceivedEntityOpenContainer = -1;
+            }
+
+            this._currentContainerInteraction?.UpdateInteract(this._client, 0f);
         }
     }
 

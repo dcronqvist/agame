@@ -1,3 +1,5 @@
+using System.CommandLine;
+using System.Linq;
 using AGame.Engine.Assets;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
@@ -152,6 +154,32 @@ public class HarvestEntityAction : IServerTickAction
             }
 
             ecs.DestroyEntity(entity.ID);
+        });
+    }
+}
+
+public class PerformServerCommandAction : IServerTickAction
+{
+    public Entity CallingEntity { get; set; }
+    public string Line { get; set; }
+
+    public PerformServerCommandAction(string line, Entity callingEntity)
+    {
+        this.Line = line;
+        this.CallingEntity = callingEntity;
+    }
+
+    public void Tick(GameServer server)
+    {
+        var split = this.Line.Split(' ');
+        var command = split[0];
+
+        server.PerformOnECS((ecs) =>
+        {
+            var c = server.GetCommandByAlias(command);
+            c.Initialize(server);
+
+            c.GetConfiguration(CallingEntity, ecs).Invoke(split.Skip(1).ToArray());
         });
     }
 }

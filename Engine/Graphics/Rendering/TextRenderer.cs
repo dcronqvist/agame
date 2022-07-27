@@ -68,6 +68,8 @@ namespace AGame.Engine.Graphics.Rendering
             glActiveTexture(GL_TEXTURE0);
             glBindVertexArray(fontVAO);
 
+            position = position.PixelAlign();
+
             float x = position.X;
             float y = position.Y;
 

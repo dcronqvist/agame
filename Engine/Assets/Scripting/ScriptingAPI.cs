@@ -19,6 +19,14 @@ public static class ScriptingAPI
         _gameClient = gameClient;
     }
 
+    public static void SendContainerContentsToViewers(Entity entityWithContainer)
+    {
+        if (_gameServer != null)
+        {
+            _gameServer.SendContainerContentsToViewers(entityWithContainer);
+        }
+    }
+
     // Can be called from both client and server, will do correct thing depending on context.
     public static void CreateEntity(Entity playerEntity, ECS ecs, string entity, Action<Entity> onCreate)
     {

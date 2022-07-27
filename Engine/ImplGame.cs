@@ -52,7 +52,6 @@ namespace AGame.Engine
             {
                 Logging.Log(LogLevel.Info, $"All assets loaded");
                 ScriptingManager.LoadScripts();
-                GameConsole.LoadCommands();
 
                 TileManager.Init();
                 Utilities.InitRNG();
