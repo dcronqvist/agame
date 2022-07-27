@@ -149,7 +149,7 @@ public class HarvestEntityAction : IServerTickAction
                     var newPos = transform.Position + new CoordinateVector(Utilities.GetRandomFloat(-2f, 2f), Utilities.GetRandomFloat(-2f, 2f));
 
                     newEntity.GetComponent<TransformComponent>().Position = newPos;
-                    newEntity.GetComponent<GroundItemComponent>().Item = item;
+                    newEntity.GetComponent<GroundItemComponent>().Item = ItemManager.GetItemDef(item).CreateItem();
                 }
             }
 

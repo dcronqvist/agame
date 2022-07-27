@@ -115,10 +115,9 @@ public class RenderSystem : BaseSystem
         if (entity.HasComponent<GroundItemComponent>())
         {
             var itemComponent = entity.GetComponent<GroundItemComponent>();
-            var itemID = itemComponent.Item;
-            var item = ItemManager.GetItemDef(itemID);
+            var item = itemComponent.Item;
 
-            Renderer.Texture.Render(ModManager.GetAsset<Texture2D>(item.Texture), transform.Position.ToWorldVector().ToVector2(), Vector2.One * 2f, 0f, ColorF.White);
+            Renderer.Texture.Render(item.GetTexture(), transform.Position.ToWorldVector().ToVector2(), Vector2.One * 2f, 0f, ColorF.White);
         }
 
         if (entity.HasComponent<InteractableComponent>() && entity.TryGetComponent<ColliderComponent>(out var c))

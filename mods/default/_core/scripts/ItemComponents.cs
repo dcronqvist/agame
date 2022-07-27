@@ -9,6 +9,7 @@ using AGame.Engine.Items;
 using AGame.Engine.Networking;
 using AGame.Engine.World;
 using AGame.Engine.Assets.Scripting;
+using AGame.Engine.Assets;
 
 namespace DefaultMod
 {
@@ -78,7 +79,7 @@ namespace DefaultMod
                                     ScriptingAPI.CreateEntity(playerEntity, ecs, "default.entity.ground_item", (entity) =>
                                     {
                                         entity.GetComponent<TransformComponent>().Position = new CoordinateVector(userCommand.MouseTileX, userCommand.MouseTileY);
-                                        entity.GetComponent<GroundItemComponent>().Item = newItem;
+                                        entity.GetComponent<GroundItemComponent>().Item = ItemManager.GetItemDef(newItem).CreateItem();
                                     });
                                 }
 

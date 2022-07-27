@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using AGame.Engine.Items;
 using AGame.Engine.Networking;
 using AGame.Engine.World;
 
@@ -9,8 +10,8 @@ namespace AGame.Engine.ECSys.Components;
 [ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true)]
 public class GroundItemComponent : Component
 {
-    private string _item;
-    public string Item
+    private ItemInstance _item;
+    public ItemInstance Item
     {
         get => _item;
         set
@@ -71,10 +72,11 @@ public class GroundItemComponent : Component
     public override int Populate(byte[] data, int offset)
     {
         int start = offset;
-        int len = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-        this.Item = Encoding.UTF8.GetString(data, offset, len);
-        offset += len;
+
+        PackedItem pi = new PackedItem();
+        offset += pi.Populate(data, offset);
+        this.Item = pi.Instance;
+
         this.PickedUpBy = BitConverter.ToInt32(data, offset);
         offset += sizeof(int);
         return offset - start;
@@ -83,8 +85,10 @@ public class GroundItemComponent : Component
     public override byte[] ToBytes()
     {
         List<byte> bytes = new List<byte>();
-        bytes.AddRange(BitConverter.GetBytes(this.Item.Length));
-        bytes.AddRange(Encoding.UTF8.GetBytes(this.Item));
+
+        PackedItem pi = new PackedItem(this.Item);
+        bytes.AddRange(pi.ToBytes());
+
         bytes.AddRange(BitConverter.GetBytes(this.PickedUpBy));
         return bytes.ToArray();
     }
