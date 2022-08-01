@@ -1,0 +1,11 @@
+{
+    "itemName": "Gravel Dust",
+    "maxStack": 256,
+    "texture": "default.tex.gravel",
+    "definitions": [
+        {
+            "type": "default.item_component.resource",
+            "quality": 0
+        }
+    ]
+}

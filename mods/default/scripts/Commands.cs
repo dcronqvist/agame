@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.CommandLine;
+using System.Linq;
 using AGame.Engine;
 using AGame.Engine.Assets;
 using AGame.Engine.Assets.Scripting;
@@ -64,15 +65,23 @@ namespace DefaultMod
             Command c = new Command("give");
 
             Argument<string> itemName = new Argument<string>("itemName");
+            Argument<int> itemCount = new Argument<int>("amount", getDefaultValue: () => 1);
 
             c.AddArgument(itemName);
+            c.AddArgument(itemCount);
 
-            c.SetHandler<string>((itemNameValue) =>
+            c.SetHandler((itemNameValue, amount) =>
             {
                 Logging.Log(LogLevel.Debug, $"Give item command executed from entity {callingEntity.ID}");
-                callingEntity.GetComponent<ContainerComponent>().GetContainer().AddItem(ItemManager.GetItemDef(itemNameValue).CreateItem());
+
+                foreach (var i in Enumerable.Range(0, amount))
+                {
+                    callingEntity.GetComponent<ContainerComponent>().GetContainer().AddItem(ItemManager.GetItemDef(itemNameValue).CreateItem());
+                }
+
                 gameServer.SendContainerContentsToViewers(callingEntity);
-            }, itemName);
+
+            }, itemName, itemCount);
 
             return c;
         }

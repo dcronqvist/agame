@@ -177,22 +177,6 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 {
                     Entity entity = ecs.CreateEntityFromAsset("default.entity.player");
                     entity.GetComponent<CharacterComponent>().Name = e.RequestPacket.Name;
-                    ItemInstance ii = ItemManager.GetItemDef("default.item.pebble").CreateItem();
-                    ii.GetComponent<DefaultMod.Tool>().CurrentDurability = 500;
-
-                    entity.GetComponent<ContainerComponent>().GetContainer().AddItem(ii);
-
-                    ii = ItemManager.GetItemDef("default.item.pebble").CreateItem();
-                    ii.GetComponent<DefaultMod.Tool>().CurrentDurability = 100;
-                    entity.GetComponent<ContainerComponent>().GetContainer().AddItem(ii);
-
-                    // int runs = Utilities.GetRandomInt(5, 10);
-                    // for (int i = 0; i < runs; i++)
-                    // {
-                    //     string item = Utilities.ChooseUniform("default.item.test_item", "default.item.test_item_2");
-                    //     entity.GetComponent<InventoryComponent>().GetInventory().AddItem(item, 1);
-                    // }
-
 
                     return entity;
                 });
@@ -325,6 +309,30 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 }
             }
         });
+
+        this.SendContainerProviderDataToViewers(entity);
+    }
+
+    public void SendContainerProviderDataToViewers(Entity entity)
+    {
+        var container = entity.GetComponent<ContainerComponent>().GetContainer();
+        var packet = container.Provider.GetContainerProviderData(entity.ID);
+
+        this.SendContainerProviderDataToViewers(packet, entity);
+    }
+
+    public void SendContainerProviderDataToViewers(SetContainerProviderDataPacket packet, Entity entity)
+    {
+        this._connectionsViewingContainerInEntity.LockedAction((view) =>
+        {
+            foreach (var connection in view.Keys)
+            {
+                if (view[connection].Contains(entity))
+                {
+                    this.EnqueuePacket(packet, connection, false, true);
+                }
+            }
+        });
     }
 
     public ServerSideCommand GetCommandByAlias(string alias)
@@ -437,6 +445,8 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         {
             var entityID = packet.EntityID;
 
+            Logging.Log(LogLevel.Debug, $"Server: Received close container packet from {connection.RemoteEndPoint} for {entityID}");
+
             var entity = this._ecs.LockedAction((ecs) =>
             {
                 return ecs.GetEntityFromID(entityID);
@@ -455,6 +465,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
             this._connectionsViewingContainerInEntity.LockedAction((view) =>
             {
+                Logging.Log(LogLevel.Debug, $"Server: Removing {connection.RemoteEndPoint} from view list for {entityID}");
                 view[connection].Remove(entity);
             });
         });

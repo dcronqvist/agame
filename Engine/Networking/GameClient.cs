@@ -285,6 +285,12 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                 this.EnqueuePacket(new AcknowledgeServerSideEntityPacket() { ServerSideEntityID = packet.EntityID }, true, false);
             });
         });
+
+        base.AddPacketHandler<SetContainerProviderDataPacket>((packet) =>
+        {
+            Logging.Log(LogLevel.Debug, $"Client: Received container provider data packet");
+            this._nextTickActions.LockedAction((q) => q.Enqueue(new ClientSetContainerProviderDataAction(packet)));
+        });
     }
 
     public async Task<bool> ConnectAsync(string clientName)

@@ -1,0 +1,60 @@
+{
+    "extends": "default.entity.base_entity",
+    "components": [
+        {
+            "componentType": "Collider",
+            "transformOffset": {
+                "x": 2,
+                "y": 32
+            },
+            "box": {
+                "width": 28,
+                "height": 28
+            },
+            "solid": true
+        },
+        {
+            "componentType": "Render",
+            "sortByY": true,
+            "renderLayer": 0,
+            "feetOffset": {
+                "x": 16,
+                "y": 32
+            }
+        },
+        {
+            "componentType": "Sprite",
+            "texture": "default.tex.rock_crusher",
+            "renderScale": {
+                "x": 2,
+                "y": 2
+            },
+            "origin": {
+                "x": 0,
+                "y": 0
+            },
+            "colorTint": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+            },
+            "sourceRectangle": {
+                "x": 0,
+                "y": 0,
+                "width": 16,
+                "height": 32
+            },
+            "rotation": 0
+        },
+        {
+            "componentType": "Interactable",
+            "interactDistance": 1,
+            "onInteract": "default.script.open_container"
+        },
+        {
+            "componentType": "Container",
+            "containerProvider": "default.script.container_rock_crusher"
+        }
+    ]
+}

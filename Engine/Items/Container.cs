@@ -207,7 +207,12 @@ public class Container
 
     public bool UpdateLogic(float deltaTime)
     {
-        return this.Provider.Update(deltaTime);
+        if (this.Provider is null)
+        {
+            return false;
+        }
+
+        return this.Provider.Update(this, deltaTime);
     }
 
     public static void RenderBackground(Vector2 topLeft, Vector2 size)
@@ -216,12 +221,12 @@ public class Container
         Renderer.Primitive.RenderRectangle(rect, ColorF.FromString("07A8F2FF"));
     }
 
-    public void Render(Vector2 topLeft)
+    public void Render(Vector2 topLeft, float deltaTime)
     {
         ContainerSlot hoveredSlot = null;
         var font = ModManager.GetAsset<Font>("default.font.rainyhearts");
 
-        this.Provider.RenderBackgroundUI(topLeft);
+        this.Provider.RenderBackgroundUI(topLeft, deltaTime);
 
         foreach (KeyValuePair<int, ContainerSlot> slot in this._slots)
         {

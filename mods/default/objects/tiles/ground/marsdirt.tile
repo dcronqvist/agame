@@ -1,6 +1,0 @@
-{
-    "tileType": "Ground",
-    "tileName": "game:marsdirt",
-    "texture": "default.tex.marsdirt",
-    "solid": false
-}

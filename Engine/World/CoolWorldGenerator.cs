@@ -93,7 +93,8 @@ public class CoolWorldGenerator : IWorldGenerator
     {
         return new List<EntityDistributionDefinition>()
         {
-            new EntityDistributionDefinition("default.entity.test_rock", 0.5f, 1f, "default.script.distributor_squares"),
-        };
+            new EntityDistributionDefinition("default.entity.ore_rock", 0.02f, 4f, "default.script.distributor_circles"),
+            new EntityDistributionDefinition("default.entity.test_rock", 0.08f, 1f, "default.script.distributor_squares")
+    };
     }
 }

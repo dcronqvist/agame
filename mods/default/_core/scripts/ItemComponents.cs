@@ -8,7 +8,6 @@ using AGame.Engine.ECSys.Components;
 using AGame.Engine.Items;
 using AGame.Engine.Networking;
 using AGame.Engine.World;
-using AGame.Engine.Assets.Scripting;
 using AGame.Engine.Assets;
 
 namespace DefaultMod
@@ -153,6 +152,66 @@ namespace DefaultMod
         public override bool ShouldItemBeConsumed()
         {
             return false;
+        }
+
+        public override byte[] ToBytes()
+        {
+            return new byte[0];
+        }
+    }
+
+    [ItemComponentProps(TypeName = "default.item_component.placeable")]
+    public class PlaceableDef : ItemComponentDefinition
+    {
+        public string EntityToPlace { get; set; }
+
+        public override ItemComponent CreateComponent()
+        {
+            return new Placeable(this);
+        }
+    }
+
+    public class Placeable : ItemComponent<PlaceableDef>
+    {
+        public Placeable(PlaceableDef definition) : base(definition)
+        {
+
+        }
+
+        public override ulong GetHash()
+        {
+            return Utilities.Hash(this.Definition.EntityToPlace);
+        }
+
+        public override void OnConsumed(Entity playerEntity, ItemInstance item, ECS ecs)
+        {
+
+        }
+
+        public override bool OnUse(Entity playerEntity, UserCommand userCommand, ItemInstance item, ECS ecs, float deltaTime, float totalTimeUsed)
+        {
+            Entity entity = ScriptingAPI.GetEntityAtPosition(ecs, new Vector2i(userCommand.MouseTileX, userCommand.MouseTileY));
+
+            if (entity is null)
+            {
+                // Can place entity
+                ScriptingAPI.CreateEntity(playerEntity, ecs, this.Definition.EntityToPlace, (entity) =>
+                {
+                    entity.GetComponent<TransformComponent>().Position = new CoordinateVector(userCommand.MouseTileX, userCommand.MouseTileY);
+                });
+            }
+
+            return false;
+        }
+
+        public override int Populate(byte[] data, int offset)
+        {
+            return 0;
+        }
+
+        public override bool ShouldItemBeConsumed()
+        {
+            return true;
         }
 
         public override byte[] ToBytes()

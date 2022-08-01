@@ -1,3 +1,6 @@
+# Remove bin directory to ensure clean
+Remove-Item .\bin -Force -Recurse -ErrorAction SilentlyContinue
+
 # Create publish pack
 dotnet publish --configuration Release --use-current-runtime --self-contained
 

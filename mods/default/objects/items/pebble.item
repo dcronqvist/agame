@@ -1,15 +1,11 @@
 {
     "itemName": "Pebble",
-    "maxStack": 1,
+    "maxStack": 255,
     "texture": "default.tex.pebble",
     "definitions": [
         {
             "type": "default.item_component.resource",
-            "quality": 5
-        },
-        {
-            "type": "default.item_component.tool",
-            "durability": 1337
+            "quality": 1
         }
     ]
 }

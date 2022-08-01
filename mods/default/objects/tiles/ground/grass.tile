@@ -1,6 +1,0 @@
-{
-    "tileType": "Ground",
-    "tileName": "game:grass",
-    "texture": "default.tex.grass_base",
-    "solid": false
-}

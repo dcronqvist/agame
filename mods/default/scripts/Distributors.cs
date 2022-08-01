@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using AGame.Engine;
 using AGame.Engine.Assets.Scripting;
@@ -28,20 +29,49 @@ namespace DefaultMod
     {
         public List<SpawnEntityDefinition> GetDistribution(string entityAsset, float size, Vector2i startTile)
         {
+            int minAmountOfCircles = 2;
+            int maxAmountOfCircles = 4;
+            int maxRadius = (int)size / 2;
+
             List<SpawnEntityDefinition> definitions = new List<SpawnEntityDefinition>();
 
-            int radius = (int)size / 2;
-            int radiusSquared = radius * radius;
-            for (int y = -radius; y <= radius; y++)
+            int amountOfCircles = Utilities.GetRandomInt(minAmountOfCircles, maxAmountOfCircles + 1);
+
+            List<Vector2i> tiles = new List<Vector2i>();
+
+            for (int i = 0; i < amountOfCircles; i++)
             {
-                for (int x = -radius; x <= radius; x++)
+                int middleX = Utilities.GetRandomInt(-maxRadius, maxRadius + 1);
+                int middleY = Utilities.GetRandomInt(-maxRadius, maxRadius + 1);
+
+                int radius = Utilities.GetRandomInt(1, maxRadius + 1);
+                int radiusSquared = radius * radius;
+
+                for (int y = -radius; y <= radius; y++)
                 {
-                    if (x * x + y * y <= radiusSquared)
+                    for (int x = -radius; x <= radius; x++)
                     {
-                        definitions.Add(new SpawnEntityDefinition(entityAsset, new Vector2i(startTile.X + x, startTile.Y + y)));
+                        int xSquared = x * x;
+                        int ySquared = y * y;
+
+                        if (xSquared + ySquared <= radiusSquared)
+                        {
+                            var v = new Vector2i(startTile.X + middleX + x, startTile.Y + middleY + y);
+
+                            if (!tiles.Contains(v))
+                            {
+                                tiles.Add(v);
+                            }
+                        }
                     }
                 }
             }
+
+            foreach (Vector2i tile in tiles)
+            {
+                definitions.Add(new SpawnEntityDefinition(entityAsset, tile));
+            }
+
             return definitions;
         }
     }

@@ -122,11 +122,11 @@ public class RenderSystem : BaseSystem
 
         if (entity.HasComponent<InteractableComponent>() && entity.TryGetComponent<ColliderComponent>(out var c))
         {
-            // var interactableCollider = entity.GetComponent<ColliderComponent>();
-            // var interactable = entity.GetComponent<InteractableComponent>();
-            // var interactBox = interactableCollider.Box.Inflate(interactable.InteractDistance * TileGrid.TILE_SIZE);
+            var interactableCollider = entity.GetComponent<ColliderComponent>();
+            var interactable = entity.GetComponent<InteractableComponent>();
+            var interactBox = interactableCollider.Box;//.Inflate(interactable.InteractDistance * TileGrid.TILE_SIZE);
 
-            // Renderer.Primitive.RenderRectangle(interactBox, ColorF.Green * 0.3f);
+            Renderer.Primitive.RenderRectangle(interactBox, ColorF.Green * 0.3f);
         }
     }
 }

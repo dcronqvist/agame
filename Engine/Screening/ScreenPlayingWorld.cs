@@ -162,7 +162,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             var displayRect = Renderer.Camera.VisibleArea;
             Renderer.Primitive.RenderRectangle(displayRect, ColorF.Black * 0.3f);
         }
-        _currentContainerInteraction?.Render(0f);
+        _currentContainerInteraction?.Render(GameTime.DeltaTime);
 
         if (this._inConsole)
         {
@@ -256,25 +256,26 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
         {
             GameConsole.SetEnabled(false);
 
-            if (Input.IsKeyPressed(GLFW.Keys.Escape))
+            if (Input.IsKeyPressed(GLFW.Keys.Escape) && this._currentContainerInteraction is null)
             {
                 this._paused = !this._paused;
             }
 
-            if (Input.IsKeyPressed(GLFW.Keys.Enter))
+            if (Input.IsKeyPressed(GLFW.Keys.Enter) && this._currentContainerInteraction is null)
             {
                 this._inConsole = true;
             }
 
             if (Input.IsKeyPressed(GLFW.Keys.E))
             {
-                if (this._currentContainerInteraction == null)
+                if (this._currentContainerInteraction is null)
                 {
                     var playerContainer = this._client.GetPlayerEntity().GetComponent<ContainerComponent>();
                     this._currentContainerInteraction = new ContainerInteractionGUI(this._client.GetPlayerEntity(), null);
                 }
                 else
                 {
+                    this._currentContainerInteraction.CloseContainer(this._client);
                     this._currentContainerInteraction = null;
                 }
             }

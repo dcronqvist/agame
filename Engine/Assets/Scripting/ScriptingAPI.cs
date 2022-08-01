@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using AGame.Engine.ECSys;
 using AGame.Engine.ECSys.Components;
+using AGame.Engine.Items;
 using AGame.Engine.Networking;
 using AGame.Engine.World;
+using GameUDPProtocol;
 
 namespace AGame.Engine.Assets.Scripting;
 
@@ -24,6 +26,14 @@ public static class ScriptingAPI
         if (_gameServer != null)
         {
             _gameServer.SendContainerContentsToViewers(entityWithContainer);
+        }
+    }
+
+    public static void SendContainerProviderDataToViewers(Entity entityWithContainer)
+    {
+        if (_gameServer != null)
+        {
+            _gameServer.SendContainerProviderDataToViewers(entityWithContainer);
         }
     }
 

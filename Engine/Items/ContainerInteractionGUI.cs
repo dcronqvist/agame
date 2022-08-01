@@ -152,7 +152,7 @@ public class ContainerInteractionGUI
             this.RenderTitle(playerContainer.GetContainer().Provider.Name, topLeft);
 
             var playerContainerStartPos = new Vector2(middleOfWindow.X - playerSize.X / 2f, middleOfWindow.Y - playerSize.Y / 2f + this._interactionTitleHeight / 2);
-            playerContainer.GetContainer().Render(playerContainerStartPos);
+            playerContainer.GetContainer().Render(playerContainerStartPos, deltaTime);
 
             var mousePos = Input.GetMousePositionInWindow();
 
@@ -179,14 +179,14 @@ public class ContainerInteractionGUI
 
                 this.RenderTitle(otherContainer.GetContainer().Provider.Name, topLeft);
                 var otherContainerStartPos = new Vector2(middleOfWindow.X - otherSize.X / 2f, middleOfWindow.Y - totalSize.Y / 2f + this._interactionTitleHeight);
-                otherContainer.GetContainer().Render(otherContainerStartPos);
+                otherContainer.GetContainer().Render(otherContainerStartPos, deltaTime);
 
                 // Render player container
                 var playerContainer = this._playerEntity.GetComponent<ContainerComponent>();
                 var playerSize = playerContainer.GetContainer().Provider.GetRenderSize();
 
                 var playerContainerStartPos = new Vector2(middleOfWindow.X - playerSize.X / 2f, otherContainerStartPos.Y + otherSize.Y);
-                playerContainer.GetContainer().Render(playerContainerStartPos);
+                playerContainer.GetContainer().Render(playerContainerStartPos, deltaTime);
 
                 var mousePos = Input.GetMousePositionInWindow();
 
@@ -205,7 +205,7 @@ public class ContainerInteractionGUI
                 Container.RenderBackground(topLeft, totalSize);
                 this.RenderTitle(otherContainer.GetContainer().Provider.Name, topLeft);
                 var otherContainerStartPos = new Vector2(middleOfWindow.X - otherSize.X / 2f, middleOfWindow.Y - totalSize.Y / 2f + this._interactionTitleHeight);
-                otherContainer.GetContainer().Render(otherContainerStartPos);
+                otherContainer.GetContainer().Render(otherContainerStartPos, deltaTime);
 
                 var mousePos = Input.GetMousePositionInWindow();
 
@@ -217,6 +217,14 @@ public class ContainerInteractionGUI
                     Renderer.Texture.Render(item.GetTexture(), mousePos, Vector2.One * 2f, 0f, ColorF.White);
                 }
             }
+        }
+    }
+
+    public void CloseContainer(GameClient client)
+    {
+        if (this._otherEntity is not null)
+        {
+            client.EnqueuePacket(new CloseContainerPacket() { EntityID = this._otherEntity.ID }, true, false);
         }
     }
 }

@@ -142,21 +142,23 @@ public class PlayerStateComponent : Component
         if (command.IsInputDown(UserCommand.INTERACT_ENTITY) && ecs.IsRunner(SystemRunner.Server))
         {
             // Get entity at mouse tile position
-            var entityAtMouse = ecs.GetAllEntities(e => e.HasComponent<InteractableComponent>() && e.TryGetComponent<TransformComponent>(out var t) && t.Position.Equals(new CoordinateVector(this.MouseTileX, this.MouseTileY))).FirstOrDefault();
+            var playerCollider = parentEntity.GetComponent<ColliderComponent>();
+            var mouseX = command.MouseTileX * TileGrid.TILE_SIZE;
+            var mouseY = command.MouseTileY * TileGrid.TILE_SIZE;
+            var interactWith = ecs.GetAllEntities(e => e.TryGetComponent<InteractableComponent>(out var i) && e.TryGetComponent<ColliderComponent>(out var c) && c.Box.Contains(mouseX + 16, mouseY + 16)).FirstOrDefault();
 
-            if (entityAtMouse is not null)
+            if (interactWith is not null)
             {
                 // Interacting with something
-                var interactable = entityAtMouse.GetComponent<InteractableComponent>();
+                var interactable = interactWith.GetComponent<InteractableComponent>();
 
-                var playerCollider = parentEntity.GetComponent<ColliderComponent>();
-                var interactableCollider = entityAtMouse.GetComponent<ColliderComponent>();
+                var interactableCollider = interactWith.GetComponent<ColliderComponent>();
 
                 var interactBox = interactableCollider.Box.Inflate(interactable.InteractDistance * TileGrid.TILE_SIZE);
 
                 if (playerCollider.Box.IntersectsWith(interactBox))
                 {
-                    interactable.GetOnInteract().OnInteract(parentEntity, entityAtMouse, command, ecs);
+                    interactable.GetOnInteract().OnInteract(parentEntity, interactWith, command, ecs);
                 }
             }
         }

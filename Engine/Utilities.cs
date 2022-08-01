@@ -547,6 +547,11 @@ namespace AGame.Engine
             return hash;
         }
 
+        public static bool InRange(this float value, float min, float max)
+        {
+            return value >= min && value <= max;
+        }
+
         public static Vector2 PixelAlign(this Vector2 v)
         {
             return new Vector2(MathF.Round(v.X), MathF.Round(v.Y));

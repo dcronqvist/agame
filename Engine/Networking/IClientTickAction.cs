@@ -92,3 +92,24 @@ public class ClientSetContainerContentAction : IClientTickAction
 
     }
 }
+
+public class ClientSetContainerProviderDataAction : IClientTickAction
+{
+    public SetContainerProviderDataPacket Packet { get; set; }
+
+    public ClientSetContainerProviderDataAction(SetContainerProviderDataPacket packet)
+    {
+        this.Packet = packet;
+    }
+
+    public void Tick(GameClient client)
+    {
+        int serverSideEntity = Packet.EntityID;
+
+        if (client.TryGetClientSideEntity(serverSideEntity, out Entity entity))
+        {
+            var container = entity.GetComponent<ContainerComponent>();
+            container.GetContainer().Provider.ReceiveProviderData(Packet);
+        }
+    }
+}
