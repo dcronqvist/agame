@@ -54,9 +54,9 @@ public class ScreenSelectName : Screen<EnterSelectNameArgs>
         Vector2 middleOfScreen = DisplayManager.GetWindowSizeInPixels() / 2f;
         float width = 350f;
 
-        GUI.TextField("player name", new Vector2(middleOfScreen.X - width / 2f, middleOfScreen.Y - 50f), new Vector2(width, 100f), ref _playerName);
+        GUI.TextField("player name", new Vector2(middleOfScreen.X - width / 2f, middleOfScreen.Y - 50f), new Vector2(width, 50f), ref _playerName);
 
-        if (GUI.Button("confirm", new Vector2(middleOfScreen.X - width / 2f, middleOfScreen.Y + 50f), new Vector2(width, 100f)))
+        if (GUI.Button("confirm", new Vector2(middleOfScreen.X - width / 2f, middleOfScreen.Y + 50f), new Vector2(width, 50f)))
         {
             if (_playerName.Length > 0)
             {
