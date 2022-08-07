@@ -1,5 +1,5 @@
 {
   "locale": "default.locale.en_US",
   "volume_master": 0.164,
-  "fps_limit": 260
+  "fps_limit": 144
 }

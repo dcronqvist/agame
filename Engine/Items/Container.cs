@@ -256,8 +256,8 @@ public class Container
                 // If has tool component, render durability
                 if (slot.Value.Item.TryGetComponent<DefaultMod.Tool>(out DefaultMod.Tool t))
                 {
-                    var durability = t.Definition.Durability;
-                    var currDur = t.CurrentDurability;
+                    var durability = t.Definition.MaxEnergyCharge;
+                    var currDur = t.CurrentEnergyCharge;
                     var perc = ((float)currDur / durability).ToString("0.00");
 
                     var durabilitySize = font.MeasureString(perc, scale);

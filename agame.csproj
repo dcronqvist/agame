@@ -8,6 +8,7 @@
     <DefaultItemExcludes>$(DefaultItemExcludes);$(ProjectDir)\res\**\*.*</DefaultItemExcludes>
     <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
     <LangVersion>preview</LangVersion>
+    <ApplicationIcon>mods\default\_core\textures\icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <PropertyGroup>

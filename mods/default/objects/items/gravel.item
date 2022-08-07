@@ -1,6 +1,6 @@
 {
     "itemName": "Gravel Dust",
-    "maxStack": 256,
+    "maxStack": 25,
     "texture": "default.tex.gravel",
     "definitions": [
         {

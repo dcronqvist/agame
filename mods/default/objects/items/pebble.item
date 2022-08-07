@@ -4,8 +4,9 @@
     "texture": "default.tex.pebble",
     "definitions": [
         {
-            "type": "default.item_component.resource",
-            "quality": 1
+            "type": "default.item_component.rock_crusher_yield",
+            "item": "default.item.gravel",
+            "amount": 3
         }
     ]
 }

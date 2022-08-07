@@ -112,4 +112,50 @@ namespace DefaultMod
             return c;
         }
     }
+
+    public class SetToolChargeCommand : ServerSideCommand
+    {
+        public override IEnumerable<string> GetAliases()
+        {
+            yield return "set_charge";
+        }
+
+        public override Command GetCommand(Entity callingEntity, ECS ecs, GameServer gameServer)
+        {
+            Command c = new Command("set_charge");
+
+            Argument<int> charge = new Argument<int>("charge");
+
+            c.AddArgument(charge);
+
+            c.SetHandler((chargeVal) =>
+            {
+                var hotbar = callingEntity.GetComponent<HotbarComponent>();
+                var inventory = callingEntity.GetComponent<ContainerComponent>().GetContainer();
+
+                var toolSlot = inventory.GetSlot(hotbar.SelectedSlot);
+                if (toolSlot.Item is null)
+                {
+                    Logging.Log(LogLevel.Warning, $"Trying to set charge of empty slot {hotbar.SelectedSlot}");
+                    return;
+                }
+                else
+                {
+                    if (toolSlot.Item.TryGetComponent<Tool>(out Tool tool))
+                    {
+                        tool.CurrentEnergyCharge = chargeVal;
+                        Logging.Log(LogLevel.Debug, $"Set charge of tool {toolSlot.Item.Definition.ItemID} to {chargeVal}");
+                        ScriptingAPI.SendContainerContentsToViewers(callingEntity);
+                    }
+                    else
+                    {
+                        Logging.Log(LogLevel.Warning, $"Trying to set charge of non-tool slot {hotbar.SelectedSlot}");
+                    }
+                }
+
+            }, charge);
+
+            return c;
+        }
+    }
 }

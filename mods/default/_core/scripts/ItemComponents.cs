@@ -15,8 +15,7 @@ namespace DefaultMod
     [ItemComponentProps(TypeName = "default.item_component.tool")]
     public class ToolDef : ItemComponentDefinition
     {
-        public int Durability { get; set; }
-        public string ScriptOnUse { get; set; }
+        public int MaxEnergyCharge { get; set; }
 
         public override ItemComponent CreateComponent()
         {
@@ -26,17 +25,17 @@ namespace DefaultMod
 
     public class Tool : ItemComponent<ToolDef>
     {
-        public int CurrentDurability { get; set; }
+        public int CurrentEnergyCharge { get; set; }
 
         public Tool(ToolDef definition) : base(definition)
         {
-            this.CurrentDurability = definition.Durability;
+            this.CurrentEnergyCharge = definition.MaxEnergyCharge;
         }
 
         public override int Populate(byte[] data, int offset)
         {
             int start = offset;
-            this.CurrentDurability = BitConverter.ToInt32(data, offset);
+            this.CurrentEnergyCharge = BitConverter.ToInt32(data, offset);
             offset += sizeof(int);
             return offset - start;
         }
@@ -44,7 +43,7 @@ namespace DefaultMod
         public override byte[] ToBytes()
         {
             List<byte> bytes = new List<byte>();
-            bytes.AddRange(BitConverter.GetBytes(this.CurrentDurability));
+            bytes.AddRange(BitConverter.GetBytes(this.CurrentEnergyCharge));
             return bytes.ToArray();
         }
 
@@ -52,7 +51,7 @@ namespace DefaultMod
         {
             Entity entity = ScriptingAPI.GetEntityAtPosition(ecs, new Vector2i(userCommand.MouseTileX, userCommand.MouseTileY));
 
-            if (entity is null)
+            if (entity is null || this.CurrentEnergyCharge <= 0)
             {
                 return false;
             }
@@ -66,8 +65,14 @@ namespace DefaultMod
                         {
                             if (!userCommand.HasBeenRun)
                             {
-                                this.CurrentDurability -= 20;
-                                ScriptingAPI.DestroyEntity(playerEntity, ecs, entity);
+                                this.CurrentEnergyCharge -= 1;
+
+                                harvest.BreaksAfter -= 1;
+
+                                if (harvest.BreaksAfter < 1)
+                                {
+                                    ScriptingAPI.DestroyEntity(playerEntity, ecs, entity);
+                                }
 
 
                                 foreach (var def in harvest.Yields)
@@ -96,7 +101,7 @@ namespace DefaultMod
 
         public override bool ShouldItemBeConsumed()
         {
-            return this.CurrentDurability <= 0;
+            return false;
         }
 
         public override void OnConsumed(Entity playerEntity, ItemInstance item, ECS ecs)
@@ -106,7 +111,7 @@ namespace DefaultMod
 
         public override ulong GetHash()
         {
-            return this.CurrentDurability.Hash();
+            return this.CurrentEnergyCharge.Hash();
         }
     }
 
@@ -212,6 +217,56 @@ namespace DefaultMod
         public override bool ShouldItemBeConsumed()
         {
             return true;
+        }
+
+        public override byte[] ToBytes()
+        {
+            return new byte[0];
+        }
+    }
+
+    [ItemComponentProps(TypeName = "default.item_component.rock_crusher_yield")]
+    public class RockCrusherYieldDef : ItemComponentDefinition
+    {
+        public string Item { get; set; }
+        public int Amount { get; set; }
+
+        public override ItemComponent CreateComponent()
+        {
+            return new RockCrusherYield(this);
+        }
+    }
+
+    public class RockCrusherYield : ItemComponent<RockCrusherYieldDef>
+    {
+        public RockCrusherYield(RockCrusherYieldDef definition) : base(definition)
+        {
+
+        }
+
+        public override ulong GetHash()
+        {
+            return Utilities.CombineHash(Utilities.Hash(this.Definition.Item), Utilities.Hash(this.Definition.Amount));
+        }
+
+        public override void OnConsumed(Entity playerEntity, ItemInstance item, ECS ecs)
+        {
+
+        }
+
+        public override bool OnUse(Entity playerEntity, UserCommand userCommand, ItemInstance item, ECS ecs, float deltaTime, float totalTimeUsed)
+        {
+            return false;
+        }
+
+        public override int Populate(byte[] data, int offset)
+        {
+            return 0;
+        }
+
+        public override bool ShouldItemBeConsumed()
+        {
+            return false;
         }
 
         public override byte[] ToBytes()

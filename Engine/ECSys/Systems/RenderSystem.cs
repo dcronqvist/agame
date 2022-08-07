@@ -128,5 +128,12 @@ public class RenderSystem : BaseSystem
 
             Renderer.Primitive.RenderRectangle(interactBox, ColorF.Green * 0.3f);
         }
+
+        if (entity.TryGetComponent<HarvestableComponent>(out var harvest))
+        {
+            int breaks = harvest.BreaksAfter;
+
+            Renderer.Text.RenderText(ModManager.GetAsset<Font>("default.font.rainyhearts"), $"{breaks}", transform.Position.ToWorldVector().ToVector2(), 1f, ColorF.DeepBlue, Renderer.Camera);
+        }
     }
 }

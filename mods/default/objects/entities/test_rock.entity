@@ -56,7 +56,8 @@
                     "maxAmount": 1,
                     "item": "default.item.pebble"
                 }
-            ]
+            ],
+            "breaksAfter": 1
         },
         {
             "componentType": "Interactable",

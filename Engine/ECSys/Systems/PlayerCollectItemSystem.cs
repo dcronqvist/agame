@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using AGame.Engine.Configuration;
 using AGame.Engine.ECSys.Components;
 using AGame.Engine.World;
 
@@ -49,6 +50,7 @@ public class PlayerCollectItemSystem : BaseSystem
                 var container = pickedUpBy.GetComponent<ContainerComponent>();
                 if (container.GetContainer().AddItem(entity.GetComponent<GroundItemComponent>().Item))
                 {
+                    Logging.Log(LogLevel.Debug, "Added item to container and destroyed item on ground");
                     ParentECS.DestroyEntity(entity.ID);
                     this.GameServer.SendContainerContentsToViewers(pickedUpBy);
                 }

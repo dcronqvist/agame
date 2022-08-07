@@ -1,0 +1,16 @@
+{
+    "itemName": "Test Tool",
+    "maxStack": 1,
+    "texture": "default.tex.icon",
+    "definitions": [
+        {
+            "type": "default.item_component.tool",
+            "maxEnergyCharge": 100
+        },
+        {
+            "type": "default.item_component.rock_crusher_yield",
+            "item": "default.item.test_tool",
+            "amount": 1
+        }
+    ]
+}

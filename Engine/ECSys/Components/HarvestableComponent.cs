@@ -82,6 +82,20 @@ public class HarvestableComponent : Component
         }
     }
 
+    private int _breaksAfter;
+    public int BreaksAfter
+    {
+        get => _breaksAfter;
+        set
+        {
+            if (_breaksAfter != value)
+            {
+                _breaksAfter = value;
+                this.NotifyPropertyChanged();
+            }
+        }
+    }
+
     public override void ApplyInput(Entity parentEntity, UserCommand command, WorldContainer world, ECS ecs)
     {
         // Do nothing
@@ -92,7 +106,8 @@ public class HarvestableComponent : Component
         return new HarvestableComponent()
         {
             Yields = this.Yields,
-            Tags = this.Tags
+            Tags = this.Tags,
+            BreaksAfter = this.BreaksAfter
         };
     }
 
@@ -106,6 +121,7 @@ public class HarvestableComponent : Component
         HarvestableComponent toComp = (HarvestableComponent)to;
         this.Yields = toComp.Yields;
         this.Tags = toComp.Tags;
+        this.BreaksAfter = toComp.BreaksAfter;
     }
 
     public override int Populate(byte[] data, int offset)
@@ -132,6 +148,9 @@ public class HarvestableComponent : Component
             offset += def.Populate(data, offset);
             this.Yields[i] = def;
         }
+        this.BreaksAfter = BitConverter.ToInt32(data, offset);
+        offset += sizeof(int);
+
         return offset - start;
     }
 
@@ -150,6 +169,9 @@ public class HarvestableComponent : Component
         {
             bytes.AddRange(yield.ToBytes());
         }
+
+        bytes.AddRange(BitConverter.GetBytes(this.BreaksAfter));
+
         return bytes.ToArray();
     }
 
@@ -162,6 +184,8 @@ public class HarvestableComponent : Component
     {
         HarvestableComponent newComp = (HarvestableComponent)newComponent;
         this.Yields = newComp.Yields;
+        this.Tags = newComp.Tags;
+        this.BreaksAfter = newComp.BreaksAfter;
     }
 
     public bool HasTag(string tag)

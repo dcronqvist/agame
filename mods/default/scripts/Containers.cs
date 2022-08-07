@@ -183,7 +183,7 @@ namespace DefaultMod
             _slots = new List<ContainerSlot>();
 
             left = new ContainerSlot(Vector2.Zero);
-            right = new ContainerSlot(new Vector2(64 + 64, 0));
+            right = new ContainerSlot(new Vector2(64 + ((64 + 5) * 5), 0));
 
             _slots.Add(left);
             _slots.Add(right);
@@ -191,7 +191,7 @@ namespace DefaultMod
 
         public override Vector2 GetRenderSize()
         {
-            return new Vector2(64 + 64 + 64 + 5 + 5, 64 + 5 + 5);
+            return new Vector2(64 + (5 * (64 + 5)) + 64 + 5 + 5, 64 + 5 + 5);
         }
 
         public override IEnumerable<ContainerSlot> GetSlots()
@@ -211,17 +211,37 @@ namespace DefaultMod
 
         public override void RenderBackgroundUI(Vector2 topLeft, float deltaTime)
         {
-            if (left.Item is not null)
+            if (left.Item is null)
             {
-                this._counter += deltaTime;
+                _counter = 0f;
+            }
+
+            if (left.Item is not null && left.Item.TryGetComponent<RockCrusherYield>(out var yie))
+            {
+                if (right.Item is null)
+                {
+                    _counter += deltaTime;
+                }
+                else
+                {
+                    if (right.Item is not null && right.Item.Definition.MaxStack > right.Count + yie.Definition.Amount && right.Item.Definition.ItemID == yie.Definition.Item)
+                    {
+                        // Can perform crushing
+                        _counter += deltaTime;
+                    }
+                    else
+                    {
+                        _counter = 0f;
+                    }
+                }
             }
             else
             {
-                this._counter = 0f;
+                _counter = 0f;
             }
 
-            var startPos = topLeft + new Vector2(64 + 5, 32);
-            var endPos = startPos + new Vector2(64 - 10, 10);
+            var startPos = topLeft + new Vector2(64 + 5, 0);
+            var endPos = startPos + new Vector2((64 + 5) * 5 - 10, 64);
 
             var progress = MathF.Min(this._counter / 5f, 1f);
 
@@ -232,6 +252,14 @@ namespace DefaultMod
 
             var rect = new RectangleF(startPos.X, startPos.Y, (progressPos.X - startPos.X), endPos.Y - startPos.Y);
             Renderer.Primitive.RenderRectangle(rect, ColorF.RoyalBlue);
+
+            var middlePos = ((endPos - startPos) / 2f) + startPos;
+            var textToShow = $"{(int)(progress * 100)}%";
+            var font = ModManager.GetAsset<Font>("default.font.rainyhearts");
+            var textSize = font.MeasureString(textToShow, 2f);
+            var textPos = middlePos - textSize / 2f;
+
+            Renderer.Text.RenderText(font, textToShow, textPos, 2f, ColorF.White, Renderer.Camera);
         }
 
         private float _counter = 0f;
@@ -241,13 +269,27 @@ namespace DefaultMod
             if (left.Item is null)
             {
                 _counter = 0f;
-                this._lastSend = 0f;
                 return false;
             }
 
-            if (left.Item.Definition.ItemID == "default.item.pebble")
+            if (left.Item is not null && left.Item.TryGetComponent<RockCrusherYield>(out var yie))
             {
-                _counter += deltaTime;
+                if (right.Item is null)
+                {
+                    _counter += deltaTime;
+                }
+                else
+                {
+                    if (right.Item is not null && right.Item.Definition.MaxStack > right.Count + yie.Definition.Amount && right.Item.Definition.ItemID == yie.Definition.Item)
+                    {
+                        // Can perform crushing
+                        _counter += deltaTime;
+                    }
+                    else
+                    {
+                        _counter = 0f;
+                    }
+                }
             }
             else
             {
@@ -257,6 +299,18 @@ namespace DefaultMod
 
             if (_counter >= 5f)
             {
+                var yield = left.Item.GetComponent<RockCrusherYield>();
+
+                if (right.Item == null)
+                {
+                    right.Item = ItemManager.GetItemDef(yield.Definition.Item).CreateItem();
+                    right.Count = yield.Definition.Amount;
+                }
+                else
+                {
+                    right.Count += yield.Definition.Amount;
+                }
+
                 _counter = 0f;
                 this._lastSend = 0f;
 
@@ -266,12 +320,6 @@ namespace DefaultMod
                     left.Item = null;
                 }
 
-                if (right.Item == null)
-                {
-                    right.Item = ItemManager.GetItemDef("default.item.gravel").CreateItem();
-                }
-
-                right.Count += 1;
                 return true;
             }
 
@@ -282,7 +330,7 @@ namespace DefaultMod
 
         public override bool ShouldSendProviderData()
         {
-            if ((_counter % 1f).InRange(0f, 0.1f) && left.Item is not null)
+            if ((_counter % 1f).InRange(0f, 0.1f) && left.Item is not null && _counter != 0f)
             {
                 _lastSend = _counter;
                 return true;
