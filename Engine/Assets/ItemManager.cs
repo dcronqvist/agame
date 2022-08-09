@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using AGame.Engine.Assets.Scripting;
+using AGame.Engine.ECSys.Components;
 using AGame.Engine.Items;
 using AGame.Engine.Networking;
 
@@ -47,18 +49,25 @@ public static class ItemManager
 
     public static void RegisterComponentTypes()
     {
-        Type[] componentTypes = Utilities.FindDerivedTypes(typeof(ItemComponentDefinition)).Where(x => x != typeof(ItemComponentDefinition) && !x.ContainsGenericParameters).ToArray();
-        componentTypes = componentTypes.OrderBy(t => t.Name).DistinctBy(x => x.Name).ToArray();
+        Type[] componentTypes = ScriptingManager.GetAllTypesWithBaseType<ItemComponentDefinition>().Where(x => x != typeof(ItemComponentDefinition) && !x.ContainsGenericParameters).ToArray();
+        componentTypes = componentTypes.OrderBy(t => t.FullName).DistinctBy(x => x.FullName).ToArray();
 
         for (int i = 0; i < componentTypes.Length; i++)
         {
-            var attribute = componentTypes[i].GetCustomAttributes(typeof(ItemComponentPropsAttribute), false).FirstOrDefault() as ItemComponentPropsAttribute;
+            var attribute = componentTypes[i].GetCustomAttributes(typeof(ScriptClassAttribute), false).FirstOrDefault() as ScriptClassAttribute;
             if (attribute is not null)
             {
-                var typename = attribute.TypeName;
-                if (!_itemComponentTypes.ContainsKey(typename))
+                var typename = attribute.Name;
+                var scriptClassName = ScriptingManager.GetScriptClassNameFromRealType(componentTypes[i]);
+                var scriptAssetNameNoEnd = scriptClassName.Substring(0, scriptClassName.LastIndexOf(".") + 1);
+
+                if (!_itemComponentTypes.ContainsKey(scriptAssetNameNoEnd + typename))
                 {
-                    _itemComponentTypes.Add(typename, componentTypes[i]);
+                    _itemComponentTypes.Add(scriptAssetNameNoEnd + typename, componentTypes[i]);
+                }
+                else
+                {
+                    _itemComponentTypes[scriptAssetNameNoEnd + typename] = componentTypes[i];
                 }
             }
         }

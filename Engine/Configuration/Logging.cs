@@ -59,14 +59,25 @@ public static class Logging
 {
     private static List<ILogStream> _logStreams = new List<ILogStream>();
     private static BufferBlock<(LogLevel, string)> _logQueue = new BufferBlock<(LogLevel, string)>();
+    private static LogLevel _logLevel = LogLevel.Debug;
 
     public static void AddLogStream(ILogStream stream)
     {
         _logStreams.Add(stream);
     }
 
+    public static void SetLogLevel(LogLevel level)
+    {
+        _logLevel = level;
+    }
+
     public static void Log(LogLevel level, string message)
     {
+        if (level < _logLevel)
+        {
+            return;
+        }
+
         string logMessage = $"[{DateTime.Now.ToString()} - {level.ToString().ToUpper().PadRight(7)}] {message}";
         _logQueue.SendAsync((level, logMessage));
     }

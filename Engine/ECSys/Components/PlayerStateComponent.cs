@@ -129,16 +129,6 @@ public class PlayerStateComponent : Component
         this.MouseTileX = command.MouseTileX;
         this.MouseTileY = command.MouseTileY;
 
-        if (this.HoldingUseItem)
-        {
-            if (!command.HasBeenRun)
-                this.ItemUsedTime += command.DeltaTime;
-        }
-        else
-        {
-            this.ItemUsedTime = 0;
-        }
-
         if (command.IsInputDown(UserCommand.INTERACT_ENTITY) && ecs.IsRunner(SystemRunner.Server))
         {
             // Get entity at mouse tile position

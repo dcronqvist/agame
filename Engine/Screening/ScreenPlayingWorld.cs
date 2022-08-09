@@ -190,6 +190,8 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
 
         var font = ModManager.GetAsset<Font>("default.font.rainyhearts");
 
+        ContainerSlot selected = slots[selectedSlot];
+
         for (int i = 0; i < slots.Count; i++)
         {
             var slot = slots[i];
@@ -200,6 +202,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
 
             if (i == selectedSlot)
             {
+                selected = slot;
                 Renderer.Primitive.RenderRectangle(new RectangleF(hotbarTopLeft.X + i * (ContainerSlot.WIDTH + 5), hotbarTopLeft.Y, ContainerSlot.WIDTH + 10, ContainerSlot.HEIGHT + 10), ColorF.LightGray * 0.8f);
             }
 
@@ -216,19 +219,14 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
                 var textSize = font.MeasureString(text, scale);
                 var textPosition = position + new Vector2(size.X - textSize.X, size.Y - textSize.Y);
                 Renderer.Text.RenderText(font, text, textPosition.PixelAlign(), scale, ColorF.White, Renderer.Camera);
-
-                //If has tool component, render durability
-                if (slot.Item.TryGetComponent<DefaultMod.Tool>(out DefaultMod.Tool t))
-                {
-                    var durability = t.Definition.MaxEnergyCharge;
-                    var currDur = t.CurrentEnergyCharge;
-                    var perc = ((float)currDur / durability).ToString("0.00");
-
-                    var durabilitySize = font.MeasureString(perc, scale);
-                    var durabilityPosition = position + new Vector2(size.X - durabilitySize.X, size.Y - durabilitySize.Y - textSize.Y);
-                    Renderer.Text.RenderText(font, perc, durabilityPosition.PixelAlign(), scale, ColorF.White, Renderer.Camera);
-                }
             }
+        }
+
+        Renderer.SetRenderTarget(null, this.Camera);
+
+        if (selected.Item is not null)
+        {
+            selected.Item.OnHoldRender(playerEntity, selected.Item, this._client.GetECS(), GameTime.DeltaTime);
         }
     }
 

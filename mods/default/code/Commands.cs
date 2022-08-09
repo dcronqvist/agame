@@ -145,7 +145,7 @@ namespace DefaultMod
                     {
                         tool.CurrentEnergyCharge = chargeVal;
                         Logging.Log(LogLevel.Debug, $"Set charge of tool {toolSlot.Item.Definition.ItemID} to {chargeVal}");
-                        ScriptingAPI.SendContainerContentsToViewers(callingEntity);
+                        ScriptingAPI.NotifyPlayerInventoryUpdate(callingEntity);
                     }
                     else
                     {

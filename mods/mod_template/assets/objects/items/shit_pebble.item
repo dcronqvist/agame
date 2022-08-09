@@ -1,12 +1,12 @@
 {
-    "itemName": "Pebble",
+    "itemName": "Trash Pebble",
     "maxStack": 255,
     "texture": "default.tex.pebble",
     "definitions": [
         {
-            "type": "default.item_component.rock_crusher_yield",
+            "type": "default.script.rock_crusher_yield_def",
             "item": "default.item.gravel",
-            "amount": 3
+            "amount": 1
         }
     ]
 }

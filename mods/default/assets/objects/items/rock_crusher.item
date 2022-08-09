@@ -1,0 +1,15 @@
+{
+    "itemName": "Rock Crusher",
+    "maxStack": 1,
+    "texture": "default.tex.rock_crusher",
+    "definitions": [
+        {
+            "type": "default.script_class.placeable_def",
+            "entityToPlace": "default.entity.rock_crusher",
+            "placeOffset": {
+                "x": 0,
+                "y": -1
+            }
+        }
+    ]
+}

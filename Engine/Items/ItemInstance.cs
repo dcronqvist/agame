@@ -37,6 +37,11 @@ public class ItemInstance
         return this.Components.Any(c => c is T);
     }
 
+    public bool HasComponent(string componentTypeName)
+    {
+        return this.Components.Any(c => c.GetTypeName() == componentTypeName);
+    }
+
     public T GetComponent<T>() where T : ItemComponent
     {
         return (T)this.Components.FirstOrDefault(c => c is T);
@@ -71,19 +76,74 @@ public class ItemInstance
         var itemScale = itemTargetSize / itemTextureSize;
 
         Renderer.Texture.Render(this.GetTexture(), position, itemScale, 0f, ColorF.White);
+
+        foreach (var comp in Components)
+        {
+            comp.RenderInSlot(this, position);
+        }
     }
 
-    public bool OnUse(Entity playerEntity, UserCommand userCommand, ItemInstance item, ECS ecs, float deltaTime, float totalTimeUsed)
+    public void OnHoverInContainerRender(Vector2 mousePosition)
     {
-        bool beingUsed = false;
+        var itemName = this.Definition.ItemName;
+        var font = ModManager.GetAsset<Font>("default.font.rainyhearts");
+
+        Renderer.Text.RenderText(font, itemName, (mousePosition + new Vector2(22, 2)).PixelAlign(), 2f, ColorF.Black, Renderer.Camera);
+        Renderer.Text.RenderText(font, itemName, (mousePosition + new Vector2(20, 0)).PixelAlign(), 2f, ColorF.White, Renderer.Camera);
+
+        foreach (var comp in Components)
+        {
+            comp.OnHoverInContainerRender(this, mousePosition);
+        }
+    }
+
+    private bool TryGetCanBeUsedComponent(Entity playerEntity, UserCommand userCommand, ItemInstance item, ECS ecs, out ItemComponent canBeUsed)
+    {
         foreach (var component in this.Components)
         {
-            if (component.OnUse(playerEntity, userCommand, item, ecs, deltaTime, totalTimeUsed))
+            if (component.CanBeUsed(playerEntity, userCommand, item, ecs))
             {
-                beingUsed = true;
+                canBeUsed = component;
+                return true;
             }
         }
-        return beingUsed;
+
+        canBeUsed = null;
+        return false;
+    }
+
+    public bool CanBeUsed(Entity playerEntity, UserCommand userCommand, ItemInstance item, ECS ecs)
+    {
+        ItemComponent canBeUsed;
+        return this.TryGetCanBeUsedComponent(playerEntity, userCommand, item, ecs, out canBeUsed);
+    }
+
+    public bool OnUse(Entity playerEntity, UserCommand userCommand, ItemInstance item, ECS ecs, float deltaTime, float totalTimeUsed, out bool resetUseTime)
+    {
+        resetUseTime = false;
+
+        if (TryGetCanBeUsedComponent(playerEntity, userCommand, item, ecs, out var canBeUsed))
+        {
+            return canBeUsed.OnUse(playerEntity, userCommand, item, ecs, deltaTime, totalTimeUsed, out resetUseTime);
+        }
+
+        return false;
+    }
+
+    public void OnHoldRender(Entity playerEntity, ItemInstance item, ECS ecs, float deltaTime)
+    {
+        foreach (var component in this.Components)
+        {
+            component.OnHoldRender(playerEntity, item, ecs, deltaTime);
+        }
+    }
+
+    public void OnUseRender(Entity playerEntity, UserCommand userCommand, ItemInstance item, ECS ecs, float deltaTime, float totalTimeUsed)
+    {
+        if (TryGetCanBeUsedComponent(playerEntity, userCommand, item, ecs, out var canBeUsed))
+        {
+            canBeUsed.OnUseRender(playerEntity, userCommand, item, ecs, deltaTime, totalTimeUsed);
+        }
     }
 
     public bool ShouldItemBeConsumed()
@@ -106,20 +166,3 @@ public class ItemInstance
         }
     }
 }
-
-
-/*
-{
-    "definitions": [
-        {
-            "type": "tool",
-            "durability": 100
-        },
-        {
-            "type": "resource",
-            "quality": 5
-        }
-    ],
-    "name": "A Very Cool Item"
-}
-*/

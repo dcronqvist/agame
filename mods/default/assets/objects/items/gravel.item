@@ -4,7 +4,7 @@
     "texture": "default.tex.gravel",
     "definitions": [
         {
-            "type": "default.item_component.resource",
+            "type": "default.script_class.resource_def",
             "quality": 0
         }
     ]

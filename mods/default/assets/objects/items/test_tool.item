@@ -4,11 +4,11 @@
     "texture": "default.tex.icon",
     "definitions": [
         {
-            "type": "default.item_component.tool",
+            "type": "default.script_class.tool_def",
             "maxEnergyCharge": 100
         },
         {
-            "type": "default.item_component.rock_crusher_yield",
+            "type": "default.script_class.rock_crusher_yield_def",
             "item": "default.item.test_tool",
             "amount": 1
         }

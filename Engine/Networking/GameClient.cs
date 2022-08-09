@@ -291,6 +291,11 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             Logging.Log(LogLevel.Debug, $"Client: Received container provider data packet");
             this._nextTickActions.LockedAction((q) => q.Enqueue(new ClientSetContainerProviderDataAction(packet)));
         });
+
+        base.AddPacketHandler<PlayAudioPacket>((packet) =>
+        {
+            this._nextTickActions.LockedAction((q) => q.Enqueue(new ClientPlayAudioFromServerAction(packet)));
+        });
     }
 
     public async Task<bool> ConnectAsync(string clientName)

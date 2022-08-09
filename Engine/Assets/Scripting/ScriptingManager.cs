@@ -18,11 +18,14 @@ namespace AGame.Engine.Assets.Scripting
         private static Dictionary<string, Script> TypeToScript { get; set; }
         private static Dictionary<string, (Script, string)> ScriptClassAttributeNameToScript { get; set; }
 
+        private static List<ModOverwriteDefinition> _overwritesToPerform { get; set; }
+
         static ScriptingManager()
         {
             Scripts = new Dictionary<string, Script>();
             TypeToScript = new Dictionary<string, Script>();
             ScriptClassAttributeNameToScript = new Dictionary<string, (Script, string)>();
+            _overwritesToPerform = new List<ModOverwriteDefinition>();
         }
 
         private static void AddScript(string key, Script script)
@@ -30,12 +33,28 @@ namespace AGame.Engine.Assets.Scripting
             Scripts.Add(key, script);
         }
 
-        private static void PointTypesToScript(Type[] types, string key)
+        public static string GetScriptClassNameFromRealType(Type type)
+        {
+            var script = GetScriptFromRealType(type);
+
+            var className = ScriptClassAttributeNameToScript.Where(kvp => kvp.Value.Item1 == script && kvp.Value.Item2 == type.FullName).FirstOrDefault().Key;
+
+            if (_overwritesToPerform.Any(x => x.New == className))
+            {
+                className = _overwritesToPerform.Where(x => x.New == className).FirstOrDefault().Original;
+            }
+
+            return className;
+        }
+
+        private static void PointTypesToScript(Type[] types, Script script)
         {
             foreach (Type t in types)
             {
                 if (!TypeToScript.ContainsKey(t.FullName))
-                    TypeToScript.Add(t.FullName, Scripts[key]);
+                {
+                    TypeToScript.Add(t.FullName, script);
+                }
             }
         }
 
@@ -45,7 +64,7 @@ namespace AGame.Engine.Assets.Scripting
             foreach (KeyValuePair<string, Script> kvp in Scripts)
             {
                 Type[] scriptTypes = kvp.Value.GetTypes();
-                types.AddRange(scriptTypes.Where(x => x.IsAssignableTo(typeof(T))));
+                types.AddRange(scriptTypes.Where(x => x.IsAssignableTo(typeof(T)) && TypeToScript.ContainsKey(x.FullName)));
             }
             return types.ToArray();
         }
@@ -56,34 +75,46 @@ namespace AGame.Engine.Assets.Scripting
 
             foreach (Script script in scripts)
             {
-                // // All went well, just add the script to the dictionary of scripts.
-                // AddScript(script.Name, script); // Add script to Scripts dictionary
-                // Logging.Log(LogLevel.Info, $"Registered script {script.Name}");
-                // PointTypesToScript(script.GetTypes(), script.Name); // Point all types in this script to this script
-                Type[] types = script.GetTypes();
-
-                foreach (Type t in types)
+                if (!Scripts.ContainsValue(script))
                 {
-                    if (t.GetCustomAttribute<ScriptClassAttribute>() != null)
+
+
+                    // // All went well, just add the script to the dictionary of scripts.
+                    // AddScript(script.Name, script); // Add script to Scripts dictionary
+                    // Logging.Log(LogLevel.Info, $"Registered script {script.Name}");
+                    // PointTypesToScript(script.GetTypes(), script.Name); // Point all types in this script to this script
+                    Type[] types = script.GetTypes();
+
+                    PointTypesToScript(types, script);
+
+                    foreach (Type t in types)
                     {
-                        var scriptAssetNameNoEnd = script.Name.Substring(0, script.Name.LastIndexOf(".") + 1);
-                        ScriptClassAttribute attr = t.GetCustomAttribute<ScriptClassAttribute>();
-
-                        if (!ScriptClassAttributeNameToScript.ContainsKey(attr.Name))
+                        if (t.GetCustomAttribute<ScriptClassAttribute>() != null)
                         {
-                            ScriptClassAttributeNameToScript.Add(scriptAssetNameNoEnd + attr.Name, (script, t.FullName));
+                            ScriptClassAttribute attr = t.GetCustomAttribute<ScriptClassAttribute>();
+                            var modName = script.Mod;
+                            var finalName = $"{modName}.script_class.{attr.Name}";
 
+                            if (!ScriptClassAttributeNameToScript.ContainsKey(finalName))
+                            {
+                                ScriptClassAttributeNameToScript.Add(finalName, (script, t.FullName));
+                            }
+                        }
+
+                        if (!TypeToScript.ContainsKey(t.FullName))
+                        {
+                            TypeToScript.Add(t.FullName, script);
                         }
                     }
 
-                    if (!TypeToScript.ContainsKey(t.FullName))
-                    {
-                        TypeToScript.Add(t.FullName, script);
-                    }
+                    Scripts.Add(script.Name, script);
                 }
-
-                Scripts.Add(script.Name, script);
             }
+        }
+
+        public static void AddOverwrite(ModOverwriteDefinition definition)
+        {
+            _overwritesToPerform.Add(definition);
         }
 
         public static Script GetScript(string name)
@@ -91,8 +122,19 @@ namespace AGame.Engine.Assets.Scripting
             return Scripts[name];
         }
 
+        public static Script GetScriptFromRealType(Type type)
+        {
+            return TypeToScript[type.FullName];
+        }
+
         public static (Script, string) GetScriptFromType(string type)
         {
+            if (_overwritesToPerform.Any(x => x.Original == type))
+            {
+                var def = _overwritesToPerform.Where(x => x.Original == type).FirstOrDefault();
+                return ScriptClassAttributeNameToScript[def.New];
+            }
+
             return ScriptClassAttributeNameToScript[type];
         }
 

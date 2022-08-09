@@ -37,6 +37,11 @@ public static class ScriptingAPI
         }
     }
 
+    public static void NotifyPlayerInventoryUpdate(Entity playerEntity)
+    {
+        SendContainerContentsToViewers(playerEntity);
+    }
+
     // Can be called from both client and server, will do correct thing depending on context.
     public static void CreateEntity(Entity playerEntity, ECS ecs, string entity, Action<Entity> onCreate)
     {
@@ -91,5 +96,18 @@ public static class ScriptingAPI
     public static Entity GetEntityAtPosition(ECS ecs, Vector2i tilePosition)
     {
         return FindEntities(ecs, (entity) => entity.TryGetComponent<TransformComponent>(out var transform) && transform.Position.Equals(new CoordinateVector(tilePosition.X, tilePosition.Y))).FirstOrDefault();
+    }
+
+    public static void PlayAudioFromPlayerAction(Entity playerEntity, ECS ecs, UserCommand command, string audioName)
+    {
+        if (ecs.IsRunner(SystemRunner.Server))
+        {
+            _gameServer.PlayAudioOnAllClients(audioName);
+        }
+        else if (ecs.IsRunner(SystemRunner.Client))
+        {
+            if (!command.HasBeenRun)
+                Audio.Play(audioName);
+        }
     }
 }

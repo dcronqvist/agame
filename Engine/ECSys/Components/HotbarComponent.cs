@@ -74,17 +74,31 @@ public class HotbarComponent : Component
         {
             if (command.IsInputDown(UserCommand.USE_ITEM))
             {
-                bool working = slot.Item.OnUse(parentEntity, command, slot.Item, ecs, command.DeltaTime, state.ItemUsedTime);
-                if (!working)
+                if (slot.Item.CanBeUsed(parentEntity, command, slot.Item, ecs))
                 {
-                    state.ItemUsedTime = 0;
-                }
+                    if (!command.HasBeenRun)
+                        state.ItemUsedTime += command.DeltaTime;
 
-                if (slot.Item.ShouldItemBeConsumed())
-                {
-                    slot.Item.OnConsumed(parentEntity, slot.Item, ecs);
-                    container.GetContainer().RemoveItem(this.ContainerSlots[this.SelectedSlot]);
+                    bool done = slot.Item.OnUse(parentEntity, command, slot.Item, ecs, command.DeltaTime, state.ItemUsedTime, out bool resetUseTime);
+                    if (done)
+                    {
+                        // Perform done thing
+                        if (slot.Item.ShouldItemBeConsumed())
+                        {
+                            slot.Item.OnConsumed(parentEntity, slot.Item, ecs);
+                            container.GetContainer().RemoveItem(this.ContainerSlots[this.SelectedSlot]);
+                        }
+                    }
+
+                    if (resetUseTime)
+                    {
+                        state.ItemUsedTime = 0;
+                    }
                 }
+            }
+            else
+            {
+                state.ItemUsedTime = 0;
             }
         }
     }

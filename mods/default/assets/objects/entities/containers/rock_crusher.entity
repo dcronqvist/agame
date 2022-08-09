@@ -4,12 +4,12 @@
         {
             "componentType": "Collider",
             "transformOffset": {
-                "x": 4,
-                "y": 12
+                "x": 2,
+                "y": 32
             },
             "box": {
-                "width": 22,
-                "height": 8
+                "width": 28,
+                "height": 28
             },
             "solid": true
         },
@@ -19,12 +19,12 @@
             "renderLayer": 0,
             "feetOffset": {
                 "x": 16,
-                "y": 17
+                "y": 32
             }
         },
         {
             "componentType": "Sprite",
-            "texture": "default.tex.test_rock",
+            "texture": "default.tex.rock_crusher",
             "renderScale": {
                 "x": 2,
                 "y": 2
@@ -43,30 +43,25 @@
                 "x": 0,
                 "y": 0,
                 "width": 16,
-                "height": 16
+                "height": 32
             },
             "rotation": 0
         },
         {
-            "componentType": "Harvestable",
-            "tags": ["rock"],
-            "yields": [
-                {
-                    "minAmount": 1,
-                    "maxAmount": 1,
-                    "item": "default.item.pebble"
-                }
-            ],
-            "breaksAfter": 1
-        },
-        {
             "componentType": "Interactable",
             "interactDistance": 1,
-            "onInteract": "default.script.open_container"
+            "onInteract": "default.script_class.open_container"
         },
         {
             "componentType": "Container",
-            "containerProvider": "default.script.container_small"
+            "containerProvider": "default.script_class.container_rock_crusher"
+        },
+        {
+            "componentType": "Placeable",
+            "placeOffset": {
+                "x": 0,
+                "y": -1
+            }
         }
     ]
 }

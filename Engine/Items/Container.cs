@@ -239,6 +239,7 @@ public class Container
             if (rec.Contains(Input.GetMousePositionInWindow()))
             {
                 color = ColorF.Gray;
+                hoveredSlot = slot.Value;
             }
 
             Renderer.Primitive.RenderRectangle(rec, color * 0.5f);
@@ -252,24 +253,12 @@ public class Container
                 var textSize = font.MeasureString(text, scale);
                 var textPosition = position + new Vector2(size.X - textSize.X, size.Y - textSize.Y);
                 Renderer.Text.RenderText(font, text, textPosition.PixelAlign(), scale, ColorF.White, Renderer.Camera);
-
-                // If has tool component, render durability
-                if (slot.Value.Item.TryGetComponent<DefaultMod.Tool>(out DefaultMod.Tool t))
-                {
-                    var durability = t.Definition.MaxEnergyCharge;
-                    var currDur = t.CurrentEnergyCharge;
-                    var perc = ((float)currDur / durability).ToString("0.00");
-
-                    var durabilitySize = font.MeasureString(perc, scale);
-                    var durabilityPosition = position + new Vector2(size.X - durabilitySize.X, size.Y - durabilitySize.Y - textSize.Y);
-                    Renderer.Text.RenderText(font, perc, durabilityPosition.PixelAlign(), scale, ColorF.White, Renderer.Camera);
-                }
             }
-        }
 
-        if (hoveredSlot is not null && hoveredSlot.Item is not null)
-        {
-            Renderer.Text.RenderText(font, hoveredSlot.Item.Definition.Name, Input.GetMousePositionInWindow(), 2f, ColorF.White, Renderer.Camera);
+            if (hoveredSlot is not null && hoveredSlot.Item is not null)
+            {
+                hoveredSlot.Item.OnHoverInContainerRender(Input.GetMousePositionInWindow());
+            }
         }
     }
 

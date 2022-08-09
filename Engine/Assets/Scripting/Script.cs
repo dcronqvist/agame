@@ -63,7 +63,5 @@ class Script : Asset
 [AttributeUsage(AttributeTargets.Class)]
 public class ScriptClassAttribute : Attribute
 {
-
-
     public string Name { get; set; }
 }

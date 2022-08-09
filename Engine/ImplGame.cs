@@ -16,6 +16,12 @@ using AGame.Engine.ECSys;
 using AGame.Engine.World;
 using AGame.Engine.UI;
 using AGame.Engine.Configuration;
+using Microsoft.Build.Evaluation;
+using Microsoft.Build.Execution;
+using Microsoft.Build.Definition;
+using Microsoft.Build.Evaluation.Context;
+using Microsoft.Build.Construction;
+using System.Reflection;
 
 namespace AGame.Engine
 {
@@ -51,7 +57,6 @@ namespace AGame.Engine
             ModManager.AllAssetsFinalized += (sender, e) =>
             {
                 Logging.Log(LogLevel.Info, $"All assets loaded");
-                ScriptingManager.LoadScripts();
 
                 TileManager.Init();
                 Utilities.InitRNG();
@@ -81,13 +86,15 @@ namespace AGame.Engine
                 Logging.Log(LogLevel.Info, "Screen manager initialized!");
 
                 bool success = Localization.Init(Settings.GetSetting<string>("locale"));
-                ItemManager.RegisterComponentTypes();
 
                 if (!success)
                 {
                     Logging.Log(LogLevel.Info, "Failed to load localization, falling back to default locale");
                     Localization.Init("default.locale.en_US");
                 }
+
+                ScriptingManager.LoadScripts();
+                ItemManager.RegisterComponentTypes();
 
                 GUI.Init();
                 _coreLoaded = true;

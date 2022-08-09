@@ -1,0 +1,12 @@
+{
+    "author": "mod_author",
+    "version": "X.X",
+    "enabled": false,
+    "overwrites": [
+        {
+            "new": "mod_template.script.placeable_def",
+            "original": "default.script.placeable_def",
+            "type": "script"
+        }
+    ]
+}

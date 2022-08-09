@@ -62,7 +62,7 @@ public static class ModManager
             { ".ttf", new FontLoader() },
             { ".shader", new ShaderLoader() },
             { ".png", new TextureLoader() },
-            { ".cs", new ScriptLoader() },
+            { ".dll", new ScriptLoader() },
             { ".entity", new EntityLoader() },
             { ".tile", new TileLoader() },
             { ".locale", new LocaleLoader() },
@@ -126,12 +126,19 @@ public static class ModManager
 
             foreach (ModOverwriteDefinition def in overwrites)
             {
-                if (_assets.ContainsKey(def.Original) && _assets.ContainsKey(def.New))
+                if (def.Type == ModOverwriteType.Asset)
                 {
-                    _assets[def.Original] = _assets[def.New];
-                    _assets.Remove(def.New);
-                    OverwroteAsset?.Invoke(null, new OverwroteAssetEventArgs() { Overwrite = def });
+                    if (_assets.ContainsKey(def.Original) && _assets.ContainsKey(def.New))
+                    {
+                        _assets[def.Original] = _assets[def.New];
+                        _assets.Remove(def.New);
+                    }
                 }
+                else if (def.Type == ModOverwriteType.Script)
+                {
+                    ScriptingManager.AddOverwrite(def);
+                }
+                OverwroteAsset?.Invoke(null, new OverwroteAssetEventArgs() { Overwrite = def });
             }
         }
     }
@@ -194,7 +201,14 @@ public static class ModManager
                 }
             }
 
-            mods.Add(mod);
+            if (mod.MetaData.Enabled)
+            {
+                mods.Add(mod);
+            }
+            else
+            {
+                Logging.Log(LogLevel.Info, $"Skipping mod {modName} because it is disabled.");
+            }
         }
 
         // Zip mods
@@ -264,7 +278,7 @@ public static class ModManager
         List<FailedAsset> failedToLoad = new List<FailedAsset>();
 
         string folder = mod.Path;
-        string coreFilesFolder = $"{folder}{Path.DirectorySeparatorChar}_core";
+        string coreFilesFolder = $"{folder}{Path.DirectorySeparatorChar}assets{Path.DirectorySeparatorChar}_core";
 
         if (!Directory.Exists(coreFilesFolder))
         {
@@ -312,14 +326,14 @@ public static class ModManager
 
         // Checks if there is a _core folder in the zip file
         // If it doesn't, then we don't need to load any core assets from the zip file
-        if (!zip.Entries.Any(entry => entry.FullName.StartsWith("_core")))
+        if (!zip.Entries.Any(entry => entry.FullName.StartsWith("assets/_core")))
         {
             loadedAssets = new Asset[0];
             failedAssets = new FailedAsset[0];
             return true;
         }
 
-        ZipArchiveEntry[] coreFileEntries = zip.Entries.Where(entry => entry.FullName.StartsWith("_core")).Where(entry => FileHasLoader(entry.FullName)).ToArray();
+        ZipArchiveEntry[] coreFileEntries = zip.Entries.Where(entry => entry.FullName.StartsWith("assets/_core")).Where(entry => FileHasLoader(entry.FullName)).ToArray();
 
         foreach (ZipArchiveEntry coreFile in coreFileEntries)
         {
@@ -353,6 +367,7 @@ public static class ModManager
         {
             loadedAsset = loader.LoadAsset(stream);
             loadedAsset.IsCore = init;
+            loadedAsset.Mod = mod.Name;
             loadedAsset.Name = CreateAssetName(mod.Name, loader.AssetPrefix(), Path.GetFileNameWithoutExtension(fileName));
             if (init)
             {
@@ -407,7 +422,7 @@ public static class ModManager
         List<FailedAsset> failedToLoad = new List<FailedAsset>();
 
         string folder = mod.Path;
-        string coreFilesFolder = $"{folder}{Path.DirectorySeparatorChar}_core";
+        string coreFilesFolder = $"{folder}{Path.DirectorySeparatorChar}assets{Path.DirectorySeparatorChar}_core";
         string[] coreFiles = new string[0];
 
         if (Directory.Exists(coreFilesFolder))
@@ -453,8 +468,8 @@ public static class ModManager
         string zipFile = mod.Path;
         ZipArchive zip = ZipFile.OpenRead(zipFile);
 
-        ZipArchiveEntry[] coreFileEntries = zip.Entries.Where(entry => entry.FullName.StartsWith("_core")).Where(entry => FileHasLoader(entry.FullName)).ToArray();
-        ZipArchiveEntry[] nonCoreFileEntries = zip.Entries.Where(entry => !entry.FullName.StartsWith("_core")).Where(entry => FileHasLoader(entry.FullName)).ToArray();
+        ZipArchiveEntry[] coreFileEntries = zip.Entries.Where(entry => entry.FullName.StartsWith("assets/_core")).Where(entry => FileHasLoader(entry.FullName)).ToArray();
+        ZipArchiveEntry[] nonCoreFileEntries = zip.Entries.Where(entry => !entry.FullName.StartsWith("assets/_core")).Where(entry => FileHasLoader(entry.FullName)).ToArray();
 
         foreach (ZipArchiveEntry assetFile in nonCoreFileEntries)
         {
@@ -526,14 +541,6 @@ public static class ModManager
     {
         string extension = Path.GetExtension(file);
         return _assetLoaders.ContainsKey(extension);
-    }
-
-    private static string[] GetCoreAssetsInFolderMod(string folder)
-    {
-        string[] allFiles = Directory.GetFiles($"{folder}{Path.DirectorySeparatorChar}_core", "*.*", SearchOption.AllDirectories);
-        string[] coreFiles = allFiles.Where(file => FileHasLoader(file)).ToArray();
-
-        return coreFiles;
     }
 
     private static string CreateAssetName(string mod, string assetPrefix, string fileName)

@@ -1,3 +1,4 @@
+using AGame.Engine.Assets;
 using AGame.Engine.ECSys;
 using AGame.Engine.ECSys.Components;
 using AGame.Engine.World;
@@ -111,5 +112,20 @@ public class ClientSetContainerProviderDataAction : IClientTickAction
             var container = entity.GetComponent<ContainerComponent>();
             container.GetContainer().Provider.ReceiveProviderData(Packet);
         }
+    }
+}
+
+public class ClientPlayAudioFromServerAction : IClientTickAction
+{
+    public PlayAudioPacket Packet { get; set; }
+
+    public ClientPlayAudioFromServerAction(PlayAudioPacket packet)
+    {
+        this.Packet = packet;
+    }
+
+    public void Tick(GameClient client)
+    {
+        Audio.Play(Packet.Audio, Packet.Pitch);
     }
 }

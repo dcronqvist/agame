@@ -863,4 +863,20 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         // Exponential gets kinda weird and is slow as hell, so I'm not using it for now.
         return Utilities.CalcQuadratic((1f / (cutoffDistance * cutoffDistance)), 0f, 1f, -distance);
     }
+
+    private void PlayAudioOnClient(string audio, Connection connection)
+    {
+        this.EnqueuePacket(new PlayAudioPacket() { Audio = audio, Pitch = 1f }, connection, true, false);
+    }
+
+    public void PlayAudioOnAllClients(string audio)
+    {
+        this._connections.LockedAction((conns) =>
+        {
+            foreach (Connection conn in conns)
+            {
+                this.PlayAudioOnClient(audio, conn);
+            }
+        });
+    }
 }

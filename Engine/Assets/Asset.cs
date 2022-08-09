@@ -4,6 +4,7 @@ namespace AGame.Engine.Assets
     {
         public string Name { get; set; }
         public bool IsCore { get; set; }
+        public string Mod { get; set; }
 
         public abstract bool InitOpenGL();
     }
