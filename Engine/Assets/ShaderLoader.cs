@@ -2,8 +2,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using AGame.Engine.Graphics.Rendering;
-using Newtonsoft.Json;
-
 namespace AGame.Engine.Assets
 {
     class ShaderLoader : IAssetLoader

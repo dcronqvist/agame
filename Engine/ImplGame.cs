@@ -16,11 +16,6 @@ using AGame.Engine.ECSys;
 using AGame.Engine.World;
 using AGame.Engine.UI;
 using AGame.Engine.Configuration;
-using Microsoft.Build.Evaluation;
-using Microsoft.Build.Execution;
-using Microsoft.Build.Definition;
-using Microsoft.Build.Evaluation.Context;
-using Microsoft.Build.Construction;
 using System.Reflection;
 
 namespace AGame.Engine

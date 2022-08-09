@@ -26,17 +26,13 @@
   <ItemGroup>
     <PackageReference Include="FreeTypeSharp" Version="1.1.3" />
     <PackageReference Include="GameUDPProtocol" Version="1.0.0" />
-    <PackageReference Include="Microsoft.Build" Version="17.2.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.11.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="OpenTK.OpenAL" Version="4.7.4" />
-    <PackageReference Include="SimplexNoise" Version="2.0.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageReference Include="StbImageSharp" Version="2.22.6" />
     <ModFiles Include="$(ProjectDir)\mods\**\*.*" />
     <WorldFiles Include="$(ProjectDir)\worlds\**\*.*" />
     <LibDlls Include="$(ProjectDir)\libs\win\**\*.*" />
     <SettingsFile Include="$(ProjectDir)\settings.json" />
-    <PackageReference Include="StbImageSharp" Version="2.22.6" />
   </ItemGroup>
 
   <ItemGroup>
