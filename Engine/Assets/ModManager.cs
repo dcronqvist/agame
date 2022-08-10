@@ -201,14 +201,7 @@ public static class ModManager
                 }
             }
 
-            if (mod.MetaData.Enabled)
-            {
-                mods.Add(mod);
-            }
-            else
-            {
-                Logging.Log(LogLevel.Info, $"Skipping mod {modName} because it is disabled.");
-            }
+            mods.Add(mod);
         }
 
         // Zip mods
@@ -247,9 +240,12 @@ public static class ModManager
             mods.Add(mod);
         }
 
-        ModContainer[] modOrder = mods.OrderBy(x => loadOrder.Contains(x.Name) ? loadOrder.IndexOf(x.Name) : int.MaxValue).ToArray();
+        // Only load mods in the loadorder
+        var modsToLoad = mods.Where(mod => loadOrder.Contains(mod.Name)).ToList();
 
-        Logging.Log(LogLevel.Info, $"Found {modOrder.Length} mods, loading them in order: {string.Join(@", ", modOrder.Select(x => x.Name))}");
+        ModContainer[] modOrder = modsToLoad.OrderBy(x => loadOrder.IndexOf(x.Name)).ToArray();
+
+        Logging.Log(LogLevel.Info, $"Found {mods.Count} mods, with {modsToLoad.Count} enabled in _loadorder.txt, loading them in order: {string.Join(@", ", modOrder.Select(x => x.Name))}");
 
         return modOrder;
     }

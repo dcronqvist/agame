@@ -27,7 +27,6 @@ public class ModMetaData
 {
     public string Author { get; set; }
     public string Version { get; set; }
-    public bool Enabled { get; set; }
 
     public List<ModOverwriteDefinition> Overwrites { get; set; }
 
