@@ -9,7 +9,6 @@ using AGame.Engine.Assets.Scripting;
 using AGame.Engine.Configuration;
 using AGame.Engine.DebugTools;
 using AGame.Engine.ECSys;
-using AGame.Engine.ECSys.Components;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
 using AGame.Engine.Items;
@@ -119,7 +118,10 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     private ThreadSafe<Dictionary<Connection, List<Entity>>> _connectionsViewingContainerInEntity;
     private ThreadSafe<Dictionary<Connection, List<(ulong, int)>>> _connectionsCreatedEntities;
     private ThreadSafe<Dictionary<Connection, List<int>>> _connectionsDestroyedEntities;
+    private ThreadSafe<Dictionary<Connection, ContainerSlot>> _connectionsToMouseSlots;
     private Dictionary<string, ServerSideCommand> _availableCommands;
+
+    private IGameServerProvider _serverProvider;
 
     // Server tick
     private int _serverTick = 0;
@@ -144,11 +146,33 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         this._connectionsViewingContainerInEntity = new ThreadSafe<Dictionary<Connection, List<Entity>>>(new Dictionary<Connection, List<Entity>>());
         this._connectionsCreatedEntities = new ThreadSafe<Dictionary<Connection, List<(ulong, int)>>>(new Dictionary<Connection, List<(ulong, int)>>());
         this._connectionsDestroyedEntities = new ThreadSafe<Dictionary<Connection, List<int>>>(new Dictionary<Connection, List<int>>());
+        this._connectionsToMouseSlots = new ThreadSafe<Dictionary<Connection, ContainerSlot>>(new Dictionary<Connection, ContainerSlot>());
         this._availableCommands = new Dictionary<string, ServerSideCommand>();
+
+        // To change the server's event provider, a mod must overwrite this.
+        this._serverProvider = ScriptingManager.CreateInstance<IGameServerProvider>("default.script_class.game_server_provider");
 
         this.RegisterServerEventHandlers();
         this.RegisterPacketHandlers();
         this.RegisterServerCommands();
+    }
+
+    public int GetPlayerID(Connection connection)
+    {
+        return this._connectionToPlayerId.LockedAction((ctp) =>
+        {
+            return ctp[connection];
+        });
+    }
+
+    public Entity GetPlayerEntity(Connection connection)
+    {
+        var playerID = this.GetPlayerID(connection);
+
+        return this._ecs.LockedAction((ecs) =>
+        {
+            return ecs.GetEntityFromID(playerID);
+        });
     }
 
     private bool IsAllowedToConnect(Connection conn, ConnectRequest request, out string reason)
@@ -173,13 +197,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
             if (this.IsAllowedToConnect(e.RequestConnection, e.RequestPacket, out string reason))
             {
-                Entity entity = this._ecs.LockedAction((ecs) =>
-                {
-                    Entity entity = ecs.CreateEntityFromAsset("default.entity.player");
-                    entity.GetComponent<CharacterComponent>().Name = e.RequestPacket.Name;
-
-                    return entity;
-                });
+                var entity = _serverProvider.OnClientConnecting(this, e.RequestConnection, e.RequestPacket);
 
                 this._connectionToPlayerId.LockedAction((connectionToPlayerId) =>
                 {
@@ -201,7 +219,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                     cce.Add(e.RequestConnection, new List<(ulong, int)>());
                 });
 
-                e.Accept(new ConnectResponse() { PlayerEntityID = entity.ID, ServerTickSpeed = this._configuration.TickRate, PlayerChunkX = 0, PlayerChunkY = 0 });
+                e.Accept(new ConnectResponse() { PlayerEntityID = entity.ID, ServerTickSpeed = this._configuration.TickRate });
             }
             else
             {
@@ -305,7 +323,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             {
                 if (view[connection].Contains(entity))
                 {
-                    this.EnqueuePacket(new SetContainerContentPacket(entity.ID, entity.GetComponent<ContainerComponent>().GetContainer(), false), connection, true, false);
+                    this.EnqueuePacket(new SetContainerContentPacket(entity.ID, this._ecs.Value.CommonFunctionality.GetContainerForEntity(entity), false), connection, true, false);
                 }
             }
         });
@@ -315,7 +333,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
     public void SendContainerProviderDataToViewers(Entity entity)
     {
-        var container = entity.GetComponent<ContainerComponent>().GetContainer();
+        var container = this._ecs.Value.CommonFunctionality.GetContainerForEntity(entity);
         var packet = container.Provider.GetContainerProviderData(entity.ID);
 
         this.SendContainerProviderDataToViewers(packet, entity);
@@ -370,15 +388,10 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         base.AddPacketHandler<ConnectReadyForData>((packet, connection) =>
         {
             //this.BroadcastEntireECS(connection);
-            var playerID = this._connectionToPlayerId.LockedAction((connectionToPlayerId) =>
-            {
-                return connectionToPlayerId[connection];
-            });
-            var playerContainer = this._ecs.LockedAction((ecs) =>
-            {
-                return ecs.GetEntityFromID(playerID).GetComponent<ContainerComponent>().GetContainer();
-            });
-            this.EnqueuePacket(new SetContainerContentPacket(playerID, playerContainer, false), connection, true, false);
+            var playerEntity = this.GetPlayerEntity(connection);
+            var container = this._ecs.Value.CommonFunctionality.GetContainerForEntity(playerEntity);
+
+            this.EnqueuePacket(new SetContainerContentPacket(playerEntity.ID, container, false), connection, true, false);
         });
 
         base.AddPacketHandler<ReceivedChunkPacket>((packet, connection) =>
@@ -407,8 +420,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             this._ecs.LockedAction((ecs) =>
             {
                 var entity = ecs.GetEntityFromID(entityID);
-
-                var container = entity.GetComponent<ContainerComponent>().GetContainer();
+                var container = this._ecs.Value.CommonFunctionality.GetContainerForEntity(entity);
 
                 ContainerSlot mouseSlot = new ContainerSlot(new Vector2(0, 0));
 
@@ -416,14 +428,17 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 {
                     return connectionToPlayerId[connection];
                 }));
-                var playerState = player.GetComponent<PlayerStateComponent>();
 
-                mouseSlot.Item = playerState.MouseSlot.Item.Instance;
-                mouseSlot.Count = playerState.MouseSlot.ItemCount;
+                this._serverProvider.OnClientClickContainerSlot(this, player, container, packet);
 
-                container.ClickSlot(packet.SlotID, ref mouseSlot);
+                // var playerState = player.GetComponent<PlayerStateComponent>();
 
-                playerState.MouseSlot = mouseSlot.ToSlotInfo(0);
+                // mouseSlot.Item = playerState.MouseSlot.Item.Instance;
+                // mouseSlot.Count = playerState.MouseSlot.ItemCount;
+
+                // container.ClickSlot(packet.SlotID, ref mouseSlot);
+
+                // playerState.MouseSlot = mouseSlot.ToSlotInfo(0);
 
                 this.SendContainerContentsToViewers(entity);
             });
@@ -509,18 +524,24 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     {
         this._connectionsViewingContainerInEntity.LockedAction((view) =>
         {
+            if (view[playerConnection].Contains(entity))
+            {
+                return;
+            }
+
             view[playerConnection].Add(entity);
         });
 
         // TODO: Whether or not the client is allowed to open the container should come from the container's provider
-        this.EnqueuePacket(new SetContainerContentPacket(entity.ID, entity.GetComponent<ContainerComponent>().GetContainer(), true), playerConnection, true, false);
+        this.EnqueuePacket(new SetContainerContentPacket(entity.ID, this._ecs.Value.CommonFunctionality.GetContainerForEntity(entity), true), playerConnection, true, false);
     }
 
     private void SendChunksToClient(Connection connection)
     {
         int playerEntityID = this._connectionToPlayerId.LockedAction((ctp) => ctp[connection]);
         Entity playerEntity = this._ecs.LockedAction((ecs) => ecs.GetEntityFromID(playerEntityID));
-        ChunkAddress chunkAddress = playerEntity.GetComponent<TransformComponent>().Position.ToChunkAddress();
+        var playerPos = this._ecs.Value.CommonFunctionality.GetCoordinatePositionForEntity(playerEntity);
+        ChunkAddress chunkAddress = playerPos.ToChunkAddress();
         int x = chunkAddress.X;
         int y = chunkAddress.Y;
 
@@ -721,10 +742,10 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         return this._ecs.LockedAction((ecs) =>
         {
             var playerID = this._connectionToPlayerId.LockedAction((ctp) => ctp[conn]);
-            var playerTransform = ecs.GetEntityFromID(playerID).GetComponent<TransformComponent>();
-            var playerPosition = playerTransform.Position;
+            var playerEntity = ecs.GetEntityFromID(playerID);
+            var playerPosition = this._ecs.Value.CommonFunctionality.GetCoordinatePositionForEntity(playerEntity);
 
-            List<Entity> inRange = ecs.GetAllEntities(e => !e.HasComponent<TransformComponent>() || e.GetComponent<TransformComponent>().Position.DistanceTo(playerPosition) <= entityDistance).ToList();
+            List<Entity> inRange = ecs.GetAllEntities(e => !this._ecs.Value.CommonFunctionality.EntityHasPosition(e) || this._ecs.Value.CommonFunctionality.GetCoordinatePositionForEntity(e).DistanceTo(playerPosition) <= entityDistance).ToList();
             return inRange;
         });
     }
@@ -750,7 +771,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             ecs.Update(null, deltaTime);
         });
 
-        List<EntityUpdate> updatesToSend = Utilities.GetPackedEntityUpdatesMaxByteSize(this.Encoder, this._updatedComponents, 800, out List<(Entity, Component)> usedUpdates);
+        List<EntityUpdate> updatesToSend = Utilities.GetPackedEntityUpdatesMaxByteSize(this.Encoder, this._updatedComponents.Where(c => c.Item2.ShouldSendUpdate(this._serverTick)).ToList(), 800, out List<(Entity, Component)> usedUpdates);
 
         this._connections.LockedAction((conns) =>
         {
@@ -847,23 +868,6 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
     }
 
-    private float CalcPriorityForEntity(Connection connection, Entity entity, float cutoffDistance)
-    {
-        var transform = entity.GetComponent<TransformComponent>();
-        var entityPos = transform.Position;
-
-        var playerID = this._connectionToPlayerId.LockedAction((c) => c[connection]);
-        var playerEntity = this._ecs.LockedAction((ecs) => ecs.GetEntityFromID(playerID));
-        var playerTransform = playerEntity.GetComponent<TransformComponent>();
-        var playerPos = playerTransform.Position;
-
-        var distance = (entityPos - playerPos).Length();
-
-        // Currently follows a simple quadratic formula, maybe try using a exponential one?
-        // Exponential gets kinda weird and is slow as hell, so I'm not using it for now.
-        return Utilities.CalcQuadratic((1f / (cutoffDistance * cutoffDistance)), 0f, 1f, -distance);
-    }
-
     private void PlayAudioOnClient(string audio, Connection connection)
     {
         this.EnqueuePacket(new PlayAudioPacket() { Audio = audio, Pitch = 1f }, connection, true, false);
@@ -878,5 +882,32 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 this.PlayAudioOnClient(audio, conn);
             }
         });
+    }
+
+    public void PlayAudioAsClient(string audio, Connection connection)
+    {
+        this._connections.LockedAction((conns) =>
+        {
+            foreach (Connection conn in conns)
+            {
+                if (conn != connection)
+                    this.PlayAudioOnClient(audio, conn);
+            }
+        });
+    }
+
+    public void PlayAudioAsClient(string audio, Entity playerEntity)
+    {
+        var playerConnection = this._connectionToPlayerId.LockedAction((ctp) =>
+        {
+            return ctp.FirstOrDefault((kvp) => kvp.Value == playerEntity.ID).Key;
+        });
+
+        if (playerConnection == null)
+        {
+            return;
+        }
+
+        this.PlayAudioAsClient(audio, playerConnection);
     }
 }

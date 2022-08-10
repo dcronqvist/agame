@@ -8,7 +8,6 @@ using AGame.Engine.Assets;
 using AGame.Engine.Configuration;
 using AGame.Engine.DebugTools;
 using AGame.Engine.ECSys;
-using AGame.Engine.ECSys.Components;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Cameras;
 using AGame.Engine.Graphics.Rendering;
@@ -144,16 +143,15 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             Entity localPlayer = this._client.GetPlayerEntity();
             int remotePlayerID = this._client.GetRemoteIDForEntity(localPlayer.ID);
 
-            var position = localPlayer.GetComponent<TransformComponent>().Position;
+            var position = this._client.GetECS().CommonFunctionality.GetCoordinatePositionForEntity(localPlayer);
             //Renderer.Text.RenderText(f, $"X: {MathF.Round(position.X, 1)} Y: {MathF.Round(position.Y, 1)}", new Vector2(150, 80), 1f, ColorF.White, Renderer.Camera);
 
-            var animator = localPlayer.GetComponent<AnimatorComponent>();
-            var offset = animator.GetAnimator().GetCurrentAnimation().GetMiddleOfCurrentFrameScaled();
+            var cameraPos = this._client.GetECS().CommonFunctionality.GetCameraFocusPositionForEntity(localPlayer);
 
             if (this._currentContainerInteraction is null)
                 this.RenderHotbar(this._client.GetPlayerEntity());
 
-            this.SetCameraPosition(position + new CoordinateVector(offset.X / TileGrid.TILE_SIZE, offset.Y / TileGrid.TILE_SIZE), false);
+            this.SetCameraPosition(cameraPos, false);
         }
 
         if (_currentContainerInteraction is not null)
@@ -171,22 +169,27 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
         }
         GUI.End();
 
+        var stats = this._client.GetTRXStats();
+        int i = 0;
+        foreach ((var type, var bytes) in stats.ComponentUpdatesReceivedBytesByType)
+        {
+            i += 1;
+            Renderer.Text.RenderText(f, $"{type}: {bytes}", new Vector2(150, 60 * i), 1f, ColorF.White, Renderer.Camera);
+        }
     }
 
     private void RenderHotbar(Entity playerEntity)
     {
-        var container = playerEntity.GetComponent<ContainerComponent>();
-        var hotbar = playerEntity.GetComponent<HotbarComponent>();
+        var container = this._client.GetECS().CommonFunctionality.GetContainerForEntity(playerEntity);
+        (var hotbarSlots, var selectedSlot) = this._client.GetECS().CommonFunctionality.GetHotbarInfoFromEntity(playerEntity);
 
-        var slots = container.GetContainer().GetSlots(hotbar.ContainerSlots.ToArray()).ToList();
+        var slots = container.GetSlots(hotbarSlots).ToList();
 
         var width = slots.Count * (ContainerSlot.WIDTH + 5);
         var middleOfScreen = DisplayManager.GetWindowSizeInPixels() / 2f;
 
         var bottomMiddle = new Vector2(middleOfScreen.X, DisplayManager.GetWindowSizeInPixels().Y);
         var hotbarTopLeft = new Vector2(bottomMiddle.X - width / 2f, bottomMiddle.Y - ContainerSlot.HEIGHT - 10);
-
-        var selectedSlot = hotbar.SelectedSlot;
 
         var font = ModManager.GetAsset<Font>("default.font.rainyhearts");
 
@@ -268,8 +271,8 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             {
                 if (this._currentContainerInteraction is null)
                 {
-                    var playerContainer = this._client.GetPlayerEntity().GetComponent<ContainerComponent>();
-                    this._currentContainerInteraction = new ContainerInteractionGUI(this._client.GetPlayerEntity(), null);
+                    var playerContainer = this._client.GetECS().CommonFunctionality.GetContainerForEntity(this._client.GetPlayerEntity());
+                    this._currentContainerInteraction = new ContainerInteractionGUI(this._client.GetECS(), this._client.GetPlayerEntity(), null);
                 }
                 else
                 {
@@ -280,7 +283,7 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
 
             if (this._client.ReceivedEntityOpenContainer != -1)
             {
-                this._currentContainerInteraction = new ContainerInteractionGUI(this._client.GetPlayerEntity(), this._client.GetECS().GetEntityFromID(this._client.ReceivedEntityOpenContainer));
+                this._currentContainerInteraction = new ContainerInteractionGUI(this._client.GetECS(), this._client.GetPlayerEntity(), this._client.GetECS().GetEntityFromID(this._client.ReceivedEntityOpenContainer));
                 this._client.ReceivedEntityOpenContainer = -1;
             }
 

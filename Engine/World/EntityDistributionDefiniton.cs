@@ -1,18 +1,20 @@
+using System;
 using System.Collections.Generic;
 using AGame.Engine.Assets.Scripting;
+using AGame.Engine.ECSys;
 
 namespace AGame.Engine.World;
 
 public struct SpawnEntityDefinition
 {
-    public SpawnEntityDefinition(string entityAsset, Vector2i tileAlignedPosition)
+    public SpawnEntityDefinition(string entityAsset, Action<Entity> onCreate)
     {
         EntityAsset = entityAsset;
-        TileAlignedPosition = tileAlignedPosition;
+        OnCreate = onCreate;
     }
 
     public string EntityAsset { get; set; }
-    public Vector2i TileAlignedPosition { get; set; }
+    public Action<Entity> OnCreate { get; set; }
 }
 
 public interface IDistributor

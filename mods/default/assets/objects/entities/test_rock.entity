@@ -2,7 +2,7 @@
     "extends": "default.entity.base_entity",
     "components": [
         {
-            "componentType": "Collider",
+            "componentType": "default.script_class.collider_component",
             "transformOffset": {
                 "x": 4,
                 "y": 12
@@ -14,7 +14,7 @@
             "solid": true
         },
         {
-            "componentType": "Render",
+            "componentType": "default.script_class.render_component",
             "sortByY": true,
             "renderLayer": 0,
             "feetOffset": {
@@ -23,7 +23,7 @@
             }
         },
         {
-            "componentType": "Sprite",
+            "componentType": "default.script_class.sprite_component",
             "texture": "default.tex.test_rock",
             "renderScale": {
                 "x": 2,
@@ -48,7 +48,7 @@
             "rotation": 0
         },
         {
-            "componentType": "Harvestable",
+            "componentType": "default.script_class.harvestable_component",
             "tags": ["rock"],
             "yields": [
                 {
@@ -57,15 +57,16 @@
                     "item": "default.item.pebble"
                 }
             ],
-            "breaksAfter": 1
+            "breaksAfter": 1,
+            "harvestSound": "default.audio.click"
         },
         {
-            "componentType": "Interactable",
+            "componentType": "default.script_class.interactable_component",
             "interactDistance": 1,
             "onInteract": "default.script_class.open_container"
         },
         {
-            "componentType": "Container",
+            "componentType": "default.script_class.container_component",
             "containerProvider": "default.script_class.container_small"
         }
     ]

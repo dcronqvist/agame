@@ -72,10 +72,10 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
         return this.ToBytes().Length;
     }
 
-    public void PushComponentUpdate(Component component)
+    public void PushComponentUpdate(Component component, float currentTime = -1f)
     {
-        float currentTime = GameTime.TotalElapsedSeconds;
-        this._interpolationQueue.Enqueue((currentTime, component));
+        float time = currentTime == -1f ? GameTime.TotalElapsedSeconds : currentTime;
+        this._interpolationQueue.Enqueue((time, component));
     }
 
     public void InterpolateComponent(float interpolationTime)
@@ -98,6 +98,21 @@ public abstract class Component : IPacketable, INotifyPropertyChanged
             float amt = (renderTimestamp - first.Item1) / (second.Item1 - first.Item1);
 
             this.InterpolateProperties(first.Item2, second.Item2, Math.Max(amt, 0));
+        }
+    }
+
+    private int _lastSentUpdateTick = -1;
+
+    public bool ShouldSendUpdate(int tick)
+    {
+        if (tick >= this._lastSentUpdateTick + this.GetCNAttrib().NetworkUpdateRate)
+        {
+            this._lastSentUpdateTick = tick;
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 }

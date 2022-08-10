@@ -10,7 +10,6 @@ using AGame.Engine.Assets;
 using AGame.Engine.Assets.Scripting;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
-using AGame.Engine.ECSys.Components;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
 using AGame.Engine.Items;
@@ -78,7 +77,8 @@ public class ScreenMainMenu : Screen<EnterMainMenuArgs>
 
                         ECS serverECS = new ECS();
                         GameServer gameServer = new GameServer(serverECS, wc, world, config, 500, 5000);
-                        serverECS.Initialize(SystemRunner.Server, gameServer: gameServer, entities: entities);
+                        var ecsCommon = ScriptingManager.CreateInstance<IECSCommonFunctionality>("default.script_class.ecs_common");
+                        serverECS.Initialize(SystemRunner.Server, ecsCommon, gameServer: gameServer, entities: entities);
 
                         await gameServer.StartAsync();
                         _ = gameServer.RunAsync();

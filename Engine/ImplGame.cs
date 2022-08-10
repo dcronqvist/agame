@@ -27,7 +27,6 @@ namespace AGame.Engine
 
         public override void Initialize(string[] args)
         {
-            ECS.Instance.Value.Initialize(SystemRunner.Client);
             Logging.AddLogStream(new FileLogger("log.txt"));
             Logging.AddLogStream(new ConsoleLogger());
 
@@ -90,6 +89,7 @@ namespace AGame.Engine
 
                 ScriptingManager.LoadScripts();
                 ItemManager.RegisterComponentTypes();
+                ECS.Instance.Value.RegisterComponentTypes();
 
                 GUI.Init();
                 _coreLoaded = true;

@@ -7,10 +7,9 @@ using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using AGame.Engine.Assets;
+using AGame.Engine.Assets.Scripting;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
-using AGame.Engine.ECSys.Components;
-using AGame.Engine.ECSys.Systems;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
 using AGame.Engine.Items;
@@ -120,7 +119,8 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     public GameClient(string hostname, int port, int reliableMillisBeforeResend, int timeoutMillis) : base(hostname, port, reliableMillisBeforeResend, timeoutMillis, new TestEncoder())
     {
         this._ecs = new ECS();
-        this._ecs.Initialize(SystemRunner.Client, gameClient: this);
+        var ecsCommon = ScriptingManager.CreateInstance<IECSCommonFunctionality>("default.script_class.ecs_common");
+        this._ecs.Initialize(SystemRunner.Client, ecsCommon, gameClient: this);
         this._fakeLatency = 0;
         this._hostname = hostname;
         this._port = port;
@@ -305,7 +305,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         if (response is not null && response.Accepted)
         {
             this._playerId = response.PlayerEntityID;
-            this._interpolationTime = (1f / response.ServerTickSpeed) * 2f;
+            this._interpolationTime = (1f / response.ServerTickSpeed);
 
             this._world = new WorldContainer(true, new ServerWorldGenerator(this));
 
@@ -416,7 +416,9 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                         foreach (Component component in update.Components)
                         {
                             if (!clientEntity.HasComponent(component.GetType()))
+                            {
                                 this._ecs.AddComponentToEntity(clientEntity, component);
+                            }
 
                             clientEntity.GetComponent(component.GetType()).PushComponentUpdate(component);
                         }

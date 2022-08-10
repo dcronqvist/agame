@@ -17,7 +17,10 @@ namespace DefaultMod
             {
                 for (int x = 0; x < size; x++)
                 {
-                    definitions.Add(new SpawnEntityDefinition(entityAsset, new Vector2i(startTile.X + x, startTile.Y + y)));
+                    definitions.Add(new SpawnEntityDefinition(entityAsset, (e) =>
+                    {
+                        e.GetComponent<TransformComponent>().Position = new CoordinateVector(startTile.X + x, startTile.Y + y);
+                    }));
                 }
             }
             return definitions;
@@ -69,7 +72,10 @@ namespace DefaultMod
 
             foreach (Vector2i tile in tiles)
             {
-                definitions.Add(new SpawnEntityDefinition(entityAsset, tile));
+                definitions.Add(new SpawnEntityDefinition(entityAsset, (e) =>
+                {
+                    e.GetComponent<TransformComponent>().Position = new CoordinateVector(tile.X, tile.Y);
+                }));
             }
 
             return definitions;

@@ -2,15 +2,15 @@
     "extends": "default.entity.base_entity",
     "components": [
         {
-            "componentType": "Transform",
+            "componentType": "default.script_class.transform_component",
             "speed": 4
         },
         {
-            "componentType": "Animator",
+            "componentType": "default.script_class.animator_component",
             "animator": "default.animator.player"
         },
         {
-            "componentType": "Collider",
+            "componentType": "default.script_class.collider_component",
             "transformOffset": {
                 "x": 7,
                 "y": 48
@@ -22,25 +22,25 @@
             "solid": false
         },
         {
-            "componentType": "Character",
+            "componentType": "default.script_class.character_component",
             "nameRenderOffset": {
                 "x": 16,
                 "y": -8
             }
         },
         {
-            "componentType": "Container",
+            "componentType": "default.script_class.container_component",
             "containerProvider": "default.script_class.container_player_inventory"
         },
         {
-            "componentType": "Hotbar",
+            "componentType": "default.script_class.hotbar_component",
             "containerSlots": [0, 1, 2, 3, 4, 5, 6, 7, 8]
         },
         {
-            "componentType": "PlayerState"
+            "componentType": "default.script_class.player_state_component"
         },
         {
-            "componentType": "Render",
+            "componentType": "default.script_class.render_component",
             "sortByY": true,
             "renderLayer": 0,
             "feetOffset": {

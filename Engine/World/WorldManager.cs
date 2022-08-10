@@ -8,7 +8,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using AGame.Engine.Assets;
 using AGame.Engine.ECSys;
-using AGame.Engine.ECSys.Components;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Cameras;
 using AGame.Engine.Graphics.Rendering;

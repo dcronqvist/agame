@@ -12,7 +12,7 @@ using AGame.Engine.Configuration;
 
 namespace AGame.Engine.Assets.Scripting
 {
-    static class ScriptingManager
+    public static class ScriptingManager
     {
         private static Dictionary<string, Script> Scripts { get; set; }
         private static Dictionary<string, Script> TypeToScript { get; set; }

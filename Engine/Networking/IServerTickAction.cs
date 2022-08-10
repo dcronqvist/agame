@@ -3,7 +3,6 @@ using System.Linq;
 using AGame.Engine.Assets;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
-using AGame.Engine.ECSys.Components;
 using AGame.Engine.Items;
 using AGame.Engine.World;
 using GameUDPProtocol;
@@ -109,51 +108,9 @@ public class ExecuteSpawnEntityDefinitionsAction : IServerTickAction
                 foreach (var entity in spawnEntities)
                 {
                     var e = ecs.CreateEntityFromAsset(this.Definition.EntityAsset);
-
-                    // Assume a transform exists for this entity
-                    var transform = e.GetComponent<TransformComponent>();
-                    transform.Position = new CoordinateVector(entity.TileAlignedPosition.X, entity.TileAlignedPosition.Y);
+                    entity.OnCreate(e);
                 }
             }
-        });
-    }
-}
-
-public class HarvestEntityAction : IServerTickAction
-{
-    public int EntityID { get; set; }
-
-    public HarvestEntityAction(int entityId)
-    {
-        this.EntityID = entityId;
-    }
-
-    public void Tick(GameServer server)
-    {
-        server.PerformOnECS((ecs) =>
-        {
-            var entity = ecs.GetEntityFromID(EntityID);
-            var transform = entity.GetComponent<TransformComponent>();
-            var harvestable = entity.GetComponent<HarvestableComponent>();
-
-            foreach (var yield in harvestable.Yields)
-            {
-                var item = yield.Item;
-
-                int amount = Utilities.GetRandomInt(yield.MinAmount, yield.MaxAmount);
-
-                for (int i = 0; i < amount; i++)
-                {
-                    var newEntity = ecs.CreateEntityFromAsset("default.entity.ground_item");
-
-                    var newPos = transform.Position + new CoordinateVector(Utilities.GetRandomFloat(-2f, 2f), Utilities.GetRandomFloat(-2f, 2f));
-
-                    newEntity.GetComponent<TransformComponent>().Position = newPos;
-                    newEntity.GetComponent<GroundItemComponent>().Item = ItemManager.GetItemDef(item).CreateItem();
-                }
-            }
-
-            ecs.DestroyEntity(entity.ID);
         });
     }
 }

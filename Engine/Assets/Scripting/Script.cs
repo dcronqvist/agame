@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace AGame.Engine.Assets.Scripting;
 
-class Script : Asset
+public class Script : Asset
 {
     public Assembly Assembly { get; set; }
 

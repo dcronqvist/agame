@@ -3,7 +3,6 @@
   <PropertyGroup>
     <OutputType>library</OutputType>
     <TargetFramework>net6.0</TargetFramework>
-    <Nullable>enable</Nullable>
     <RootNamespace>DefaultMod</RootNamespace>
   </PropertyGroup>
 

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using AGame.Engine.Assets.Scripting;
-using AGame.Engine.ECSys.Components;
 using AGame.Engine.Items;
 using AGame.Engine.Networking;
 

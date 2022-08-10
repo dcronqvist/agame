@@ -57,7 +57,8 @@ public class ScreenMultiplayerMenu : Screen<EnterMultiplayerMenuArgs>
 
                         ECS serverECS = new ECS();
                         GameServer gameServer = new GameServer(serverECS, wc, world, config, 500, 500000);
-                        serverECS.Initialize(SystemRunner.Server, gameServer: gameServer, entities: entities);
+                        var ecsCommon = ScriptingManager.CreateInstance<IECSCommonFunctionality>("default.script_class.ecs_common");
+                        serverECS.Initialize(SystemRunner.Server, ecsCommon, gameServer: gameServer, entities: entities);
                         await gameServer.StartAsync();
                         _ = gameServer.RunAsync();
 

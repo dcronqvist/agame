@@ -8,7 +8,6 @@ using AGame.Engine.Assets;
 using AGame.Engine.Assets.Scripting;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
-using AGame.Engine.ECSys.Components;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
 using AGame.Engine.Items;

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.Linq;
@@ -7,7 +8,6 @@ using AGame.Engine.Assets.Scripting;
 using AGame.Engine.Configuration;
 using AGame.Engine.DebugTools;
 using AGame.Engine.ECSys;
-using AGame.Engine.ECSys.Components;
 using AGame.Engine.Networking;
 using AGame.Engine.World;
 
@@ -154,6 +154,89 @@ namespace DefaultMod
                 }
 
             }, charge);
+
+            return c;
+        }
+    }
+
+    public class GetEntityIDCommand : ServerSideCommand
+    {
+        public override IEnumerable<string> GetAliases()
+        {
+            yield return "get_id";
+        }
+
+        public override Command GetCommand(Entity callingEntity, ECS ecs, GameServer gameServer)
+        {
+            Command c = new Command("get_id");
+
+            c.SetHandler((context) =>
+            {
+                // Assuming that the calling entity is a player
+                var playerState = callingEntity.GetComponent<PlayerStateComponent>();
+                var x = playerState.MouseTileX;
+                var y = playerState.MouseTileY;
+
+                var entity = ScriptingAPI.GetEntityAtPosition(ecs, new Vector2i(x, y));
+                Logging.Log(LogLevel.Info, $"Entity at {x},{y} is {entity.ID}");
+            });
+
+            return c;
+        }
+    }
+
+    public class SetEntityComponentPropertyCommand : ServerSideCommand
+    {
+        public override IEnumerable<string> GetAliases()
+        {
+            yield return "set_prop";
+        }
+
+        public override System.CommandLine.Command GetCommand(Entity callingEntity, ECS ecs, GameServer gameServer)
+        {
+            // set_prop <entity_id:int> <component_name:string> <property_name:string> <property_value:string>
+            Command c = new Command("set_prop");
+            Argument<int> entityID = new Argument<int>("entity_id");
+            Argument<string> componentName = new Argument<string>("component_name");
+            Argument<string> propertyName = new Argument<string>("property_name");
+            Argument<string> propertyValue = new Argument<string>("property_value");
+            c.AddArgument(entityID);
+            c.AddArgument(componentName);
+            c.AddArgument(propertyName);
+            c.AddArgument(propertyValue);
+            c.SetHandler((entityIDValue, componentNameValue, propertyNameValue, propertyValueValue) =>
+            {
+                var entity = ecs.GetEntityFromID(entityIDValue);
+                if (entity is null)
+                {
+                    Logging.Log(LogLevel.Warning, $"Entity {entityIDValue} not found");
+                    return;
+                }
+                else
+                {
+                    var component = entity.GetComponent(ecs.GetComponentType(componentNameValue));
+                    if (component is null)
+                    {
+                        Logging.Log(LogLevel.Warning, $"Component {componentNameValue} not found on entity {entityIDValue}");
+                        return;
+                    }
+                    else
+                    {
+                        var property = component.GetType().GetProperty(propertyNameValue);
+                        if (property is null)
+                        {
+                            Logging.Log(LogLevel.Warning, $"Property {propertyNameValue} not found on component {componentNameValue}");
+                            return;
+                        }
+                        else
+                        {
+                            var value = Convert.ChangeType(propertyValueValue, property.PropertyType);
+                            property.SetValue(component, value);
+                            Logging.Log(LogLevel.Info, $"Set property {propertyNameValue} of component {componentNameValue} on entity {entityIDValue} to {propertyValueValue}");
+                        }
+                    }
+                }
+            }, entityID, componentName, propertyName, propertyValue);
 
             return c;
         }

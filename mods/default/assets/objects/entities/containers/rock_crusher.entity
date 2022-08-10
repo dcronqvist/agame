@@ -2,7 +2,7 @@
     "extends": "default.entity.base_entity",
     "components": [
         {
-            "componentType": "Collider",
+            "componentType": "default.script_class.collider_component",
             "transformOffset": {
                 "x": 2,
                 "y": 32
@@ -14,7 +14,7 @@
             "solid": true
         },
         {
-            "componentType": "Render",
+            "componentType": "default.script_class.render_component",
             "sortByY": true,
             "renderLayer": 0,
             "feetOffset": {
@@ -23,7 +23,7 @@
             }
         },
         {
-            "componentType": "Sprite",
+            "componentType": "default.script_class.sprite_component",
             "texture": "default.tex.rock_crusher",
             "renderScale": {
                 "x": 2,
@@ -48,16 +48,16 @@
             "rotation": 0
         },
         {
-            "componentType": "Interactable",
+            "componentType": "default.script_class.interactable_component",
             "interactDistance": 1,
             "onInteract": "default.script_class.open_container"
         },
         {
-            "componentType": "Container",
+            "componentType": "default.script_class.container_component",
             "containerProvider": "default.script_class.container_rock_crusher"
         },
         {
-            "componentType": "Placeable",
+            "componentType": "default.script_class.placeable_component",
             "placeOffset": {
                 "x": 0,
                 "y": -1

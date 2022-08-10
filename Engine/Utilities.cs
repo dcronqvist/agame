@@ -566,6 +566,11 @@ namespace AGame.Engine
         {
             return 1f - MathF.Abs(2 * val - 1f);
         }
+
+        public static Vector2 Offset(this Vector2 v, Vector2 vec)
+        {
+            return v + vec;
+        }
     }
 
     public struct Vector2i : IPacketable

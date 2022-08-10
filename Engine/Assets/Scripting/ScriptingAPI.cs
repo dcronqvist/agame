@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using AGame.Engine.ECSys;
-using AGame.Engine.ECSys.Components;
 using AGame.Engine.Items;
 using AGame.Engine.Networking;
 using AGame.Engine.World;
@@ -43,18 +42,40 @@ public static class ScriptingAPI
     }
 
     // Can be called from both client and server, will do correct thing depending on context.
-    public static void CreateEntity(Entity playerEntity, ECS ecs, string entity, Action<Entity> onCreate)
+    public static void CreateEntity(Entity playerEntity, ECS ecs, string entity, Action<Entity> onCreateClientSide = null, Action<Entity> onCreateServerSide = null)
     {
         if (ecs.IsRunner(SystemRunner.Server))
         {
             // IF WE ARE ON THE SERVER
-            _gameServer.CreateEntityAsClient(playerEntity.ID, entity, onCreate);
+            if (onCreateServerSide != null)
+            {
+                if (onCreateClientSide != null)
+                {
+                    _gameServer.CreateEntityAsClient(playerEntity.ID, entity, onCreateServerSide);
+                }
+                else
+                {
+                    _gameServer.PerformOnECS((ecs) =>
+                    {
+                        var e = ecs.CreateEntityFromAsset(entity);
+                        onCreateServerSide(e);
+                    });
+                }
+            }
         }
         else if (ecs.IsRunner(SystemRunner.Client))
         {
             // IF WE ARE ON THE CLIENT
-            _gameClient.AttemptCreateEntity(entity, onCreate);
+            if (onCreateClientSide != null)
+            {
+                _gameClient.AttemptCreateEntity(entity, onCreateClientSide);
+            }
         }
+    }
+
+    public static void CreateEntity(Entity playerEntity, ECS ecs, string entity, Action<Entity> onCreate)
+    {
+        CreateEntity(playerEntity, ecs, entity, onCreate, onCreate);
     }
 
     // Can be called from both client and server, will do correct thing depending on context.
@@ -95,14 +116,14 @@ public static class ScriptingAPI
 
     public static Entity GetEntityAtPosition(ECS ecs, Vector2i tilePosition)
     {
-        return FindEntities(ecs, (entity) => entity.TryGetComponent<TransformComponent>(out var transform) && transform.Position.Equals(new CoordinateVector(tilePosition.X, tilePosition.Y))).FirstOrDefault();
+        return FindEntities(ecs, (entity) => ecs.CommonFunctionality.EntityHasPosition(entity) && ecs.CommonFunctionality.GetCoordinatePositionForEntity(entity).Equals(new CoordinateVector(tilePosition.X, tilePosition.Y))).FirstOrDefault();
     }
 
     public static void PlayAudioFromPlayerAction(Entity playerEntity, ECS ecs, UserCommand command, string audioName)
     {
         if (ecs.IsRunner(SystemRunner.Server))
         {
-            _gameServer.PlayAudioOnAllClients(audioName);
+            _gameServer.PlayAudioAsClient(audioName, playerEntity);
         }
         else if (ecs.IsRunner(SystemRunner.Client))
         {

@@ -2,7 +2,7 @@
     "extends": "default.entity.base_entity",
     "components": [
         {
-            "componentType": "Collider",
+            "componentType": "default.script_class.collider_component",
             "transformOffset": {
                 "x": 4,
                 "y": 12
@@ -14,7 +14,7 @@
             "solid": false
         },
         {
-            "componentType": "Render",
+            "componentType": "default.script_class.render_component",
             "sortByY": true,
             "renderLayer": 0,
             "feetOffset": {
@@ -23,7 +23,7 @@
             }
         },
         {
-            "componentType": "Sprite",
+            "componentType": "default.script_class.sprite_component",
             "texture": "default.tex.test_ore",
             "renderScale": {
                 "x": 2,
@@ -48,16 +48,17 @@
             "rotation": 0
         },
         {
-            "componentType": "Harvestable",
+            "componentType": "default.script_class.harvestable_component",
             "tags": ["rock"],
             "yields": [
                 {
                     "minAmount": 1,
-                    "maxAmount": 1,
+                    "maxAmount": 2,
                     "item": "default.item.pebble"
                 }
             ],
-            "breaksAfter": 5
+            "breaksAfter": 5,
+            "harvestSound": "default.audio.click"
         }
     ]
 }

@@ -1,6 +1,5 @@
 using AGame.Engine.Assets;
 using AGame.Engine.ECSys;
-using AGame.Engine.ECSys.Components;
 using AGame.Engine.World;
 
 namespace AGame.Engine.Networking;
@@ -76,12 +75,12 @@ public class ClientSetContainerContentAction : IClientTickAction
 
         if (client.TryGetClientSideEntity(serverSideEntity, out Entity entity))
         {
-            var container = entity.GetComponent<ContainerComponent>();
+            var container = client.GetECS().CommonFunctionality.GetContainerForEntity(entity);
             var infos = Packet.Slots;
 
             foreach (var info in infos)
             {
-                container.GetContainer().SetItemInSlot(info.SlotID, info.Item.Instance, info.ItemCount);
+                container.SetItemInSlot(info.SlotID, info.Item.Instance, info.ItemCount);
             }
 
             if (Packet.OpenInteract)
@@ -109,8 +108,8 @@ public class ClientSetContainerProviderDataAction : IClientTickAction
 
         if (client.TryGetClientSideEntity(serverSideEntity, out Entity entity))
         {
-            var container = entity.GetComponent<ContainerComponent>();
-            container.GetContainer().Provider.ReceiveProviderData(Packet);
+            var container = client.GetECS().CommonFunctionality.GetContainerForEntity(entity);
+            container.Provider.ReceiveProviderData(Packet);
         }
     }
 }

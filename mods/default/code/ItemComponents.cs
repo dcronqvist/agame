@@ -4,7 +4,6 @@ using AGame.Engine;
 using AGame.Engine.Assets.Scripting;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
-using AGame.Engine.ECSys.Components;
 using AGame.Engine.Items;
 using AGame.Engine.Networking;
 using AGame.Engine.World;
@@ -13,6 +12,7 @@ using System.Numerics;
 using System.Drawing;
 using AGame.Engine.Graphics.Rendering;
 using AGame.Engine.Graphics;
+using System.Linq;
 
 namespace DefaultMod
 {
@@ -75,12 +75,19 @@ namespace DefaultMod
                             int amount = Utilities.GetRandomInt(def.MinAmount, def.MaxAmount);
                             string newItem = def.Item;
 
-                            ScriptingAPI.CreateEntity(playerEntity, ecs, "default.entity.ground_item", (entity) =>
+                            foreach (var i in Enumerable.Range(0, amount))
                             {
-                                entity.GetComponent<TransformComponent>().Position = new CoordinateVector(userCommand.MouseTileX, userCommand.MouseTileY);
-                                entity.GetComponent<GroundItemComponent>().Item = ItemManager.GetItemDef(newItem).CreateItem();
-                            });
+                                ScriptingAPI.CreateEntity(playerEntity, ecs, "default.entity.ground_item", null, (entity) =>
+                                {
+                                    entity.GetComponent<TransformComponent>().Position = new CoordinateVector(userCommand.MouseTileX, userCommand.MouseTileY);
+                                    entity.GetComponent<GroundItemComponent>().Item = ItemManager.GetItemDef(newItem).CreateItem();
+                                    entity.GetComponent<BouncingComponent>().VerticalVelocity = Utilities.GetRandomFloat(-200f, -100f);
+                                    entity.GetComponent<BouncingComponent>().Velocity = Vector2.Normalize(Utilities.GetRandomVector2(-1f, 1f, -1f, 1f)) * Utilities.GetRandomFloat(0.1f, 1f);
+                                });
+                            }
                         }
+
+                        ScriptingAPI.PlayAudioFromPlayerAction(playerEntity, ecs, userCommand, harvest.HarvestSound);
 
                         resetUseTime = true;
                         return true;

@@ -2,7 +2,7 @@
     "extends": "default.entity.base_entity",
     "components": [
         {
-            "componentType": "Collider",
+            "componentType": "default.script_class.collider_component",
             "transformOffset": {
                 "x": 8,
                 "y": 8
@@ -14,16 +14,24 @@
             "solid": false
         },
         {
-            "componentType": "Render",
+            "componentType": "default.script_class.render_component",
             "sortByY": true,
             "renderLayer": 1,
             "feetOffset": {
                 "x": 16,
-                "y": 32
+                "y": 16
             }
         },
         {
-            "componentType": "GroundItem"
+            "componentType": "default.script_class.ground_item_component"
+        },
+        {
+            "componentType": "default.script_class.bouncing_component",
+            "gravityFactor": 300,
+            "fallOffFactor": 0.4,
+            "verticalVelocity": 0,
+            "velocityThreshold": 10,
+            "velocityFriction": 2
         }
     ]
 }

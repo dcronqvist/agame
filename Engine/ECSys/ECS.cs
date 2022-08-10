@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using AGame.Engine.Assets;
 using AGame.Engine.Assets.Scripting;
 using AGame.Engine.DebugTools;
-using AGame.Engine.ECSys.Systems;
 using AGame.Engine.Networking;
 using AGame.Engine.World;
 using GameUDPProtocol;
@@ -51,7 +51,9 @@ public class ECS
         }
     }
 
-    public void Initialize(SystemRunner runner, GameClient gameClient = null, GameServer gameServer = null, List<Entity> entities = null)
+    public IECSCommonFunctionality CommonFunctionality { get; private set; }
+
+    public void Initialize(SystemRunner runner, IECSCommonFunctionality functionalityProvider, GameClient gameClient = null, GameServer gameServer = null, List<Entity> entities = null)
     {
         this._runner = runner;
         this._entities = entities ?? new List<Entity>();
@@ -59,6 +61,7 @@ public class ECS
         this._server = gameServer;
         this._nextEntityID = this._entities.Count > 0 ? this._entities.Max(x => x.ID) + 1 : 0;
         this.InterpolationTime = 0f;
+        this.CommonFunctionality = functionalityProvider;
 
         // Register all component types
         this.RegisterComponentTypes();
@@ -93,8 +96,8 @@ public class ECS
     public void RegisterAllSystems()
     {
         this._systems.Clear();
-        //List<Type> systems = ScriptingManager.GetAllTypesWithBaseType<BaseSystem>().ToList();
-        List<Type> systems = Utilities.FindDerivedTypes(typeof(BaseSystem)).Where(x => x != typeof(BaseSystem)).ToList();
+        List<Type> systems = ScriptingManager.GetAllTypesWithBaseType<BaseSystem>().ToList();
+        //List<Type> systems = Utilities.FindDerivedTypes(typeof(BaseSystem)).Where(x => x != typeof(BaseSystem)).ToList();
 
         foreach (Type systemType in systems)
         {
@@ -107,12 +110,14 @@ public class ECS
         this._componentTypes.Clear();
         this._componentTypeIDs.Clear();
 
-        Type[] componentTypes = Utilities.FindDerivedTypes(typeof(Component)).Where(x => x != typeof(Component)).ToArray();
-        componentTypes = componentTypes.OrderBy(t => t.Name).DistinctBy(x => x.Name).ToArray();
+        var componentTypes = ScriptingManager.GetAllTypesWithBaseType<Component>();
+
+        // Type[] componentTypes = Utilities.FindDerivedTypes(typeof(Component)).Where(x => x != typeof(Component)).ToArray();
+        // componentTypes = componentTypes.OrderBy(t => t.Name).DistinctBy(x => x.Name).ToArray();
 
         for (int i = 0; i < componentTypes.Length; i++)
         {
-            string typeName = componentTypes[i].Name.Replace("Component", "");
+            string typeName = ScriptingManager.GetScriptClassNameFromRealType(componentTypes[i]);
             _componentTypes.Add(typeName, componentTypes[i]);
             _componentTypeIDs.Add(componentTypes[i], i);
         }
