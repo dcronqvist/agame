@@ -168,14 +168,6 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             Renderer.RenderRenderTexture(rt);
         }
         GUI.End();
-
-        var stats = this._client.GetTRXStats();
-        int i = 0;
-        foreach ((var type, var bytes) in stats.ComponentUpdatesReceivedBytesByType)
-        {
-            i += 1;
-            Renderer.Text.RenderText(f, $"{type}: {bytes}", new Vector2(150, 60 * i), 1f, ColorF.White, Renderer.Camera);
-        }
     }
 
     private void RenderHotbar(Entity playerEntity)
