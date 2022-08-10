@@ -1,0 +1,17 @@
+{
+    "locale_name": "Pirate",
+
+    // Common stuff
+    "screen.loading_assets.title": "Finding booty...",
+
+    // context: asset_name
+    "screen.loading_assets.subtitle": "Grabbing ${asset_name}...",
+
+    // Common menu stuff
+    "menu.button.back": "< Away",
+
+    // Main menu stuff
+    "screen.main_menu.button.singleplayer": "On yer own",
+    "screen.main_menu.button.multiplayer": "With a crew",
+    "screen.main_menu.button.exit": "Walk the plank"
+}
