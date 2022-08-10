@@ -4,7 +4,6 @@ using AGame.Engine;
 using AGame.Engine.Assets.Scripting;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
-using AGame.Engine.ECSys.Components;
 using AGame.Engine.Items;
 using AGame.Engine.Networking;
 using AGame.Engine.World;
@@ -13,6 +12,8 @@ using System.Numerics;
 using System.Drawing;
 using AGame.Engine.Graphics.Rendering;
 using AGame.Engine.Graphics;
+using DefaultMod;
+using System.Linq;
 
 namespace ModTemplate
 {
@@ -100,6 +101,153 @@ namespace ModTemplate
             var worldPos = new Vector2(pos.X * TileGrid.TILE_SIZE, pos.Y * TileGrid.TILE_SIZE);
 
             Renderer.Texture.Render(texture, worldPos, Vector2.One * 2f, 0f, ColorF.Green * 0.2f, TextureRenderEffects.None);
+        }
+    }
+
+    [ScriptClass(Name = "tool_def")]
+    public class ToolDef : ItemComponentDefinition
+    {
+        public int MaxEnergyCharge { get; set; }
+
+        public override ItemComponent CreateComponent()
+        {
+            return new Tool(this);
+        }
+    }
+
+    public class Tool : ItemComponent<ToolDef>
+    {
+        public int CurrentEnergyCharge { get; set; }
+
+        public Tool(ToolDef definition) : base(definition)
+        {
+            this.CurrentEnergyCharge = definition.MaxEnergyCharge;
+        }
+
+        public override int Populate(byte[] data, int offset)
+        {
+            int start = offset;
+            this.CurrentEnergyCharge = BitConverter.ToInt32(data, offset);
+            offset += sizeof(int);
+            return offset - start;
+        }
+
+        public override byte[] ToBytes()
+        {
+            List<byte> bytes = new List<byte>();
+            bytes.AddRange(BitConverter.GetBytes(this.CurrentEnergyCharge));
+            return bytes.ToArray();
+        }
+
+        public override bool OnUse(Entity playerEntity, UserCommand userCommand, ItemInstance item, ECS ecs, float deltaTime, float totalTimeUsed, out bool resetUseTime)
+        {
+            Entity entity = ScriptingAPI.GetEntityAtPosition(ecs, new Vector2i(userCommand.MouseTileX, userCommand.MouseTileY));
+
+            if (entity.TryGetComponent<HarvestableComponent>(out var harvest) && playerEntity.TryGetComponent<ContainerComponent>(out var container))
+            {
+                if (container.GetContainer().FindSlotWithItem("default.item.pebble") != -1)
+                {
+                    if (totalTimeUsed > 1f)
+                    {
+                        if (!userCommand.HasBeenRun)
+                        {
+                            var slot = container.GetContainer().FindSlotWithItem("default.item.pebble");
+                            container.GetContainer().RemoveItem(slot);
+
+                            this.CurrentEnergyCharge -= 1;
+
+                            harvest.BreaksAfter -= 1;
+
+                            if (harvest.BreaksAfter < 1)
+                            {
+                                ScriptingAPI.DestroyEntity(playerEntity, ecs, entity);
+                            }
+
+                            foreach (var def in harvest.Yields)
+                            {
+                                int amount = Utilities.GetRandomInt(def.MinAmount, def.MaxAmount);
+                                string newItem = def.Item;
+
+                                foreach (var i in Enumerable.Range(0, amount))
+                                {
+                                    ScriptingAPI.CreateEntity(playerEntity, ecs, "default.entity.ground_item", null, (entity) =>
+                                    {
+                                        entity.GetComponent<TransformComponent>().Position = new CoordinateVector(userCommand.MouseTileX, userCommand.MouseTileY);
+                                        entity.GetComponent<GroundItemComponent>().Item = ItemManager.GetItemDef(newItem).CreateItem();
+                                        entity.GetComponent<BouncingComponent>().VerticalVelocity = Utilities.GetRandomFloat(-200f, -100f);
+                                        entity.GetComponent<BouncingComponent>().Velocity = Vector2.Normalize(Utilities.GetRandomVector2(-1f, 1f, -1f, 1f)) * Utilities.GetRandomFloat(0.1f, 1f);
+                                    });
+                                }
+                            }
+
+                            ScriptingAPI.PlayAudioFromPlayerAction(playerEntity, ecs, userCommand, harvest.HarvestSound);
+
+                            resetUseTime = true;
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            resetUseTime = false;
+            return false;
+        }
+
+        public override bool ShouldItemBeConsumed()
+        {
+            return false;
+        }
+
+        public override void OnConsumed(Entity playerEntity, ItemInstance item, ECS ecs)
+        {
+            Logging.Log(LogLevel.Debug, "Tool was consumed");
+        }
+
+        public override ulong GetHash()
+        {
+            return this.CurrentEnergyCharge.Hash();
+        }
+
+        public override bool CanBeUsed(Entity playerEntity, UserCommand userCommand, ItemInstance item, ECS ecs)
+        {
+            Entity entity = ScriptingAPI.GetEntityAtPosition(ecs, new Vector2i(userCommand.MouseTileX, userCommand.MouseTileY));
+
+            if (entity is null || this.CurrentEnergyCharge <= 0)
+            {
+                return false;
+            }
+            else
+            {
+                if (entity.TryGetComponent<HarvestableComponent>(out var harvest) && playerEntity.TryGetComponent<ContainerComponent>(out var container))
+                {
+                    if (harvest.HasTag("rock"))
+                    {
+                        if (container.GetContainer().FindSlotWithItem("default.item.pebble") != -1)
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        public override void RenderInSlot(ItemInstance item, Vector2 slotTopLeft)
+        {
+            var durability = this.Definition.MaxEnergyCharge;
+            var currDur = this.CurrentEnergyCharge;
+            var perc = ((float)currDur / durability).ToString("0.00");
+
+            var font = ModManager.GetAsset<Font>("default.font.rainyhearts");
+            var scale = 1f;
+            var size = new Vector2(ContainerSlot.WIDTH, ContainerSlot.HEIGHT);
+
+            var durabilitySize = font.MeasureString(perc, scale);
+
+            var textSize = font.MeasureString(perc, scale);
+            var durabilityPosition = slotTopLeft + new Vector2(size.X - durabilitySize.X, size.Y - durabilitySize.Y - textSize.Y * 2);
+            Renderer.Text.RenderText(font, perc, durabilityPosition.PixelAlign(), scale, ColorF.White, Renderer.Camera);
         }
     }
 }

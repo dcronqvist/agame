@@ -113,6 +113,23 @@ public class Container
         }
     }
 
+    public int FindSlotWithItem(string itemID)
+    {
+        List<int> slots = this.Provider.GetSlotSeekOrder().ToList();
+
+        foreach (int slot in slots)
+        {
+            var cslot = this._slots[slot];
+
+            if (cslot.Item is not null && cslot.Item.Definition.ItemID == itemID)
+            {
+                return slot;
+            }
+        }
+
+        return -1;
+    }
+
     private int FindSlotWithSameItem(ItemInstance item)
     {
         List<int> slots = this.Provider.GetSlotSeekOrder().ToList();

@@ -56,17 +56,15 @@ public static class ItemManager
             var attribute = componentTypes[i].GetCustomAttributes(typeof(ScriptClassAttribute), false).FirstOrDefault() as ScriptClassAttribute;
             if (attribute is not null)
             {
-                var typename = attribute.Name;
                 var scriptClassName = ScriptingManager.GetScriptClassNameFromRealType(componentTypes[i]);
-                var scriptAssetNameNoEnd = scriptClassName.Substring(0, scriptClassName.LastIndexOf(".") + 1);
 
-                if (!_itemComponentTypes.ContainsKey(scriptAssetNameNoEnd + typename))
+                if (!_itemComponentTypes.ContainsKey(scriptClassName))
                 {
-                    _itemComponentTypes.Add(scriptAssetNameNoEnd + typename, componentTypes[i]);
+                    _itemComponentTypes.Add(scriptClassName, componentTypes[i]);
                 }
                 else
                 {
-                    _itemComponentTypes[scriptAssetNameNoEnd + typename] = componentTypes[i];
+                    _itemComponentTypes[scriptClassName] = componentTypes[i];
                 }
             }
         }

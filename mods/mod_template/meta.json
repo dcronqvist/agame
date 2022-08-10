@@ -1,11 +1,16 @@
 {
     "author": "mod_author",
     "version": "X.X",
-    "enabled": false,
+    "enabled": true,
     "overwrites": [
         {
-            "new": "mod_template.script.placeable_def",
-            "original": "default.script.placeable_def",
+            "new": "mod_template.script_class.placeable_def",
+            "original": "default.script_class.placeable_def",
+            "type": "script"
+        },
+        {
+            "new": "mod_template.script_class.tool_def",
+            "original": "default.script_class.tool_def",
             "type": "script"
         }
     ]
