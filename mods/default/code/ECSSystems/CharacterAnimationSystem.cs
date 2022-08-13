@@ -4,10 +4,11 @@ using AGame.Engine.ECSys;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
 using AGame.Engine.World;
+using AGame.Engine.Assets.Scripting;
 
 namespace DefaultMod;
 
-[SystemRunsOn(SystemRunner.Client)]
+[SystemRunsOn(SystemRunner.Client), ScriptType(Name = "character_animation_system")]
 public class CharacterAnimationSystem : BaseSystem
 {
     public override void Initialize()

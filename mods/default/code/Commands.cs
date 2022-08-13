@@ -13,6 +13,7 @@ using AGame.Engine.World;
 
 namespace DefaultMod
 {
+    [ScriptType(Name = "command_test_client")]
     public class TestClientCommand : ClientSideCommand
     {
         public override IEnumerable<string> GetAliases()
@@ -33,6 +34,7 @@ namespace DefaultMod
         }
     }
 
+    [ScriptType(Name = "command_test_server")]
     public class TestServerCommand : ServerSideCommand
     {
         public override IEnumerable<string> GetAliases()
@@ -53,6 +55,7 @@ namespace DefaultMod
         }
     }
 
+    [ScriptType(Name = "command_give")]
     public class GiveItemCommand : ServerSideCommand
     {
         public override IEnumerable<string> GetAliases()
@@ -87,6 +90,7 @@ namespace DefaultMod
         }
     }
 
+    [ScriptType(Name = "command_tp")]
     public class TeleportPlayerCommand : ServerSideCommand
     {
         public override IEnumerable<string> GetAliases()
@@ -113,6 +117,7 @@ namespace DefaultMod
         }
     }
 
+    [ScriptType(Name = "command_set_charge")]
     public class SetToolChargeCommand : ServerSideCommand
     {
         public override IEnumerable<string> GetAliases()
@@ -159,6 +164,7 @@ namespace DefaultMod
         }
     }
 
+    [ScriptType(Name = "command_get_id")]
     public class GetEntityIDCommand : ServerSideCommand
     {
         public override IEnumerable<string> GetAliases()
@@ -177,14 +183,18 @@ namespace DefaultMod
                 var x = playerState.MouseTileX;
                 var y = playerState.MouseTileY;
 
-                var entity = ScriptingAPI.GetEntityAtPosition(ecs, new Vector2i(x, y));
-                Logging.Log(LogLevel.Info, $"Entity at {x},{y} is {entity.ID}");
+                ecs.GetAllEntities((e) => e.TryGetComponent<TransformComponent>(out var transform) && transform.Position.DistanceTo(new CoordinateVector(x, y)) < 1).ToList().ForEach((e) =>
+                {
+                    var transform = e.GetComponent<TransformComponent>();
+                    Logging.Log(LogLevel.Debug, $"Entity {e.ID} at {transform.Position.X},{transform.Position.Y}");
+                });
             });
 
             return c;
         }
     }
 
+    [ScriptType(Name = "command_set_prop")]
     public class SetEntityComponentPropertyCommand : ServerSideCommand
     {
         public override IEnumerable<string> GetAliases()

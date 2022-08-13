@@ -11,10 +11,33 @@ using AGame.Engine.World;
 
 namespace DefaultMod;
 
-[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptClass(Name = "player_state_component")]
+public class ContainerSlotInfoPacker : ComponentPropertyPacker<ContainerSlotInfo>
+{
+    public override byte[] Pack(ContainerSlotInfo value)
+    {
+        return value.ToBytes();
+    }
+
+    public override int Unpack(byte[] data, int offset, out ContainerSlotInfo value)
+    {
+        value = new ContainerSlotInfo();
+        return value.Populate(data, offset);
+    }
+}
+
+public class ContainerSlotInfoInterpolator : ComponentPropertyInterpolator<ContainerSlotInfo>
+{
+    public override ContainerSlotInfo Interpolate(ContainerSlotInfo a, ContainerSlotInfo b, float t)
+    {
+        return a;
+    }
+}
+
+[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptType(Name = "player_state_component")]
 public class PlayerStateComponent : Component
 {
     private bool _holdingUseItem;
+    [ComponentProperty(0, typeof(BoolPacker), typeof(BoolInterpolator), InterpolationType.ToInstant)]
     public bool HoldingUseItem
     {
         get => _holdingUseItem;
@@ -29,6 +52,7 @@ public class PlayerStateComponent : Component
     }
 
     private string _holdingItem;
+    [ComponentProperty(1, typeof(StringPacker), typeof(StringInterpolator), InterpolationType.ToInstant)]
     public string HoldingItem
     {
         get => _holdingItem ?? "";
@@ -43,6 +67,7 @@ public class PlayerStateComponent : Component
     }
 
     private int _mouseTileX;
+    [ComponentProperty(2, typeof(IntPacker), typeof(IntInterpolator), InterpolationType.ToInstant)]
     public int MouseTileX
     {
         get => _mouseTileX;
@@ -57,6 +82,7 @@ public class PlayerStateComponent : Component
     }
 
     private int _mouseTileY;
+    [ComponentProperty(3, typeof(IntPacker), typeof(IntInterpolator), InterpolationType.ToInstant)]
     public int MouseTileY
     {
         get => _mouseTileY;
@@ -71,6 +97,7 @@ public class PlayerStateComponent : Component
     }
 
     private float _itemUsedTime;
+    [ComponentProperty(4, typeof(FloatPacker), typeof(FloatInterpolator), InterpolationType.Linear)]
     public float ItemUsedTime
     {
         get => _itemUsedTime;
@@ -85,6 +112,7 @@ public class PlayerStateComponent : Component
     }
 
     private string _itemOnMouse;
+    [ComponentProperty(5, typeof(StringPacker), typeof(StringInterpolator), InterpolationType.ToInstant)]
     public string ItemOnMouse
     {
         get => _itemOnMouse ?? "";
@@ -99,6 +127,7 @@ public class PlayerStateComponent : Component
     }
 
     private int _itemOnMouseCount;
+    [ComponentProperty(6, typeof(IntPacker), typeof(IntInterpolator), InterpolationType.ToInstant)]
     public int ItemOnMouseCount
     {
         get => _itemOnMouseCount;
@@ -113,6 +142,7 @@ public class PlayerStateComponent : Component
     }
 
     private ContainerSlotInfo _mouseSlot;
+    [ComponentProperty(7, typeof(ContainerSlotInfoPacker), typeof(ContainerSlotInfoInterpolator), InterpolationType.ToInstant)]
     public ContainerSlotInfo MouseSlot
     {
         get => _mouseSlot ?? (_mouseSlot = new ContainerSlotInfo(0, null, 0));
@@ -174,81 +204,11 @@ public class PlayerStateComponent : Component
 
     public override ulong GetHash()
     {
-        return Utilities.Hash(this.ToBytes());
-    }
-
-    public override void InterpolateProperties(Component from, Component to, float amt)
-    {
-        var toC = (PlayerStateComponent)to;
-        var fromC = (PlayerStateComponent)from;
-
-        this.HoldingUseItem = toC.HoldingUseItem;
-        this.HoldingItem = toC.HoldingItem;
-        this.MouseTileX = (int)Math.Round(Utilities.Lerp(fromC.MouseTileX, toC.MouseTileX, amt));
-        this.MouseTileY = (int)Math.Round(Utilities.Lerp(fromC.MouseTileY, toC.MouseTileY, amt));
-        this.ItemUsedTime = Utilities.Lerp(fromC.ItemUsedTime, toC.ItemUsedTime, amt);
-        this.ItemOnMouse = toC.ItemOnMouse;
-        this.ItemOnMouseCount = toC.ItemOnMouseCount;
-        this.MouseSlot = toC.MouseSlot;
-    }
-
-    public override int Populate(byte[] data, int offset)
-    {
-        int start = offset;
-        this.HoldingUseItem = BitConverter.ToBoolean(data, offset);
-        offset += sizeof(bool);
-        int len = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-        this.HoldingItem = Encoding.UTF8.GetString(data, offset, len);
-        offset += len;
-        this.MouseTileX = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-        this.MouseTileY = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-        this.ItemUsedTime = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-        len = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-        this.ItemOnMouse = Encoding.UTF8.GetString(data, offset, len);
-        offset += len;
-        this.ItemOnMouseCount = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-        this.MouseSlot = new ContainerSlotInfo();
-        offset += this.MouseSlot.Populate(data, offset);
-        return offset - start;
-    }
-
-    public override byte[] ToBytes()
-    {
-        List<byte> bytes = new List<byte>();
-        bytes.AddRange(BitConverter.GetBytes(this.HoldingUseItem));
-        bytes.AddRange(BitConverter.GetBytes(this.HoldingItem.Length));
-        bytes.AddRange(Encoding.UTF8.GetBytes(this.HoldingItem));
-        bytes.AddRange(BitConverter.GetBytes(this.MouseTileX));
-        bytes.AddRange(BitConverter.GetBytes(this.MouseTileY));
-        bytes.AddRange(BitConverter.GetBytes(this.ItemUsedTime));
-        bytes.AddRange(BitConverter.GetBytes(this.ItemOnMouse.Length));
-        bytes.AddRange(Encoding.UTF8.GetBytes(this.ItemOnMouse));
-        bytes.AddRange(BitConverter.GetBytes(this.ItemOnMouseCount));
-        bytes.AddRange(this.MouseSlot.ToBytes());
-        return bytes.ToArray();
+        return Utilities.CombineHash(this.HoldingUseItem.Hash(), this.HoldingItem.Hash(), this.MouseTileX.Hash(), this.MouseTileY.Hash(), this.ItemUsedTime.Hash(), this.ItemOnMouse.Hash(), this.ItemOnMouseCount.Hash());
     }
 
     public override string ToString()
     {
         return $"PlayerStateComponent: HoldingUse={this.HoldingUseItem}";
-    }
-
-    public override void UpdateComponent(Component newComponent)
-    {
-        var newC = (PlayerStateComponent)newComponent;
-        this.HoldingUseItem = newC.HoldingUseItem;
-        this.HoldingItem = newC.HoldingItem;
-        this.MouseTileX = newC.MouseTileX;
-        this.MouseTileY = newC.MouseTileY;
-        this.ItemUsedTime = newC.ItemUsedTime;
-        this.ItemOnMouse = newC.ItemOnMouse;
-        this.ItemOnMouseCount = newC.ItemOnMouseCount;
-        this.MouseSlot = newC.MouseSlot;
     }
 }

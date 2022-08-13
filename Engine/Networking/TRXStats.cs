@@ -47,16 +47,18 @@ public class TRXStats
                 UpdateEntitiesPacket updateEntitiesPacket = (UpdateEntitiesPacket)packet;
                 foreach (EntityUpdate eu in updateEntitiesPacket.Updates)
                 {
-                    foreach (Component c in eu.Components)
+                    foreach (var kvp in eu.ComponentData)
                     {
-                        if (!ComponentUpdatesReceivedBytesByType.Any(x => x.Item1 == c.GetType()))
+                        var cType = ECS.Instance.Value.GetComponentType(kvp.Key);
+
+                        if (!ComponentUpdatesReceivedBytesByType.Any(x => x.Item1 == cType))
                         {
-                            ComponentUpdatesReceivedBytesByType.Add((c.GetType(), 0));
+                            ComponentUpdatesReceivedBytesByType.Add((cType, 0));
                         }
                         else
                         {
-                            int index = ComponentUpdatesReceivedBytesByType.FindIndex(x => x.Item1 == c.GetType());
-                            ComponentUpdatesReceivedBytesByType[index] = (c.GetType(), ComponentUpdatesReceivedBytesByType[index].Item2 + encoder.Encode(c.ToBytes()).Length);
+                            int index = ComponentUpdatesReceivedBytesByType.FindIndex(x => x.Item1 == cType);
+                            ComponentUpdatesReceivedBytesByType[index] = (cType, ComponentUpdatesReceivedBytesByType[index].Item2 + kvp.Value.Length);
                         }
                     }
                 }

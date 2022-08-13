@@ -9,10 +9,11 @@ using AGame.Engine.World;
 
 namespace DefaultMod;
 
-[ComponentNetworking(CreateTriggersNetworkUpdate = false, UpdateTriggersNetworkUpdate = false, NetworkUpdateRate = 50), ScriptClass(Name = "bouncing_component")]
+[ComponentNetworking(CreateTriggersNetworkUpdate = false, UpdateTriggersNetworkUpdate = false, NetworkUpdateRate = 50), ScriptType(Name = "bouncing_component")]
 public class BouncingComponent : Component
 {
     private float _gravityFactor;
+    [ComponentProperty(0, typeof(FloatPacker), typeof(FloatInterpolator), InterpolationType.Linear)]
     public float GravityFactor
     {
         get => _gravityFactor;
@@ -27,6 +28,7 @@ public class BouncingComponent : Component
     }
 
     private float _fallOffFactor;
+    [ComponentProperty(1, typeof(FloatPacker), typeof(FloatInterpolator), InterpolationType.Linear)]
     public float FallOffFactor
     {
         get => _fallOffFactor;
@@ -41,6 +43,7 @@ public class BouncingComponent : Component
     }
 
     private float _verticalVelocity;
+    [ComponentProperty(2, typeof(FloatPacker), typeof(FloatInterpolator), InterpolationType.Linear)]
     public float VerticalVelocity
     {
         get => _verticalVelocity;
@@ -55,6 +58,7 @@ public class BouncingComponent : Component
     }
 
     private Vector2 _velocity;
+    [ComponentProperty(3, typeof(Vector2Packer), typeof(Vector2Interpolator), InterpolationType.Linear)]
     public Vector2 Velocity
     {
         get => _velocity;
@@ -69,6 +73,7 @@ public class BouncingComponent : Component
     }
 
     private float _velocityFriction;
+    [ComponentProperty(4, typeof(FloatPacker), typeof(FloatInterpolator), InterpolationType.Linear)]
     public float VelocityFriction
     {
         get => _velocityFriction;
@@ -83,6 +88,7 @@ public class BouncingComponent : Component
     }
 
     private float _velocityThreshold;
+    [ComponentProperty(5, typeof(FloatPacker), typeof(FloatInterpolator), InterpolationType.Linear)]
     public float VelocityThreshold
     {
         get => _velocityThreshold;
@@ -119,63 +125,8 @@ public class BouncingComponent : Component
         return Utilities.CombineHash(this.GravityFactor.Hash(), this.FallOffFactor.Hash(), this.VelocityFriction.Hash(), this.VelocityThreshold.Hash());
     }
 
-    public override void InterpolateProperties(Component from, Component to, float amt)
-    {
-        var fromC = (BouncingComponent)from;
-        var toC = (BouncingComponent)to;
-
-        this.GravityFactor = Utilities.Lerp(fromC.GravityFactor, toC.GravityFactor, amt);
-        this.FallOffFactor = Utilities.Lerp(fromC.FallOffFactor, toC.FallOffFactor, amt);
-        this.VerticalVelocity = Utilities.Lerp(fromC.VerticalVelocity, toC.VerticalVelocity, amt);
-        this.Velocity = Vector2.Lerp(fromC.Velocity, toC.Velocity, amt);
-        this.VelocityFriction = Utilities.Lerp(fromC.VelocityFriction, toC.VelocityFriction, amt);
-        this.VelocityThreshold = Utilities.Lerp(fromC.VelocityThreshold, toC.VelocityThreshold, amt);
-    }
-
-    public override int Populate(byte[] data, int offset)
-    {
-        int sOffset = offset;
-        this.GravityFactor = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-        this.FallOffFactor = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-        this.VerticalVelocity = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-        this.VelocityThreshold = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-        this.Velocity = new Vector2(BitConverter.ToSingle(data, offset), BitConverter.ToSingle(data, offset + sizeof(float)));
-        offset += sizeof(float) * 2;
-        this.VelocityFriction = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-        return offset - sOffset;
-    }
-
-    public override byte[] ToBytes()
-    {
-        List<byte> bytes = new List<byte>();
-        bytes.AddRange(BitConverter.GetBytes(this.GravityFactor));
-        bytes.AddRange(BitConverter.GetBytes(this.FallOffFactor));
-        bytes.AddRange(BitConverter.GetBytes(this.VerticalVelocity));
-        bytes.AddRange(BitConverter.GetBytes(this.VelocityThreshold));
-        bytes.AddRange(BitConverter.GetBytes(this.Velocity.X));
-        bytes.AddRange(BitConverter.GetBytes(this.Velocity.Y));
-        bytes.AddRange(BitConverter.GetBytes(this.VelocityFriction));
-        return bytes.ToArray();
-    }
-
     public override string ToString()
     {
         return $"BouncingComponent=[gravityFactor={this.GravityFactor}, fallOffFactor={this.FallOffFactor}]";
-    }
-
-    public override void UpdateComponent(Component newComponent)
-    {
-        var newC = newComponent as BouncingComponent;
-        this.GravityFactor = newC.GravityFactor;
-        this.FallOffFactor = newC.FallOffFactor;
-        this.VerticalVelocity = newC.VerticalVelocity;
-        this.VelocityThreshold = newC.VelocityThreshold;
-        this.Velocity = newC.Velocity;
-        this.VelocityFriction = newC.VelocityFriction;
     }
 }

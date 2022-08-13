@@ -6,7 +6,7 @@ using AGame.Engine.World;
 
 namespace DefaultMod;
 
-[ScriptClass(Name = "ecs_common")]
+[ScriptType(Name = "ecs_common")]
 public class ECSCommonFunctionality : IECSCommonFunctionality
 {
     public bool EntityHasPosition(Entity entity)

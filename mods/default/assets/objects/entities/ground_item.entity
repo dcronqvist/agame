@@ -1,37 +1,37 @@
 {
-    "extends": "default.entity.base_entity",
-    "components": [
-        {
-            "componentType": "default.script_class.collider_component",
-            "transformOffset": {
-                "x": 8,
-                "y": 8
-            },
-            "box": {
-                "width": 16,
-                "height": 16
-            },
-            "solid": false
-        },
-        {
-            "componentType": "default.script_class.render_component",
-            "sortByY": true,
-            "renderLayer": 1,
-            "feetOffset": {
-                "x": 16,
-                "y": 16
-            }
-        },
-        {
-            "componentType": "default.script_class.ground_item_component"
-        },
-        {
-            "componentType": "default.script_class.bouncing_component",
-            "gravityFactor": 300,
-            "fallOffFactor": 0.4,
-            "verticalVelocity": 0,
-            "velocityThreshold": 10,
-            "velocityFriction": 2
-        }
-    ]
+  "extends": "default.entity.base_entity",
+  "components": [
+    {
+      "componentType": "default.script_type.collider_component",
+      "transformOffset": {
+        "x": 8,
+        "y": 8
+      },
+      "box": {
+        "width": 16,
+        "height": 16
+      },
+      "solid": false
+    },
+    {
+      "componentType": "default.script_type.render_component",
+      "sortByY": true,
+      "renderLayer": 1,
+      "feetOffset": {
+        "x": 16,
+        "y": 16
+      }
+    },
+    {
+      "componentType": "default.script_type.ground_item_component"
+    },
+    {
+      "componentType": "default.script_type.bouncing_component",
+      "gravityFactor": 300,
+      "fallOffFactor": 0.4,
+      "verticalVelocity": 0,
+      "velocityThreshold": 10,
+      "velocityFriction": 2
+    }
+  ]
 }

@@ -11,6 +11,28 @@ using GameUDPProtocol;
 
 namespace DefaultMod;
 
+public class HarvestDefinitionPacker : ComponentPropertyPacker<HarvestDefinition>
+{
+    public override byte[] Pack(HarvestDefinition value)
+    {
+        return value.ToBytes();
+    }
+
+    public override int Unpack(byte[] data, int offset, out HarvestDefinition value)
+    {
+        value = new HarvestDefinition();
+        return value.Populate(data, offset);
+    }
+}
+
+public class HarvestDefinitionInterpolator : ComponentPropertyInterpolator<HarvestDefinition>
+{
+    public override HarvestDefinition Interpolate(HarvestDefinition a, HarvestDefinition b, float t)
+    {
+        return a;
+    }
+}
+
 public class HarvestDefinition : IPacketable
 {
     public HarvestDefinition()
@@ -54,10 +76,11 @@ public class HarvestDefinition : IPacketable
     }
 }
 
-[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptClass(Name = "harvestable_component")]
+[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptType(Name = "harvestable_component")]
 public class HarvestableComponent : Component
 {
     private string[] _tags;
+    [ComponentProperty(0, typeof(ArrayPacker<string, StringPacker>), typeof(ArrayInterpolator), InterpolationType.ToInstant)]
     public string[] Tags
     {
         get => _tags;
@@ -72,6 +95,7 @@ public class HarvestableComponent : Component
     }
 
     private HarvestDefinition[] _yields;
+    [ComponentProperty(1, typeof(ArrayPacker<HarvestDefinition, HarvestDefinitionPacker>), typeof(ArrayInterpolator), InterpolationType.ToInstant)]
     public HarvestDefinition[] Yields
     {
         get => _yields;
@@ -86,6 +110,7 @@ public class HarvestableComponent : Component
     }
 
     private int _breaksAfter;
+    [ComponentProperty(2, typeof(IntPacker), typeof(IntInterpolator), InterpolationType.ToInstant)]
     public int BreaksAfter
     {
         get => _breaksAfter;
@@ -100,6 +125,7 @@ public class HarvestableComponent : Component
     }
 
     private string _harvestSound;
+    [ComponentProperty(3, typeof(StringPacker), typeof(StringInterpolator), InterpolationType.ToInstant)]
     public string HarvestSound
     {
         get => _harvestSound;
@@ -131,88 +157,12 @@ public class HarvestableComponent : Component
 
     public override ulong GetHash()
     {
-        return Utilities.Hash(this.ToBytes());
-    }
-
-    public override void InterpolateProperties(Component from, Component to, float amt)
-    {
-        HarvestableComponent toComp = (HarvestableComponent)to;
-        this.Yields = toComp.Yields;
-        this.Tags = toComp.Tags;
-        this.BreaksAfter = toComp.BreaksAfter;
-        this.HarvestSound = toComp.HarvestSound;
-    }
-
-    public override int Populate(byte[] data, int offset)
-    {
-        int start = offset;
-        int tagLen = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-
-        this.Tags = new string[tagLen];
-        for (int i = 0; i < tagLen; i++)
-        {
-            int l = BitConverter.ToInt32(data, offset);
-            offset += sizeof(int);
-            this.Tags[i] = Encoding.UTF8.GetString(data, offset, l);
-            offset += l;
-        }
-
-        int len = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-        this.Yields = new HarvestDefinition[len];
-        for (int i = 0; i < len; i++)
-        {
-            HarvestDefinition def = new HarvestDefinition();
-            offset += def.Populate(data, offset);
-            this.Yields[i] = def;
-        }
-        this.BreaksAfter = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-
-        int l2 = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-        this.HarvestSound = Encoding.UTF8.GetString(data, offset, l2);
-        offset += l2;
-
-        return offset - start;
-    }
-
-    public override byte[] ToBytes()
-    {
-        List<byte> bytes = new List<byte>();
-        bytes.AddRange(BitConverter.GetBytes(this.Tags.Length));
-        foreach (string tag in this.Tags)
-        {
-            bytes.AddRange(BitConverter.GetBytes(tag.Length));
-            bytes.AddRange(Encoding.UTF8.GetBytes(tag));
-        }
-
-        bytes.AddRange(BitConverter.GetBytes(this.Yields.Length));
-        foreach (HarvestDefinition yield in this.Yields)
-        {
-            bytes.AddRange(yield.ToBytes());
-        }
-
-        bytes.AddRange(BitConverter.GetBytes(this.BreaksAfter));
-        bytes.AddRange(BitConverter.GetBytes(this.HarvestSound.Length));
-        bytes.AddRange(Encoding.UTF8.GetBytes(this.HarvestSound));
-
-        return bytes.ToArray();
+        return Utilities.CombineHash(this.Tags.Length.Hash(), this.Yields.Length.Hash(), this.BreaksAfter.Hash(), this.HarvestSound.Hash());
     }
 
     public override string ToString()
     {
         return $"{this.Yields.Length} yields";
-    }
-
-    public override void UpdateComponent(Component newComponent)
-    {
-        HarvestableComponent newComp = (HarvestableComponent)newComponent;
-        this.Yields = newComp.Yields;
-        this.Tags = newComp.Tags;
-        this.BreaksAfter = newComp.BreaksAfter;
-        this.HarvestSound = newComp.HarvestSound;
     }
 
     public bool HasTag(string tag)

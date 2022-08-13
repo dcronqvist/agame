@@ -60,8 +60,3 @@ public class Script : Asset
         return true;
     }
 }
-[AttributeUsage(AttributeTargets.Class)]
-public class ScriptClassAttribute : Attribute
-{
-    public string Name { get; set; }
-}

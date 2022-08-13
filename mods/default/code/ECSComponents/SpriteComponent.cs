@@ -13,10 +13,11 @@ using AGame.Engine.World;
 
 namespace DefaultMod;
 
-[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptClass(Name = "sprite_component")]
+[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptType(Name = "sprite_component")]
 public class SpriteComponent : Component
 {
     private string _texture;
+    [ComponentProperty(0, typeof(StringPacker), typeof(StringInterpolator), InterpolationType.ToInstant)]
     public string Texture
     {
         get => _texture;
@@ -31,6 +32,7 @@ public class SpriteComponent : Component
     }
 
     private Vector2 _renderScale;
+    [ComponentProperty(1, typeof(Vector2Packer), typeof(Vector2Interpolator), InterpolationType.Linear)]
     public Vector2 RenderScale
     {
         get => _renderScale;
@@ -45,6 +47,7 @@ public class SpriteComponent : Component
     }
 
     private Vector2 _origin;
+    [ComponentProperty(2, typeof(Vector2Packer), typeof(Vector2Interpolator), InterpolationType.Linear)]
     public Vector2 Origin
     {
         get => _origin;
@@ -59,6 +62,7 @@ public class SpriteComponent : Component
     }
 
     private ColorF _colorTint;
+    [ComponentProperty(3, typeof(ColorFPacker), typeof(ColorFInterpolator), InterpolationType.Linear)]
     public ColorF ColorTint
     {
         get => _colorTint;
@@ -73,6 +77,7 @@ public class SpriteComponent : Component
     }
 
     private RectangleF _SourceRectangle;
+    [ComponentProperty(4, typeof(RectangleFPacker), typeof(RectangleFInterpolator), InterpolationType.Linear)]
     public RectangleF SourceRectangle
     {
         get => _SourceRectangle;
@@ -87,6 +92,7 @@ public class SpriteComponent : Component
     }
 
     private float _rotation;
+    [ComponentProperty(5, typeof(FloatPacker), typeof(FloatInterpolator), InterpolationType.Linear)]
     public float Rotation
     {
         get => _rotation;
@@ -136,78 +142,11 @@ public class SpriteComponent : Component
 
     public override ulong GetHash()
     {
-        return Utilities.Hash(this.ToBytes());
-    }
-
-    public override void InterpolateProperties(Component from, Component to, float amt)
-    {
-        var fromC = (SpriteComponent)from;
-        var toC = (SpriteComponent)to;
-
-        this.Texture = toC.Texture;
-        this.RenderScale = Vector2.Lerp(fromC.RenderScale, toC.RenderScale, amt);
-        this.Origin = Vector2.Lerp(fromC.Origin, toC.Origin, amt);
-        this.ColorTint = ColorF.Lerp(fromC.ColorTint, toC.ColorTint, amt);
-        this.SourceRectangle = fromC.SourceRectangle.Lerp(toC.SourceRectangle, amt);
-        this.Rotation = Utilities.Lerp(fromC.Rotation, toC.Rotation, amt);
-        this._sprite = null;
-    }
-
-    public override int Populate(byte[] data, int offset)
-    {
-        int startOffset = offset;
-        int len = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-        this.Texture = Encoding.UTF8.GetString(data, offset, len);
-        offset += len;
-        this.RenderScale = new Vector2(BitConverter.ToSingle(data, offset), BitConverter.ToSingle(data, offset + sizeof(float)));
-        offset += sizeof(float) * 2;
-        this.Origin = new Vector2(BitConverter.ToSingle(data, offset), BitConverter.ToSingle(data, offset + sizeof(float)));
-        offset += sizeof(float) * 2;
-        this.ColorTint = new ColorF(BitConverter.ToSingle(data, offset), BitConverter.ToSingle(data, offset + sizeof(float)), BitConverter.ToSingle(data, offset + sizeof(float) * 2), BitConverter.ToSingle(data, offset + sizeof(float) * 3));
-        offset += sizeof(float) * 4;
-        this.SourceRectangle = new RectangleF(BitConverter.ToSingle(data, offset), BitConverter.ToSingle(data, offset + sizeof(float)), BitConverter.ToSingle(data, offset + sizeof(float) * 2), BitConverter.ToSingle(data, offset + sizeof(float) * 3));
-        offset += sizeof(float) * 4;
-        this.Rotation = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-        return offset - startOffset;
-    }
-
-    public override byte[] ToBytes()
-    {
-        List<byte> bytes = new List<byte>();
-        bytes.AddRange(BitConverter.GetBytes(this.Texture.Length));
-        bytes.AddRange(Encoding.UTF8.GetBytes(this.Texture));
-        bytes.AddRange(BitConverter.GetBytes(this.RenderScale.X));
-        bytes.AddRange(BitConverter.GetBytes(this.RenderScale.Y));
-        bytes.AddRange(BitConverter.GetBytes(this.Origin.X));
-        bytes.AddRange(BitConverter.GetBytes(this.Origin.Y));
-        bytes.AddRange(BitConverter.GetBytes(this.ColorTint.R));
-        bytes.AddRange(BitConverter.GetBytes(this.ColorTint.G));
-        bytes.AddRange(BitConverter.GetBytes(this.ColorTint.B));
-        bytes.AddRange(BitConverter.GetBytes(this.ColorTint.A));
-        bytes.AddRange(BitConverter.GetBytes(this.SourceRectangle.X));
-        bytes.AddRange(BitConverter.GetBytes(this.SourceRectangle.Y));
-        bytes.AddRange(BitConverter.GetBytes(this.SourceRectangle.Width));
-        bytes.AddRange(BitConverter.GetBytes(this.SourceRectangle.Height));
-        bytes.AddRange(BitConverter.GetBytes(this.Rotation));
-        return bytes.ToArray();
+        return Utilities.CombineHash(this.Texture.Hash(), this.RenderScale.X.Hash(), this.RenderScale.Y.Hash(), this.Origin.X.Hash(), this.Origin.Y.Hash(), this.ColorTint.R.Hash(), this.ColorTint.G.Hash(), this.ColorTint.B.Hash(), this.ColorTint.A.Hash(), this.SourceRectangle.X.Hash(), this.SourceRectangle.Y.Hash(), this.SourceRectangle.Width.Hash(), this.SourceRectangle.Height.Hash(), this.Rotation.Hash());
     }
 
     public override string ToString()
     {
         return $"SpriteComponent: {this.Texture}";
-    }
-
-    public override void UpdateComponent(Component newComponent)
-    {
-        var newC = (SpriteComponent)newComponent;
-        this.Texture = newC.Texture;
-        this.RenderScale = newC.RenderScale;
-        this.Origin = newC.Origin;
-        this.ColorTint = newC.ColorTint;
-        this.SourceRectangle = newC.SourceRectangle;
-        this.Rotation = newC.Rotation;
-        this._sprite = null;
     }
 }

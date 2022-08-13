@@ -31,35 +31,37 @@ public class UpdateEntitiesPacket : Packet
 public class EntityUpdate : IPacketable
 {
     public int EntityID { get; set; }
-    public ushort[] ComponentTypes { get; set; }
-    public Component[] Components { get; set; }
+    public Dictionary<ushort, byte[]> ComponentData { get; set; }
 
     public EntityUpdate()
     {
 
     }
 
-    public EntityUpdate(int entityId, params Component[] components)
+    public EntityUpdate(int entityId, params (Component, string[])[] components)
     {
         this.EntityID = entityId;
-        this.ComponentTypes = components.Select(x => (ushort)ECS.Instance.Value.GetComponentID(x.GetType())).ToArray();
-        this.Components = components;
+        this.ComponentData = new Dictionary<ushort, byte[]>();
+
+        foreach ((var comp, var props) in components)
+        {
+            var compBytes = comp.GetBytes(props);
+            var compType = ECS.Instance.Value.GetComponentID(comp.GetType());
+            this.ComponentData.Add((ushort)compType, compBytes);
+        }
     }
 
     public byte[] ToBytes()
     {
         List<byte> bytes = new List<byte>();
         bytes.AddRange(BitConverter.GetBytes(EntityID));
-        bytes.AddRange(BitConverter.GetBytes(ComponentTypes.Length));
+        bytes.AddRange(BitConverter.GetBytes(ComponentData.Count));
 
-        foreach (ushort componentType in ComponentTypes)
+        foreach (var kvp in this.ComponentData)
         {
-            bytes.AddRange(BitConverter.GetBytes(componentType));
-        }
-
-        foreach (Component component in Components)
-        {
-            bytes.AddRange(component.ToBytes());
+            bytes.AddRange(BitConverter.GetBytes(kvp.Key));
+            bytes.AddRange(BitConverter.GetBytes(kvp.Value.Length));
+            bytes.AddRange(kvp.Value);
         }
 
         return bytes.ToArray();
@@ -74,22 +76,40 @@ public class EntityUpdate : IPacketable
         int length = BitConverter.ToInt32(data, offset);
         offset += sizeof(int);
 
-        this.ComponentTypes = new ushort[length];
-        this.Components = new Component[length];
+        this.ComponentData = new Dictionary<ushort, byte[]>();
 
         for (int i = 0; i < length; i++)
         {
-            ushort componentType = BitConverter.ToUInt16(data, offset);
-            this.ComponentTypes[i] = componentType;
+            ushort compType = BitConverter.ToUInt16(data, offset);
             offset += sizeof(ushort);
+
+            int compLength = BitConverter.ToInt32(data, offset);
+            offset += sizeof(int);
+
+            byte[] compBytes = new byte[compLength];
+            Array.Copy(data, offset, compBytes, 0, compLength);
+
+            offset += compLength;
+
+            this.ComponentData.Add(compType, compBytes);
         }
 
-        for (int i = 0; i < this.ComponentTypes.Length; i++)
-        {
-            Component comp = Activator.CreateInstance(ECS.Instance.Value.GetComponentType(this.ComponentTypes[i])) as Component;
-            offset += comp.Populate(data, offset);
-            this.Components[i] = comp;
-        }
+        // this.ComponentTypes = new ushort[length];
+        // this.Components = new Component[length];
+
+        // for (int i = 0; i < length; i++)
+        // {
+        //     ushort componentType = BitConverter.ToUInt16(data, offset);
+        //     this.ComponentTypes[i] = componentType;
+        //     offset += sizeof(ushort);
+        // }
+
+        // for (int i = 0; i < this.ComponentTypes.Length; i++)
+        // {
+        //     Component comp = Activator.CreateInstance(ECS.Instance.Value.GetComponentType(this.ComponentTypes[i])) as Component;
+        //     offset += comp.Populate(data, offset);
+        //     this.Components[i] = comp;
+        // }
 
         return offset - startOffset;
     }

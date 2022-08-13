@@ -6,7 +6,7 @@ using AGame.Engine.World;
 
 namespace DefaultMod
 {
-    [ScriptClass(Name = "distributor_squares")] // default.script.distributor_squares
+    [ScriptType(Name = "distributor_squares")] // default.script.distributor_squares
     public class SquareDistributor : IDistributor
     {
         public List<SpawnEntityDefinition> GetDistribution(string entityAsset, float size, Vector2i startTile)
@@ -27,7 +27,7 @@ namespace DefaultMod
         }
     }
 
-    [ScriptClass(Name = "distributor_circles")] // default.script.distributor_circles
+    [ScriptType(Name = "distributor_circles")] // default.script.distributor_circles
     public class CircleDistributor : IDistributor
     {
         public List<SpawnEntityDefinition> GetDistribution(string entityAsset, float size, Vector2i startTile)

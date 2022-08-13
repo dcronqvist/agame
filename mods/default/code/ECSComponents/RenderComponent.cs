@@ -9,10 +9,11 @@ using AGame.Engine.World;
 
 namespace DefaultMod;
 
-[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptClass(Name = "render_component")]
+[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptType(Name = "render_component")]
 public class RenderComponent : Component
 {
     private bool _sortByY;
+    [ComponentProperty(0, typeof(BoolPacker), typeof(BoolInterpolator), InterpolationType.ToInstant)]
     public bool SortByY
     {
         get => _sortByY;
@@ -27,6 +28,7 @@ public class RenderComponent : Component
     }
 
     private byte _renderLayer;
+    [ComponentProperty(1, typeof(BytePacker), typeof(ByteInterpolator), InterpolationType.ToInstant)]
     public byte RenderLayer
     {
         get => _renderLayer;
@@ -41,6 +43,7 @@ public class RenderComponent : Component
     }
 
     private Vector2 _feetOffset;
+    [ComponentProperty(2, typeof(Vector2Packer), typeof(Vector2Interpolator), InterpolationType.ToInstant)]
     public Vector2 FeetOffset
     {
         get => _feetOffset;
@@ -71,49 +74,11 @@ public class RenderComponent : Component
 
     public override ulong GetHash()
     {
-        return Utilities.Hash(this.ToBytes());
-    }
-
-    public override void InterpolateProperties(Component from, Component to, float amt)
-    {
-        var toC = (RenderComponent)to;
-        this.SortByY = toC.SortByY;
-        this.RenderLayer = toC.RenderLayer;
-        this.FeetOffset = toC.FeetOffset;
-    }
-
-    public override int Populate(byte[] data, int offset)
-    {
-        int start = offset;
-        this.SortByY = BitConverter.ToBoolean(data, offset);
-        offset += sizeof(bool);
-        this.RenderLayer = data[offset];
-        offset += sizeof(byte);
-        this.FeetOffset = new Vector2(BitConverter.ToSingle(data, offset), BitConverter.ToSingle(data, offset + sizeof(float)));
-        offset += sizeof(float) * 2;
-        return offset - start;
-    }
-
-    public override byte[] ToBytes()
-    {
-        List<byte> bytes = new List<byte>();
-        bytes.AddRange(BitConverter.GetBytes(this.SortByY));
-        bytes.Add(this.RenderLayer);
-        bytes.AddRange(BitConverter.GetBytes(this.FeetOffset.X));
-        bytes.AddRange(BitConverter.GetBytes(this.FeetOffset.Y));
-        return bytes.ToArray();
+        return Utilities.CombineHash(this.SortByY.Hash(), this.RenderLayer.Hash(), this.FeetOffset.X.Hash(), this.FeetOffset.Y.Hash());
     }
 
     public override string ToString()
     {
         return $"SortByY: {this.SortByY}, RenderLayer: {this.RenderLayer}";
-    }
-
-    public override void UpdateComponent(Component newComponent)
-    {
-        var newC = (RenderComponent)newComponent;
-        this.SortByY = newC.SortByY;
-        this.RenderLayer = newC.RenderLayer;
-        this.FeetOffset = newC.FeetOffset;
     }
 }

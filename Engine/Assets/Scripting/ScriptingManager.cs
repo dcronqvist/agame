@@ -10,161 +10,121 @@ using System.Linq;
 using AGame.Engine.DebugTools;
 using AGame.Engine.Configuration;
 
-namespace AGame.Engine.Assets.Scripting
+namespace AGame.Engine.Assets.Scripting;
+
+public class ScriptType
 {
-    public static class ScriptingManager
+    private string ScriptTypeName { get; set; }
+    public string OverwrittenBy { get; set; }
+    public Type RealType { get; set; }
+    public Script ContainedInScript { get; set; }
+
+    public ScriptType(string scriptClassName, Type realType, Script containedInScript)
     {
-        private static Dictionary<string, Script> Scripts { get; set; }
-        private static Dictionary<string, Script> TypeToScript { get; set; }
-        private static Dictionary<string, (Script, string)> ScriptClassAttributeNameToScript { get; set; }
+        ScriptTypeName = scriptClassName;
+        RealType = realType;
+        ContainedInScript = containedInScript;
+        OverwrittenBy = null;
+    }
 
-        private static List<ModOverwriteDefinition> _overwritesToPerform { get; set; }
+    public string GetScriptTypeName()
+    {
+        return OverwrittenBy ?? ScriptTypeName;
+    }
 
-        static ScriptingManager()
+    public T CreateInstance<T>()
+    {
+        return (T)Activator.CreateInstance(RealType);
+    }
+
+    public bool HasBaseType<T>()
+    {
+        return RealType.IsAssignableTo(typeof(T));
+    }
+}
+
+public class ScriptTypeAttribute : Attribute
+{
+    public string Name { get; set; }
+}
+
+public static class ScriptingManager
+{
+    private static List<ScriptType> _scriptTypes = new List<ScriptType>();
+    private static Dictionary<string, ScriptType> _scriptTypesByName = new Dictionary<string, ScriptType>();
+
+    private static List<ModOverwriteDefinition> _overwritesToPerform { get; set; }
+
+    static ScriptingManager()
+    {
+        _overwritesToPerform = new List<ModOverwriteDefinition>();
+    }
+
+    public static void Initialize()
+    {
+        var scripts = ModManager.GetAssetsOfType<Script>();
+
+        foreach (var script in scripts)
         {
-            Scripts = new Dictionary<string, Script>();
-            TypeToScript = new Dictionary<string, Script>();
-            ScriptClassAttributeNameToScript = new Dictionary<string, (Script, string)>();
-            _overwritesToPerform = new List<ModOverwriteDefinition>();
-        }
+            // All types in the script that have a ScriptTypeAttribute
+            var types = script.GetTypes().Where(t => t.GetCustomAttribute(typeof(ScriptTypeAttribute)) != null);
 
-        private static void AddScript(string key, Script script)
-        {
-            Scripts.Add(key, script);
-        }
-
-        public static string GetScriptClassNameFromRealType(Type type)
-        {
-            var script = GetScriptFromRealType(type);
-
-            var className = ScriptClassAttributeNameToScript.Where(kvp => kvp.Value.Item1 == script && kvp.Value.Item2 == type.FullName).FirstOrDefault().Key;
-
-            if (_overwritesToPerform.Any(x => x.New == className))
+            foreach (var type in types)
             {
-                className = _overwritesToPerform.Where(x => x.New == className).FirstOrDefault().Original;
-            }
+                var attr = (ScriptTypeAttribute)type.GetCustomAttribute(typeof(ScriptTypeAttribute));
+                var name = $"{script.Mod}.script_type.{attr.Name}";
+                var scriptType = new ScriptType(name, type, script);
 
-            return className;
-        }
-
-        private static void PointTypesToScript(Type[] types, Script script)
-        {
-            foreach (Type t in types)
-            {
-                if (!TypeToScript.ContainsKey(t.FullName))
-                {
-                    TypeToScript.Add(t.FullName, script);
-                }
-            }
-        }
-
-        public static Type[] GetAllTypesWithBaseType<T>()
-        {
-            List<Type> types = new List<Type>();
-            foreach (KeyValuePair<string, Script> kvp in Scripts)
-            {
-                Type[] scriptTypes = kvp.Value.GetTypes();
-                types.AddRange(scriptTypes.Where(x => x.IsAssignableTo(typeof(T)) && TypeToScript.ContainsKey(x.FullName)));
-            }
-            return types.ToArray();
-        }
-
-        public static void LoadScripts()
-        {
-            Script[] scripts = ModManager.GetAssetsOfType<Script>();
-
-            foreach (Script script in scripts)
-            {
-                if (!Scripts.ContainsValue(script))
-                {
-
-
-                    // // All went well, just add the script to the dictionary of scripts.
-                    // AddScript(script.Name, script); // Add script to Scripts dictionary
-                    // Logging.Log(LogLevel.Info, $"Registered script {script.Name}");
-                    // PointTypesToScript(script.GetTypes(), script.Name); // Point all types in this script to this script
-                    Type[] types = script.GetTypes();
-
-                    PointTypesToScript(types, script);
-
-                    foreach (Type t in types)
-                    {
-                        if (t.GetCustomAttribute<ScriptClassAttribute>() != null)
-                        {
-                            ScriptClassAttribute attr = t.GetCustomAttribute<ScriptClassAttribute>();
-                            var modName = script.Mod;
-                            var finalName = $"{modName}.script_class.{attr.Name}";
-
-                            if (!ScriptClassAttributeNameToScript.ContainsKey(finalName))
-                            {
-                                ScriptClassAttributeNameToScript.Add(finalName, (script, t.FullName));
-                            }
-                        }
-
-                        if (!TypeToScript.ContainsKey(t.FullName))
-                        {
-                            TypeToScript.Add(t.FullName, script);
-                        }
-                    }
-
-                    Scripts.Add(script.Name, script);
-                }
+                _scriptTypes.Add(scriptType);
+                _scriptTypesByName.Add(scriptType.GetScriptTypeName(), scriptType);
             }
         }
 
-        public static void AddOverwrite(ModOverwriteDefinition definition)
+        foreach (var overwrite in _overwritesToPerform)
         {
-            _overwritesToPerform.Add(definition);
+            var original = _scriptTypesByName[overwrite.Original];
+            var newType = _scriptTypesByName[overwrite.New];
+            original.OverwrittenBy = newType.GetScriptTypeName();
         }
+    }
 
-        public static Script GetScript(string name)
+    public static ScriptType GetScriptType(string scriptTypeName)
+    {
+        foreach (var type in _scriptTypes)
         {
-            return Scripts[name];
-        }
-
-        public static Script GetScriptFromRealType(Type type)
-        {
-            return TypeToScript[type.FullName];
-        }
-
-        public static (Script, string) GetScriptFromType(string type)
-        {
-            if (_overwritesToPerform.Any(x => x.Original == type))
+            if (type.GetScriptTypeName() == scriptTypeName)
             {
-                var def = _overwritesToPerform.Where(x => x.Original == type).FirstOrDefault();
-                return ScriptClassAttributeNameToScript[def.New];
+                return type;
             }
-
-            return ScriptClassAttributeNameToScript[type];
         }
+        return null;
+    }
 
-        public static T CreateInstanceFromRealType<T>(string type)
+    public static ScriptType[] GetAllScriptTypesWithBaseType<T>()
+    {
+        return _scriptTypes.Where(t => t.HasBaseType<T>()).ToArray();
+    }
+
+    public static T CreateInstance<T>(string scriptTypeName)
+    {
+        var scriptType = GetScriptType(scriptTypeName);
+        return scriptType.CreateInstance<T>();
+    }
+
+    public static ScriptType GetScriptTypeNameFromRealType(Type type)
+    {
+        foreach (var scriptType in _scriptTypes)
         {
-            Script sc = TypeToScript[type];
-            return sc.CreateInstance<T>(type);
+            if (scriptType.RealType == type)
+            {
+                return scriptType;
+            }
         }
+        return null;
+    }
 
-        public static T CreateInstance<T>(string type)
-        {
-            return CreateInstance<T>(type, null);
-        }
-
-        public static T CreateInstance<T>(string type, params object[] args)
-        {
-            (Script sc, string realType) = GetScriptFromType(type);
-            return sc.CreateInstance<T>(realType, args);
-        }
-
-        public static object CreateInstance(string type, params object[] args)
-        {
-            (Script sc, string realType) = GetScriptFromType(type);
-            return sc.CreateInstance(realType, args);
-        }
-
-        public static object CreateInstance(string type)
-        {
-            (Script sc, string realType) = GetScriptFromType(type);
-            return sc.CreateInstance(realType, null);
-        }
+    public static void AddOverwrite(ModOverwriteDefinition definition)
+    {
+        _overwritesToPerform.Add(definition);
     }
 }

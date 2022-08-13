@@ -10,10 +10,11 @@ using AGame.Engine.World;
 
 namespace DefaultMod;
 
-[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptClass(Name = "ground_item_component")]
+[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptType(Name = "ground_item_component")]
 public class GroundItemComponent : Component
 {
     private ItemInstance _item;
+    [ComponentProperty(0, typeof(ItemInstancePacker), typeof(ItemInstanceInterpolator), InterpolationType.ToInstant)]
     public ItemInstance Item
     {
         get => _item;
@@ -28,6 +29,7 @@ public class GroundItemComponent : Component
     }
 
     private int _pickedUpBy;
+    [ComponentProperty(1, typeof(IntPacker), typeof(IntInterpolator), InterpolationType.ToInstant)]
     public int PickedUpBy
     {
         get => _pickedUpBy;
@@ -62,49 +64,11 @@ public class GroundItemComponent : Component
 
     public override ulong GetHash()
     {
-        return Utilities.Hash(this.ToBytes());
-    }
-
-    public override void InterpolateProperties(Component from, Component to, float amt)
-    {
-        GroundItemComponent toComp = (GroundItemComponent)to;
-        this.Item = toComp.Item;
-        this.PickedUpBy = toComp.PickedUpBy;
-    }
-
-    public override int Populate(byte[] data, int offset)
-    {
-        int start = offset;
-
-        PackedItem pi = new PackedItem();
-        offset += pi.Populate(data, offset);
-        this.Item = pi.Instance;
-
-        this.PickedUpBy = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-        return offset - start;
-    }
-
-    public override byte[] ToBytes()
-    {
-        List<byte> bytes = new List<byte>();
-
-        PackedItem pi = new PackedItem(this.Item);
-        bytes.AddRange(pi.ToBytes());
-
-        bytes.AddRange(BitConverter.GetBytes(this.PickedUpBy));
-        return bytes.ToArray();
+        return this.Item.Definition.ItemID.Hash();
     }
 
     public override string ToString()
     {
         return $"GroundItemComponent: {this.Item}";
-    }
-
-    public override void UpdateComponent(Component newComponent)
-    {
-        GroundItemComponent newComp = (GroundItemComponent)newComponent;
-        this.Item = newComp.Item;
-        this.PickedUpBy = newComp.PickedUpBy;
     }
 }

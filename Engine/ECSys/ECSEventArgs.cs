@@ -8,12 +8,14 @@ public class EntityComponentChangedEventArgs : EventArgs
     public Entity Entity { get; set; }
     public Component Component { get; set; }
     public ComponentNetworkingAttribute Attrib { get; set; }
+    public string PropertyChanged { get; set; }
 
-    public EntityComponentChangedEventArgs(Entity entity, Component component)
+    public EntityComponentChangedEventArgs(Entity entity, Component component, string changedProperty)
     {
         Entity = entity;
         Component = component;
         this.Attrib = component.GetCNAttrib();
+        this.PropertyChanged = changedProperty;
     }
 }
 

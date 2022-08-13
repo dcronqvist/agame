@@ -1,20 +1,18 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Numerics;
 using AGame.Engine;
 using AGame.Engine.Assets;
-using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
 using AGame.Engine.World;
-using GameUDPProtocol;
+using AGame.Engine.Assets.Scripting;
 
 namespace DefaultMod;
 
-[SystemRunsOn(SystemRunner.Client)]
+[SystemRunsOn(SystemRunner.Client), ScriptType(Name = "render_system")]
 public class RenderSystem : BaseSystem
 {
     public override void Initialize()

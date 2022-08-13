@@ -5,10 +5,11 @@ using AGame.Engine;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
 using AGame.Engine.World;
+using AGame.Engine.Assets.Scripting;
 
 namespace DefaultMod;
 
-[SystemRunsOn(SystemRunner.Server)]
+[SystemRunsOn(SystemRunner.Server), ScriptType(Name = "player_collect_item_system")]
 public class PlayerCollectItemSystem : BaseSystem
 {
     public override void Initialize()

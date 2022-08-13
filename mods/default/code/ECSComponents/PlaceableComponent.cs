@@ -10,10 +10,11 @@ using AGame.Engine.World;
 
 namespace DefaultMod;
 
-[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptClass(Name = "placeable_component")]
+[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptType(Name = "placeable_component")]
 public class PlaceableComponent : Component
 {
     private Vector2 _placeOffset;
+    [ComponentProperty(0, typeof(Vector2Packer), typeof(Vector2Interpolator), InterpolationType.Linear)]
     public Vector2 PlaceOffset
     {
         get => _placeOffset;
@@ -42,41 +43,11 @@ public class PlaceableComponent : Component
 
     public override ulong GetHash()
     {
-        return Utilities.Hash(this.ToBytes());
-    }
-
-    public override void InterpolateProperties(Component from, Component to, float amt)
-    {
-        var fromC = (PlaceableComponent)from;
-        var toC = (PlaceableComponent)to;
-
-        this.PlaceOffset = Vector2.Lerp(fromC.PlaceOffset, toC.PlaceOffset, amt);
-    }
-
-    public override int Populate(byte[] data, int offset)
-    {
-        int sOffset = offset;
-        this.PlaceOffset = new Vector2(BitConverter.ToSingle(data, sOffset), BitConverter.ToSingle(data, sOffset + 4));
-        offset += sizeof(float) * 2;
-        return offset - sOffset;
-    }
-
-    public override byte[] ToBytes()
-    {
-        List<byte> bytes = new List<byte>();
-        bytes.AddRange(BitConverter.GetBytes(this.PlaceOffset.X));
-        bytes.AddRange(BitConverter.GetBytes(this.PlaceOffset.Y));
-        return bytes.ToArray();
+        return Utilities.CombineHash(this.PlaceOffset.X.Hash(), this.PlaceOffset.Y.Hash());
     }
 
     public override string ToString()
     {
         return $"PlaceableComponent: {this.PlaceOffset}";
-    }
-
-    public override void UpdateComponent(Component newComponent)
-    {
-        var newC = (PlaceableComponent)newComponent;
-        this.PlaceOffset = newC.PlaceOffset;
     }
 }

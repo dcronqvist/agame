@@ -3,10 +3,11 @@ using AGame.Engine.ECSys;
 using AGame.Engine.Graphics;
 using AGame.Engine.Graphics.Rendering;
 using AGame.Engine.World;
+using AGame.Engine.Assets.Scripting;
 
 namespace DefaultMod;
 
-[SystemRunsOn(SystemRunner.Client | SystemRunner.Server)]
+[SystemRunsOn(SystemRunner.Client | SystemRunner.Server), ScriptType(Name = "collision_system")]
 public class CollisionSystem : BaseSystem
 {
     public override void Initialize()

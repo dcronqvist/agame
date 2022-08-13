@@ -45,6 +45,11 @@ public class Entity
         ECS.Instance.Value.AddComponentToEntity(this, c);
     }
 
+    public Component GetComponent(ushort compType)
+    {
+        return this.Components.FirstOrDefault(c => ECS.Instance.Value.GetComponentID(c.GetType()) == compType);
+    }
+
     public T GetComponent<T>() where T : Component
     {
         return this.Components.Find(c => c.GetType() == typeof(T)) as T;
@@ -63,6 +68,11 @@ public class Entity
     public bool HasComponent(Type type)
     {
         return this.Components.Find(c => c.GetType() == type) != null;
+    }
+
+    public bool HasComponent(ushort compType)
+    {
+        return this.Components.Find(c => ECS.Instance.Value.GetComponentID(c.GetType()) == compType) != null;
     }
 
     public bool HasAllComponents(Type[] types)

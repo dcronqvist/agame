@@ -11,10 +11,11 @@ using AGame.Engine.World;
 
 namespace DefaultMod;
 
-[ComponentNetworking(UpdateTriggersNetworkUpdate = true, CreateTriggersNetworkUpdate = true), ScriptClass(Name = "transform_component")]
+[ComponentNetworking(UpdateTriggersNetworkUpdate = true, CreateTriggersNetworkUpdate = true), ScriptType(Name = "transform_component")]
 public class TransformComponent : Component
 {
     private CoordinateVector _position;
+    [ComponentProperty(0, typeof(CoordinateVectorPacker), typeof(CoordinateVectorInterpolator), InterpolationType.Linear)]
     public CoordinateVector Position
     {
         get => _position;
@@ -29,6 +30,7 @@ public class TransformComponent : Component
     }
 
     private CoordinateVector _velocity;
+    [ComponentProperty(1, typeof(CoordinateVectorPacker), typeof(CoordinateVectorInterpolator), InterpolationType.Linear)]
     public CoordinateVector Velocity
     {
         get => _velocity;
@@ -43,6 +45,7 @@ public class TransformComponent : Component
     }
 
     private CoordinateVector _targetVelocity;
+    [ComponentProperty(2, typeof(CoordinateVectorPacker), typeof(CoordinateVectorInterpolator), InterpolationType.Linear)]
     public CoordinateVector TargetVelocity
     {
         get => _targetVelocity;
@@ -57,6 +60,7 @@ public class TransformComponent : Component
     }
 
     private float _speed;
+    [ComponentProperty(3, typeof(FloatPacker), typeof(FloatInterpolator), InterpolationType.Linear)]
     public float Speed
     {
         get => _speed;
@@ -71,6 +75,7 @@ public class TransformComponent : Component
     }
 
     private float _heightAboveGround;
+    [ComponentProperty(4, typeof(FloatPacker), typeof(FloatInterpolator), InterpolationType.Linear)]
     public float HeightAboveGround
     {
         get => _heightAboveGround;
@@ -101,81 +106,14 @@ public class TransformComponent : Component
         };
     }
 
-    public override int Populate(byte[] data, int offset)
-    {
-        int initialOffset = offset;
-        float x = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-        float y = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-        this._position = new CoordinateVector(x, y);
-
-        float vx = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-        float vy = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-        this._velocity = new CoordinateVector(vx, vy);
-
-        float tvx = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-        float tvy = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-        this._targetVelocity = new CoordinateVector(tvx, tvy);
-
-        this._speed = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-
-        this._heightAboveGround = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-
-        return offset - initialOffset;
-    }
-
-    public override byte[] ToBytes()
-    {
-        List<byte> bytes = new List<byte>();
-        bytes.AddRange(BitConverter.GetBytes(Position.X));
-        bytes.AddRange(BitConverter.GetBytes(Position.Y));
-        bytes.AddRange(BitConverter.GetBytes(Velocity.X));
-        bytes.AddRange(BitConverter.GetBytes(Velocity.Y));
-        bytes.AddRange(BitConverter.GetBytes(TargetVelocity.X));
-        bytes.AddRange(BitConverter.GetBytes(TargetVelocity.Y));
-        bytes.AddRange(BitConverter.GetBytes(Speed));
-        bytes.AddRange(BitConverter.GetBytes(HeightAboveGround));
-        return bytes.ToArray();
-    }
-
     public override string ToString()
     {
         return $"PlayerPosition=[x={Position.X}, y={Position.Y}, vx={Velocity.X}, vy={Velocity.Y}, tvx={TargetVelocity.X}, tvy={TargetVelocity.Y}]";
     }
 
-    public override void UpdateComponent(Component newComponent)
-    {
-        TransformComponent tc = newComponent as TransformComponent;
-
-        this.Position = tc.Position;
-        this.Velocity = tc.Velocity;
-        this.TargetVelocity = tc.TargetVelocity;
-        this.Speed = tc.Speed;
-        this.HeightAboveGround = tc.HeightAboveGround;
-    }
-
-    public override void InterpolateProperties(Component from, Component to, float amt)
-    {
-        TransformComponent fromTC = from as TransformComponent;
-        TransformComponent toTC = to as TransformComponent;
-
-        this.Position = CoordinateVector.Lerp(fromTC.Position, toTC.Position, amt);
-        this.Velocity = CoordinateVector.Lerp(fromTC.Velocity, toTC.Velocity, amt);
-        this.TargetVelocity = CoordinateVector.Lerp(fromTC.TargetVelocity, toTC.TargetVelocity, amt);
-        this.Speed = Utilities.Lerp(fromTC.Speed, toTC.Speed, amt);
-        this.HeightAboveGround = Utilities.Lerp(fromTC.HeightAboveGround, toTC.HeightAboveGround, amt);
-    }
-
     public override ulong GetHash()
     {
-        return Utilities.Hash(this.ToBytes());
+        return Utilities.CombineHash(this.Position.X.Hash(), this.Position.Y.Hash(), this.Velocity.X.Hash(), this.Velocity.Y.Hash(), this.TargetVelocity.X.Hash(), this.TargetVelocity.Y.Hash(), this.Speed.Hash(), this.HeightAboveGround.Hash());
     }
 
     public override void ApplyInput(Entity parentEntity, UserCommand command, WorldContainer world, ECS ecs)

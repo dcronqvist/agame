@@ -4,13 +4,13 @@
     "enabled": true,
     "overwrites": [
         {
-            "new": "mod_template.script_class.placeable_def",
-            "original": "default.script_class.placeable_def",
+            "new": "mod_template.script_type.placeable_def",
+            "original": "default.script_type.placeable_def",
             "type": "script"
         },
         {
-            "new": "mod_template.script_class.tool_def",
-            "original": "default.script_class.tool_def",
+            "new": "mod_template.script_type.tool_def",
+            "original": "default.script_type.tool_def",
             "type": "script"
         }
     ]

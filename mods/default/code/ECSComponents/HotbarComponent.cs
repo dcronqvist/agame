@@ -14,10 +14,11 @@ using AGame.Engine.World;
 
 namespace DefaultMod;
 
-[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptClass(Name = "hotbar_component")]
+[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptType(Name = "hotbar_component")]
 public class HotbarComponent : Component
 {
     private int _selectedSlot;
+    [ComponentProperty(0, typeof(IntPacker), typeof(IntInterpolator), InterpolationType.ToInstant)]
     public int SelectedSlot
     {
         get => _selectedSlot;
@@ -32,6 +33,7 @@ public class HotbarComponent : Component
     }
 
     private int[] _containerSlots;
+    [ComponentProperty(1, typeof(ArrayPacker<int, IntPacker>), typeof(ArrayInterpolator), InterpolationType.ToInstant)]
     public int[] ContainerSlots
     {
         get => _containerSlots;
@@ -117,53 +119,11 @@ public class HotbarComponent : Component
 
     public override ulong GetHash()
     {
-        return Utilities.Hash(this.ToBytes());
-    }
-
-    public override void InterpolateProperties(Component from, Component to, float amt)
-    {
-        HotbarComponent toHotbar = (HotbarComponent)to;
-        this.SelectedSlot = toHotbar.SelectedSlot;
-        this.ContainerSlots = toHotbar.ContainerSlots;
-    }
-
-    public override int Populate(byte[] data, int offset)
-    {
-        int start = offset;
-        this.SelectedSlot = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-        int len = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-        this.ContainerSlots = new int[len];
-        for (int i = 0; i < len; i++)
-        {
-            this.ContainerSlots[i] = BitConverter.ToInt32(data, offset);
-            offset += sizeof(int);
-        }
-        return offset - start;
-    }
-
-    public override byte[] ToBytes()
-    {
-        List<byte> bytes = new List<byte>();
-        bytes.AddRange(BitConverter.GetBytes(this.SelectedSlot));
-        bytes.AddRange(BitConverter.GetBytes(this.ContainerSlots.Length));
-        foreach (var slot in this.ContainerSlots)
-        {
-            bytes.AddRange(BitConverter.GetBytes(slot));
-        }
-        return bytes.ToArray();
+        return Utilities.CombineHash(this.SelectedSlot.Hash(), Utilities.CombineHash(this.ContainerSlots.Select(x => x.Hash()).ToArray()));
     }
 
     public override string ToString()
     {
         return "HotbarComponent: SelectedSlot=" + this.SelectedSlot;
-    }
-
-    public override void UpdateComponent(Component newComponent)
-    {
-        HotbarComponent newHotbar = (HotbarComponent)newComponent;
-        this.SelectedSlot = newHotbar.SelectedSlot;
-        this.ContainerSlots = newHotbar.ContainerSlots;
     }
 }

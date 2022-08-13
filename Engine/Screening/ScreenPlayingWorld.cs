@@ -167,6 +167,25 @@ public class ScreenPlayingWorld : Screen<EnterPlayingWorldArgs>
             var rt = GameConsole.Render(ModManager.GetAsset<Font>("default.font.rainyhearts"));
             Renderer.RenderRenderTexture(rt);
         }
+
+        Renderer.SetRenderTarget(null, null);
+
+        // var stats = this._client.GetTRXStats();
+
+        // int i = 0;
+        // foreach ((var t, var s) in stats.ComponentUpdatesReceivedBytesByType)
+        // {
+        //     Renderer.Text.RenderText(f, $"{t.Name}: {s}", new Vector2(120, 60 + 20 * i), 1f, ColorF.White, Renderer.Camera);
+        //     i++;
+        // }
+
+        //Renderer.Text.RenderText(f, $"Server Last Processed Command: {this._client.GetLastProcessedServerCommandID()}", new Vector2(120, 60), 1f, ColorF.White, Renderer.Camera);
+
+        int rx = this._client.GetRXLastSecond();
+        int tx = this._client.GetTXLastSecond();
+
+        Renderer.Text.RenderText(f, $"RX: {Utilities.GetBytesPerSecondAsString(rx)} TX: {Utilities.GetBytesPerSecondAsString(tx)}", new Vector2(120, 60), 1f, ColorF.White, Renderer.Camera);
+
         GUI.End();
     }
 

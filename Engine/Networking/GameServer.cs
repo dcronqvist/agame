@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -102,6 +104,119 @@ public class UserCommand : Packet
     }
 }
 
+public class ComponentPropertiesCollection
+{
+    private Dictionary<Component, List<string>> _properties = new Dictionary<Component, List<string>>();
+
+    public void Add(Component component, params string[] properties)
+    {
+        if (!_properties.ContainsKey(component))
+        {
+            _properties[component] = new List<string>();
+        }
+
+        _properties[component].AddRange(properties);
+    }
+
+    public void Remove(Component component, params string[] properties)
+    {
+        if (!_properties.ContainsKey(component))
+        {
+            return;
+        }
+
+        _properties[component].RemoveAll(p => properties.Contains(p));
+    }
+
+    public List<string> Get(Component component)
+    {
+        if (!_properties.ContainsKey(component))
+        {
+            return new List<string>();
+        }
+
+        return _properties[component];
+    }
+
+    public bool Contains(Component component, string property)
+    {
+        if (!_properties.ContainsKey(component))
+        {
+            return false;
+        }
+
+        return _properties[component].Contains(property);
+    }
+
+    public void Clear()
+    {
+        _properties.Clear();
+    }
+
+    public List<(Component, string[])> GetAll()
+    {
+        var result = new List<(Component, string[])>();
+        foreach (var kvp in _properties)
+        {
+            result.Add((kvp.Key, kvp.Value.ToArray()));
+        }
+        return result;
+    }
+}
+
+public class EntityUpdateCollection
+{
+    private Dictionary<int, ComponentPropertiesCollection> _updates = new Dictionary<int, ComponentPropertiesCollection>();
+
+    public void RegisterEntityComponentPropertyUpdated(Entity entity, Component component, string property)
+    {
+        if (!_updates.ContainsKey(entity.ID))
+        {
+            _updates[entity.ID] = new ComponentPropertiesCollection();
+        }
+
+        if (_updates[entity.ID].Contains(component, property))
+        {
+            return;
+        }
+        _updates[entity.ID].Add(component, property);
+    }
+
+    public EntityUpdate[] GetEntityUpdatesWithMaxTotalByteSize(int maxTotalBytes)
+    {
+        var updates = new List<EntityUpdate>();
+
+        var totalSize = 0;
+
+        List<int> keysToRemove = new List<int>();
+
+        foreach (var kvp in _updates)
+        {
+            int entityID = kvp.Key;
+            var propsCollection = kvp.Value;
+
+            var entityUpdate = new EntityUpdate(entityID, propsCollection.GetAll().ToArray());
+
+            var size = entityUpdate.ToBytes().Length;
+            if (size + totalSize > maxTotalBytes)
+            {
+                break;
+            }
+
+            totalSize += size;
+            updates.Add(entityUpdate);
+            keysToRemove.Add(entityID);
+        }
+
+        foreach (var key in keysToRemove)
+        {
+            _updates.Remove(key);
+        }
+
+        return updates.ToArray();
+    }
+}
+
 public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 {
     private ThreadSafe<ECS> _ecs;
@@ -110,7 +225,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     private ThreadSafe<Dictionary<Connection, int>> _connectionToPlayerId;
     private ThreadSafe<Queue<(Connection, UserCommand)>> _receivedCommands;
     private ThreadSafe<Dictionary<Connection, UserCommand>> _lastProcessedCommand;
-    private List<(Entity, Component)> _updatedComponents;
+    private List<(Entity, Component, string)> _updatedComponents;
     private GameServerConfiguration _configuration;
     private ThreadSafe<Queue<IServerTickAction>> _nextTickActions;
     private ThreadSafe<Dictionary<Connection, List<ChunkAddress>>> _connectionsLoadedChunks;
@@ -120,6 +235,8 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
     private ThreadSafe<Dictionary<Connection, List<int>>> _connectionsDestroyedEntities;
     private ThreadSafe<Dictionary<Connection, ContainerSlot>> _connectionsToMouseSlots;
     private Dictionary<string, ServerSideCommand> _availableCommands;
+
+    private EntityUpdateCollection _entityUpdates;
 
     private IGameServerProvider _serverProvider;
 
@@ -142,15 +259,16 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         this._connectionsLoadedChunks = new ThreadSafe<Dictionary<Connection, List<ChunkAddress>>>(new Dictionary<Connection, List<ChunkAddress>>());
         this._ecs = new ThreadSafe<ECS>(ecs);
         this._connectionsLoadedEntities = new Dictionary<Connection, List<Entity>>();
-        this._updatedComponents = new List<(Entity, Component)>();
+        this._updatedComponents = new List<(Entity, Component, string)>();
         this._connectionsViewingContainerInEntity = new ThreadSafe<Dictionary<Connection, List<Entity>>>(new Dictionary<Connection, List<Entity>>());
         this._connectionsCreatedEntities = new ThreadSafe<Dictionary<Connection, List<(ulong, int)>>>(new Dictionary<Connection, List<(ulong, int)>>());
         this._connectionsDestroyedEntities = new ThreadSafe<Dictionary<Connection, List<int>>>(new Dictionary<Connection, List<int>>());
         this._connectionsToMouseSlots = new ThreadSafe<Dictionary<Connection, ContainerSlot>>(new Dictionary<Connection, ContainerSlot>());
         this._availableCommands = new Dictionary<string, ServerSideCommand>();
+        this._entityUpdates = new EntityUpdateCollection();
 
         // To change the server's event provider, a mod must overwrite this.
-        this._serverProvider = ScriptingManager.CreateInstance<IGameServerProvider>("default.script_class.game_server_provider");
+        this._serverProvider = ScriptingManager.CreateInstance<IGameServerProvider>("default.script_type.game_server_provider");
 
         this.RegisterServerEventHandlers();
         this.RegisterPacketHandlers();
@@ -273,12 +391,14 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
         this._ecs.Value.ComponentChanged += (sender, e) =>
         {
-            if (this._updatedComponents.Contains((e.Entity, e.Component)))
-            {
-                return;
-            }
+            // if (this._updatedComponents.Contains((e.Entity, e.Component, e.PropertyChanged)))
+            // {
+            //     return;
+            // }
 
-            this._updatedComponents.Add((e.Entity, e.Component));
+            // this._updatedComponents.Add((e.Entity, e.Component, e.PropertyChanged));
+
+            this._entityUpdates.RegisterEntityComponentPropertyUpdated(e.Entity, e.Component, e.PropertyChanged);
         };
 
         this._world.ChunkGenerated += (sender, e) =>
@@ -360,11 +480,11 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
 
     private void RegisterServerCommands()
     {
-        Type[] commandTypes = ScriptingManager.GetAllTypesWithBaseType<ServerSideCommand>();
+        ScriptType[] commandTypes = ScriptingManager.GetAllScriptTypesWithBaseType<ServerSideCommand>();
 
-        foreach (Type commandType in commandTypes)
+        foreach (ScriptType commandType in commandTypes)
         {
-            ServerSideCommand ic = ScriptingManager.CreateInstanceFromRealType<ServerSideCommand>(commandType.FullName);
+            ServerSideCommand ic = commandType.CreateInstance<ServerSideCommand>();
             var aliases = ic.GetAliases();
             ic.Initialize(this);
 
@@ -755,7 +875,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
         List<EntityUpdate> updates = new List<EntityUpdate>();
         foreach (Entity entity in entities)
         {
-            updates.Add(new EntityUpdate(entity.ID, entity.Components.Where(c => c.GetCNAttrib().CreateTriggersNetworkUpdate).ToArray()));
+            updates.Add(new EntityUpdate(entity.ID, entity.Components.Select(c => (c, c.GetAllProperties())).ToArray()));
         }
         return updates;
     }
@@ -771,7 +891,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
             ecs.Update(null, deltaTime);
         });
 
-        List<EntityUpdate> updatesToSend = Utilities.GetPackedEntityUpdatesMaxByteSize(this.Encoder, this._updatedComponents.Where(c => c.Item2.ShouldSendUpdate(this._serverTick)).ToList(), 800, out List<(Entity, Component)> usedUpdates);
+        List<EntityUpdate> updatesToSend = this._entityUpdates.GetEntityUpdatesWithMaxTotalByteSize(500).ToList();
 
         this._connections.LockedAction((conns) =>
         {
@@ -789,6 +909,7 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 this._connectionsLoadedEntities[conn] = entitiesInRange;
 
                 List<Entity> newEntities = entitiesInRange.Except(lastEntitiesInRange).Except(selfCreatedEntities).ToList();
+
                 // Somehow create these entities on the client
                 // These will be new to the client, so the client receiving them will mean
                 // that they will create them locally and bind their server side entity id to the client side entity id
@@ -819,11 +940,6 @@ public class GameServer : Server<ConnectRequest, ConnectResponse, QueryResponse>
                 action.Tick(this);
             }
         });
-
-        foreach ((Entity, Component) update in usedUpdates)
-        {
-            this._updatedComponents.Remove(update);
-        }
     }
 
     public async Task RunAsync()

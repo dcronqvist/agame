@@ -4,10 +4,11 @@ using AGame.Engine.ECSys;
 using AGame.Engine.Graphics;
 using AGame.Engine.World;
 using GameUDPProtocol;
+using AGame.Engine.Assets.Scripting;
 
 namespace DefaultMod;
 
-[SystemRunsOn(SystemRunner.Client)]
+[SystemRunsOn(SystemRunner.Client), ScriptType(Name = "animator_system")]
 public class AnimatorSystem : BaseSystem
 {
     public override void Initialize()

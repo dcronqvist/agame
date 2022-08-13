@@ -5,10 +5,11 @@ using AGame.Engine.ECSys;
 using AGame.Engine.Graphics;
 using AGame.Engine.World;
 using GameUDPProtocol;
+using AGame.Engine.Assets.Scripting;
 
 namespace DefaultMod;
 
-[SystemRunsOn(SystemRunner.Server | SystemRunner.Client)]
+[SystemRunsOn(SystemRunner.Server | SystemRunner.Client), ScriptType(Name = "bouncing_system")]
 public class BouncingSystem : BaseSystem
 {
     public override void Initialize()

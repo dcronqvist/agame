@@ -1,7 +1,7 @@
 {
-    "components": [
-        {
-            "componentType": "default.script_class.transform_component"
-        }
-    ]
+  "components": [
+    {
+      "componentType": "default.script_type.transform_component"
+    }
+  ]
 }

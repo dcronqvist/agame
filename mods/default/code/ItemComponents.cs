@@ -16,7 +16,7 @@ using System.Linq;
 
 namespace DefaultMod
 {
-    [ScriptClass(Name = "tool_def")]
+    [ScriptType(Name = "tool_def")]
     public class ToolDef : ItemComponentDefinition
     {
         public int MaxEnergyCharge { get; set; }
@@ -77,7 +77,7 @@ namespace DefaultMod
 
                             foreach (var i in Enumerable.Range(0, amount))
                             {
-                                ScriptingAPI.CreateEntity(playerEntity, ecs, "default.entity.ground_item", null, (entity) =>
+                                ScriptingAPI.CreateEntity(playerEntity, ecs, "default.entity.ground_item", onCreateClientSide: null, (entity) =>
                                 {
                                     entity.GetComponent<TransformComponent>().Position = new CoordinateVector(userCommand.MouseTileX, userCommand.MouseTileY);
                                     entity.GetComponent<GroundItemComponent>().Item = ItemManager.GetItemDef(newItem).CreateItem();
@@ -154,7 +154,7 @@ namespace DefaultMod
         }
     }
 
-    [ScriptClass(Name = "resource_def")]
+    [ScriptType(Name = "resource_def")]
     public class ResourceDef : ItemComponentDefinition
     {
         public int Quality { get; set; }
@@ -210,7 +210,7 @@ namespace DefaultMod
         }
     }
 
-    [ScriptClass(Name = "placeable_def")]
+    [ScriptType(Name = "placeable_def")]
     public class PlaceableDef : ItemComponentDefinition
     {
         public string EntityToPlace { get; set; }
@@ -297,11 +297,12 @@ namespace DefaultMod
         }
     }
 
-    [ScriptClass(Name = "rock_crusher_yield_def")]
+    [ScriptType(Name = "rock_crusher_yield_def")]
     public class RockCrusherYieldDef : ItemComponentDefinition
     {
         public string Item { get; set; }
         public int Amount { get; set; }
+        public float TimeToCrush { get; set; }
 
         public override ItemComponent CreateComponent()
         {
@@ -323,7 +324,7 @@ namespace DefaultMod
 
         public override ulong GetHash()
         {
-            return Utilities.CombineHash(Utilities.Hash(this.Definition.Item), Utilities.Hash(this.Definition.Amount));
+            return Utilities.CombineHash(Utilities.Hash(this.Definition.Item), Utilities.Hash(this.Definition.Amount), this.Definition.TimeToCrush.Hash());
         }
 
         public override void OnConsumed(Entity playerEntity, ItemInstance item, ECS ecs)

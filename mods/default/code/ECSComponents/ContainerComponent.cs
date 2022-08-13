@@ -10,10 +10,11 @@ using AGame.Engine.World;
 
 namespace DefaultMod;
 
-[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = false), ScriptClass(Name = "container_component")]
+[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = false), ScriptType(Name = "container_component")]
 public class ContainerComponent : Component
 {
     private string _containerProvider;
+    [ComponentProperty(0, typeof(StringPacker), typeof(StringInterpolator), InterpolationType.ToInstant)]
     public string ContainerProvider
     {
         get => _containerProvider;
@@ -32,7 +33,7 @@ public class ContainerComponent : Component
     {
         if (_container == null)
         {
-            _container = new Container((IContainerProvider)ScriptingManager.CreateInstance(this.ContainerProvider));
+            _container = new Container(ScriptingManager.CreateInstance<IContainerProvider>(this.ContainerProvider));
         }
 
         return _container;
@@ -53,43 +54,11 @@ public class ContainerComponent : Component
 
     public override ulong GetHash()
     {
-        return Utilities.Hash(this.ToBytes());
-    }
-
-    public override void InterpolateProperties(Component from, Component to, float amt)
-    {
-        var toC = (ContainerComponent)to;
-        this.ContainerProvider = toC.ContainerProvider;
-        this._container = null;
-    }
-
-    public override int Populate(byte[] data, int offset)
-    {
-        int start = offset;
-        int len = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-        this.ContainerProvider = Encoding.UTF8.GetString(data, offset, len);
-        offset += len;
-        return offset - start;
-    }
-
-    public override byte[] ToBytes()
-    {
-        List<byte> bytes = new List<byte>();
-        bytes.AddRange(BitConverter.GetBytes(this.ContainerProvider.Length));
-        bytes.AddRange(Encoding.UTF8.GetBytes(this.ContainerProvider));
-        return bytes.ToArray();
+        return this.ContainerProvider.Hash();
     }
 
     public override string ToString()
     {
         return $"ContainerComponent: {this.ContainerProvider}";
-    }
-
-    public override void UpdateComponent(Component newComponent)
-    {
-        var newC = (ContainerComponent)newComponent;
-        this.ContainerProvider = newC.ContainerProvider;
-        this._container = null;
     }
 }

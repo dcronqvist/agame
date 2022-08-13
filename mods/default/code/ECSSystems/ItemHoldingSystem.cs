@@ -2,10 +2,11 @@ using System.Collections.Generic;
 using AGame.Engine.ECSys;
 using AGame.Engine.Items;
 using AGame.Engine.World;
+using AGame.Engine.Assets.Scripting;
 
 namespace DefaultMod;
 
-[SystemRunsOn(SystemRunner.Server)]
+[SystemRunsOn(SystemRunner.Server), ScriptType(Name = "item_holding_system")]
 public class ItemHoldingSystem : BaseSystem
 {
     public override void Initialize()

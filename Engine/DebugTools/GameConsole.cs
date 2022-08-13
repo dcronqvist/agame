@@ -110,11 +110,11 @@ public static class GameConsole
 
     public static void InitializeCommands(GameClient gameClient)
     {
-        Type[] commandTypes = ScriptingManager.GetAllTypesWithBaseType<ClientSideCommand>();
+        ScriptType[] commandTypes = ScriptingManager.GetAllScriptTypesWithBaseType<ClientSideCommand>();
 
-        foreach (Type commandType in commandTypes)
+        foreach (ScriptType commandType in commandTypes)
         {
-            ClientSideCommand ic = ScriptingManager.CreateInstanceFromRealType<ClientSideCommand>(commandType.FullName);
+            ClientSideCommand ic = commandType.CreateInstance<ClientSideCommand>();
             var aliases = ic.GetAliases();
             ic.Initialize(gameClient);
 

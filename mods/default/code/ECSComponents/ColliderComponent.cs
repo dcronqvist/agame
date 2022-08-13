@@ -10,10 +10,11 @@ using AGame.Engine.World;
 
 namespace DefaultMod;
 
-[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptClass(Name = "collider_component")]
+[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptType(Name = "collider_component")]
 public class ColliderComponent : Component
 {
     private RectangleF _box;
+    [ComponentProperty(0, typeof(RectangleFPacker), typeof(RectangleFInterpolator), InterpolationType.Linear)]
     public RectangleF Box
     {
         get => _box;
@@ -28,6 +29,7 @@ public class ColliderComponent : Component
     }
 
     private Vector2 _transformOffset;
+    [ComponentProperty(1, typeof(Vector2Packer), typeof(Vector2Interpolator), InterpolationType.Linear)]
     public Vector2 TransformOffset
     {
         get => _transformOffset;
@@ -42,6 +44,7 @@ public class ColliderComponent : Component
     }
 
     private bool _solid;
+    [ComponentProperty(2, typeof(BoolPacker), typeof(BoolInterpolator), InterpolationType.ToInstant)]
     public bool Solid
     {
         get => _solid;
@@ -75,62 +78,12 @@ public class ColliderComponent : Component
 
     public override ulong GetHash()
     {
-        return Utilities.Hash(this.ToBytes());
-    }
-
-    public override void InterpolateProperties(Component from, Component to, float amt)
-    {
-        var fromCollider = (ColliderComponent)from;
-        var toCollider = (ColliderComponent)to;
-        this.Box = fromCollider.Box.Lerp(toCollider.Box, amt);
-        this.TransformOffset = Vector2.Lerp(fromCollider.TransformOffset, toCollider.TransformOffset, amt);
-        this.Solid = toCollider.Solid;
-    }
-
-    public override int Populate(byte[] data, int offset)
-    {
-        int startOffset = offset;
-        this.Box = new RectangleF(
-            BitConverter.ToSingle(data, offset),
-            BitConverter.ToSingle(data, offset + 4),
-            BitConverter.ToSingle(data, offset + 8),
-            BitConverter.ToSingle(data, offset + 12)
-        );
-        offset += 16;
-        this.TransformOffset = new Vector2(
-            BitConverter.ToSingle(data, offset),
-            BitConverter.ToSingle(data, offset + 4)
-        );
-        offset += 8;
-        this.Solid = BitConverter.ToBoolean(data, offset);
-        offset += sizeof(bool);
-        return offset - startOffset;
-    }
-
-    public override byte[] ToBytes()
-    {
-        List<byte> bytes = new List<byte>();
-        bytes.AddRange(BitConverter.GetBytes(this.Box.X));
-        bytes.AddRange(BitConverter.GetBytes(this.Box.Y));
-        bytes.AddRange(BitConverter.GetBytes(this.Box.Width));
-        bytes.AddRange(BitConverter.GetBytes(this.Box.Height));
-        bytes.AddRange(BitConverter.GetBytes(this.TransformOffset.X));
-        bytes.AddRange(BitConverter.GetBytes(this.TransformOffset.Y));
-        bytes.AddRange(BitConverter.GetBytes(this.Solid));
-        return bytes.ToArray();
+        return Utilities.CombineHash(this.Solid.Hash(), this.TransformOffset.X.Hash(), this.TransformOffset.Y.Hash(), this.Box.X.Hash(), this.Box.Y.Hash(), this.Box.Width.Hash(), this.Box.Height.Hash());
     }
 
     public override string ToString()
     {
         return $"ColliderComponent=[solid={this.Solid}, x={this.Box.X}, y={this.Box.Y}, w={this.Box.Width}, h={this.Box.Height}, offsetX={this.TransformOffset.X}, offsetY={this.TransformOffset.Y}]";
-    }
-
-    public override void UpdateComponent(Component newComponent)
-    {
-        var newCollider = (ColliderComponent)newComponent;
-        this.Box = newCollider.Box;
-        this.TransformOffset = newCollider.TransformOffset;
-        this.Solid = newCollider.Solid;
     }
 
     public void UpdateBox(WorldVector position)

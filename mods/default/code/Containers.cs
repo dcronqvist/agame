@@ -18,7 +18,7 @@ using GameUDPProtocol;
 
 namespace DefaultMod
 {
-    [ScriptClass(Name = "container_player_inventory")]
+    [ScriptType(Name = "container_player_inventory")]
     public class ContainerPlayerInventory : IContainerProvider
     {
         public string Name => "Inventory";
@@ -79,7 +79,7 @@ namespace DefaultMod
         }
     }
 
-    [ScriptClass(Name = "container_small")]
+    [ScriptType(Name = "container_small")]
     public class SmallContainerProvider : IContainerProvider
     {
         public string Name => "Small Container";
@@ -138,7 +138,7 @@ namespace DefaultMod
         }
     }
 
-    [ScriptClass(Name = "open_container")] // default.script.open_container
+    [ScriptType(Name = "open_container")] // default.script.open_container
     public class OpenContainerInteract : IOnInteract
     {
         public void OnInteract(Entity playerEntity, Entity interactingWith, UserCommand command, ECS ecs)
@@ -166,7 +166,7 @@ namespace DefaultMod
         public int Populate(byte[] data, int offset) => PacketUtils.Deserialize(this, data, offset);
     }
 
-    [ScriptClass(Name = "container_rock_crusher")] // default.script.container_rock_crusher
+    [ScriptType(Name = "container_rock_crusher")] // default.script.container_rock_crusher
     public class RockCrusherProvider : ContainerProvider<RockCrusherData>
     {
         public override string Name => "Rock Crusher";
@@ -210,6 +210,8 @@ namespace DefaultMod
 
         public override void RenderBackgroundUI(Vector2 topLeft, float deltaTime)
         {
+            float crushTime = -1f;
+
             if (left.Item is null)
             {
                 _counter = 0f;
@@ -233,6 +235,8 @@ namespace DefaultMod
                         _counter = 0f;
                     }
                 }
+
+                crushTime = yie.Definition.TimeToCrush;
             }
             else
             {
@@ -242,7 +246,7 @@ namespace DefaultMod
             var startPos = topLeft + new Vector2(64 + 5, 0);
             var endPos = startPos + new Vector2((64 + 5) * 5 - 10, 64);
 
-            var progress = MathF.Min(this._counter / 5f, 1f);
+            var progress = MathF.Min(this._counter / crushTime, 1f);
 
             var progressPos = startPos + (endPos - startPos) * progress;
 
@@ -289,37 +293,37 @@ namespace DefaultMod
                         _counter = 0f;
                     }
                 }
+
+                if (_counter >= left.Item.GetComponent<RockCrusherYield>().Definition.TimeToCrush)
+                {
+                    var yield = left.Item.GetComponent<RockCrusherYield>();
+
+                    if (right.Item == null)
+                    {
+                        right.Item = ItemManager.GetItemDef(yield.Definition.Item).CreateItem();
+                        right.Count = yield.Definition.Amount;
+                    }
+                    else
+                    {
+                        right.Count += yield.Definition.Amount;
+                    }
+
+                    _counter = 0f;
+                    this._lastSend = 0f;
+
+                    left.Count -= 1;
+                    if (left.Count <= 0)
+                    {
+                        left.Item = null;
+                    }
+
+                    return true;
+                }
             }
             else
             {
                 _counter = 0f;
                 this._lastSend = 0f;
-            }
-
-            if (_counter >= 5f)
-            {
-                var yield = left.Item.GetComponent<RockCrusherYield>();
-
-                if (right.Item == null)
-                {
-                    right.Item = ItemManager.GetItemDef(yield.Definition.Item).CreateItem();
-                    right.Count = yield.Definition.Amount;
-                }
-                else
-                {
-                    right.Count += yield.Definition.Amount;
-                }
-
-                _counter = 0f;
-                this._lastSend = 0f;
-
-                left.Count -= 1;
-                if (left.Count <= 0)
-                {
-                    left.Item = null;
-                }
-
-                return true;
             }
 
             return false;

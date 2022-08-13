@@ -4,7 +4,7 @@
     "texture": "default.tex.pebble",
     "definitions": [
         {
-            "type": "default.script_class.rock_crusher_yield_def",
+            "type": "default.script_type.rock_crusher_yield_def",
             "item": "default.item.gravel",
             "amount": 1
         }

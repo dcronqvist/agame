@@ -96,12 +96,12 @@ public class ECS
     public void RegisterAllSystems()
     {
         this._systems.Clear();
-        List<Type> systems = ScriptingManager.GetAllTypesWithBaseType<BaseSystem>().ToList();
+        ScriptType[] systems = ScriptingManager.GetAllScriptTypesWithBaseType<BaseSystem>();
         //List<Type> systems = Utilities.FindDerivedTypes(typeof(BaseSystem)).Where(x => x != typeof(BaseSystem)).ToList();
 
-        foreach (Type systemType in systems)
+        foreach (ScriptType systemType in systems)
         {
-            RegisterSystem(systemType);
+            RegisterSystem(systemType.RealType);
         }
     }
 
@@ -110,16 +110,16 @@ public class ECS
         this._componentTypes.Clear();
         this._componentTypeIDs.Clear();
 
-        var componentTypes = ScriptingManager.GetAllTypesWithBaseType<Component>();
+        var componentTypes = ScriptingManager.GetAllScriptTypesWithBaseType<Component>();
 
         // Type[] componentTypes = Utilities.FindDerivedTypes(typeof(Component)).Where(x => x != typeof(Component)).ToArray();
         // componentTypes = componentTypes.OrderBy(t => t.Name).DistinctBy(x => x.Name).ToArray();
 
         for (int i = 0; i < componentTypes.Length; i++)
         {
-            string typeName = ScriptingManager.GetScriptClassNameFromRealType(componentTypes[i]);
-            _componentTypes.Add(typeName, componentTypes[i]);
-            _componentTypeIDs.Add(componentTypes[i], i);
+            string typeName = componentTypes[i].GetScriptTypeName();
+            _componentTypes.Add(typeName, componentTypes[i].RealType);
+            _componentTypeIDs.Add(componentTypes[i].RealType, i);
         }
     }
 
@@ -240,7 +240,8 @@ public class ECS
             {
                 if (extend.HasComponent(c.GetType()))
                 {
-                    extend.GetComponent(c.GetType()).UpdateComponent(c.Clone());
+                    EntityUpdate eu = new EntityUpdate(extend.ID, (c.Clone(), c.GetAllProperties()));
+                    this.ApplyEntityUpdateInstantly(extend, eu);
                 }
                 else
                 {
@@ -280,14 +281,20 @@ public class ECS
         {
             c.PropertyChanged += (sender, e) =>
             {
-                this.ComponentChanged?.Invoke(this, new EntityComponentChangedEventArgs(entity, c));
+                this.ComponentChanged?.Invoke(this, new EntityComponentChangedEventArgs(entity, c, e.PropertyName));
             };
         }
 
         if (c.GetCNAttrib().CreateTriggersNetworkUpdate)
         {
-            this.ComponentChanged?.Invoke(this, new EntityComponentChangedEventArgs(entity, c));
+            var props = c.GetAllProperties();
+
+            foreach (var prop in props)
+            {
+                this.ComponentChanged?.Invoke(this, new EntityComponentChangedEventArgs(entity, c, prop));
+            }
         }
+
         entity.Components.Add(c);
         RecalculateSystemEntities();
     }
@@ -360,5 +367,42 @@ public class ECS
     public List<Entity> GetAllEntities(Func<Entity, bool> predicate)
     {
         return _entities.Where(e => predicate(e)).ToList();
+    }
+
+    public Component GetNewComponentOfType(Type type)
+    {
+        return Activator.CreateInstance(type) as Component;
+    }
+
+    public Component GetNewComponentOfType(ushort compID)
+    {
+        return Activator.CreateInstance(this.GetComponentType(compID)) as Component;
+    }
+
+    public void ApplyEntityUpdateInstantly(Entity e, EntityUpdate update)
+    {
+        foreach (var kvp in update.ComponentData)
+        {
+            if (!e.HasComponent(kvp.Key))
+            {
+                this.AddComponentToEntity(e, this.GetNewComponentOfType(kvp.Key));
+            }
+
+            e.GetComponent(kvp.Key).FromBytes(kvp.Value, 0);
+        }
+    }
+
+    public void ApplyEntityUpdateInterpolation(Entity e, EntityUpdate update)
+    {
+        foreach (var kvp in update.ComponentData)
+        {
+            if (!e.HasComponent(kvp.Key))
+            {
+                this.AddComponentToEntity(e, this.GetNewComponentOfType(kvp.Key));
+                e.GetComponent(kvp.Key).FromBytes(kvp.Value, 0);
+            }
+
+            e.GetComponent(kvp.Key).PushPropertyInterpolationUpdate(kvp.Value, 0);
+        }
     }
 }

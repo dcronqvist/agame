@@ -1,52 +1,52 @@
 {
-    "extends": "default.entity.base_entity",
-    "components": [
-        {
-            "componentType": "default.script_class.transform_component",
-            "speed": 4
-        },
-        {
-            "componentType": "default.script_class.animator_component",
-            "animator": "default.animator.player"
-        },
-        {
-            "componentType": "default.script_class.collider_component",
-            "transformOffset": {
-                "x": 7,
-                "y": 48
-            },
-            "box": {
-                "width": 18,
-                "height": 16
-            },
-            "solid": false
-        },
-        {
-            "componentType": "default.script_class.character_component",
-            "nameRenderOffset": {
-                "x": 16,
-                "y": -8
-            }
-        },
-        {
-            "componentType": "default.script_class.container_component",
-            "containerProvider": "default.script_class.container_player_inventory"
-        },
-        {
-            "componentType": "default.script_class.hotbar_component",
-            "containerSlots": [0, 1, 2, 3, 4, 5, 6, 7, 8]
-        },
-        {
-            "componentType": "default.script_class.player_state_component"
-        },
-        {
-            "componentType": "default.script_class.render_component",
-            "sortByY": true,
-            "renderLayer": 0,
-            "feetOffset": {
-                "x": 16,
-                "y": 64
-            }
-        }
-    ]
+  "extends": "default.entity.base_entity",
+  "components": [
+    {
+      "componentType": "default.script_type.transform_component",
+      "speed": 4
+    },
+    {
+      "componentType": "default.script_type.animator_component",
+      "animator": "default.animator.player"
+    },
+    {
+      "componentType": "default.script_type.collider_component",
+      "transformOffset": {
+        "x": 7,
+        "y": 48
+      },
+      "box": {
+        "width": 18,
+        "height": 16
+      },
+      "solid": false
+    },
+    {
+      "componentType": "default.script_type.character_component",
+      "nameRenderOffset": {
+        "x": 16,
+        "y": -8
+      }
+    },
+    {
+      "componentType": "default.script_type.container_component",
+      "containerProvider": "default.script_type.container_player_inventory"
+    },
+    {
+      "componentType": "default.script_type.hotbar_component",
+      "containerSlots": [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    },
+    {
+      "componentType": "default.script_type.player_state_component"
+    },
+    {
+      "componentType": "default.script_type.render_component",
+      "sortByY": true,
+      "renderLayer": 0,
+      "feetOffset": {
+        "x": 16,
+        "y": 64
+      }
+    }
+  ]
 }

@@ -8,7 +8,7 @@ using GameUDPProtocol;
 
 namespace DefaultMod;
 
-[ScriptClass(Name = "game_server_provider")]
+[ScriptType(Name = "game_server_provider")]
 public class GameServerProvider : IGameServerProvider
 {
     public Container GetContainerForEntity(GameServer server, Entity entity)

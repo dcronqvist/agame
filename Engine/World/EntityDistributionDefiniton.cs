@@ -39,7 +39,7 @@ public class EntityDistributionDefinition
 
     public List<SpawnEntityDefinition> GetDistribution(Vector2i startTile)
     {
-        var distributor = (IDistributor)ScriptingManager.CreateInstance(Distributor);
+        var distributor = ScriptingManager.CreateInstance<IDistributor>(Distributor);
         return distributor.GetDistribution(this.EntityAsset, this.Size, startTile);
     }
 }

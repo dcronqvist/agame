@@ -48,25 +48,12 @@ public static class ItemManager
 
     public static void RegisterComponentTypes()
     {
-        Type[] componentTypes = ScriptingManager.GetAllTypesWithBaseType<ItemComponentDefinition>().Where(x => x != typeof(ItemComponentDefinition) && !x.ContainsGenericParameters).ToArray();
-        componentTypes = componentTypes.OrderBy(t => t.FullName).DistinctBy(x => x.FullName).ToArray();
+        ScriptType[] componentTypes = ScriptingManager.GetAllScriptTypesWithBaseType<ItemComponentDefinition>().Where(x => !x.RealType.ContainsGenericParameters).ToArray();
+        componentTypes = componentTypes.OrderBy(t => t.RealType.FullName).DistinctBy(x => x.RealType.FullName).ToArray();
 
         for (int i = 0; i < componentTypes.Length; i++)
         {
-            var attribute = componentTypes[i].GetCustomAttributes(typeof(ScriptClassAttribute), false).FirstOrDefault() as ScriptClassAttribute;
-            if (attribute is not null)
-            {
-                var scriptClassName = ScriptingManager.GetScriptClassNameFromRealType(componentTypes[i]);
-
-                if (!_itemComponentTypes.ContainsKey(scriptClassName))
-                {
-                    _itemComponentTypes.Add(scriptClassName, componentTypes[i]);
-                }
-                else
-                {
-                    _itemComponentTypes[scriptClassName] = componentTypes[i];
-                }
-            }
+            _itemComponentTypes.Add(componentTypes[i].GetScriptTypeName(), componentTypes[i].RealType);
         }
     }
 }

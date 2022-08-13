@@ -119,7 +119,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
     public GameClient(string hostname, int port, int reliableMillisBeforeResend, int timeoutMillis) : base(hostname, port, reliableMillisBeforeResend, timeoutMillis, new TestEncoder())
     {
         this._ecs = new ECS();
-        var ecsCommon = ScriptingManager.CreateInstance<IECSCommonFunctionality>("default.script_class.ecs_common");
+        var ecsCommon = ScriptingManager.CreateInstance<IECSCommonFunctionality>("default.script_type.ecs_common");
         this._ecs.Initialize(SystemRunner.Client, ecsCommon, gameClient: this);
         this._fakeLatency = 0;
         this._hostname = hostname;
@@ -242,6 +242,7 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
             this._receivedEntityUpdates.LockedAction((rep) =>
             {
                 rep.Enqueue(packet);
+                //Logging.Log(LogLevel.Debug, $"Received {packet.Updates.Length} entity updates");
             });
         });
 
@@ -365,6 +366,11 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
         }
     }
 
+    public int GetLastProcessedServerCommandID()
+    {
+        return this._serverLastProcessedCommand;
+    }
+
     private void ProcessServerECSUpdates()
     {
         while (true)
@@ -393,13 +399,15 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                     {
                         // This component belongs to me, the client.
                         // I should perform reconciliation.
-                        foreach (Component component in update.Components)
-                        {
-                            if (!clientEntity.HasComponent(component.GetType()))
-                                this._ecs.AddComponentToEntity(clientEntity, component);
+                        // foreach (Component component in update.Components)
+                        // {
+                        //     if (!clientEntity.HasComponent(component.GetType()))
+                        //         this._ecs.AddComponentToEntity(clientEntity, component);
 
-                            clientEntity.GetComponent(component.GetType()).UpdateComponent(component);
-                        }
+                        //     clientEntity.GetComponent(component.GetType()).UpdateComponent(component);
+                        // }
+
+                        this.GetECS().ApplyEntityUpdateInstantly(clientEntity, update);
 
                         List<UserCommand> commandsAfterLast = this._pendingCommands.Where(c => c.CommandNumber > this._serverLastProcessedCommand).ToList();
 
@@ -413,15 +421,17 @@ public class GameClient : Client<ConnectRequest, ConnectResponse>
                     {
                         // This component belongs to an entity which
                         // is not me, so I should perform interpolation.
-                        foreach (Component component in update.Components)
-                        {
-                            if (!clientEntity.HasComponent(component.GetType()))
-                            {
-                                this._ecs.AddComponentToEntity(clientEntity, component);
-                            }
+                        // foreach (Component component in update.Components)
+                        // {
+                        //     if (!clientEntity.HasComponent(component.GetType()))
+                        //     {
+                        //         this._ecs.AddComponentToEntity(clientEntity, component);
+                        //     }
 
-                            clientEntity.GetComponent(component.GetType()).PushComponentUpdate(component);
-                        }
+                        //     clientEntity.GetComponent(component.GetType()).PushComponentUpdate(component);
+                        // }
+
+                        this.GetECS().ApplyEntityUpdateInterpolation(clientEntity, update);
                     }
                 }
 

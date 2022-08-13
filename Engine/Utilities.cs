@@ -363,47 +363,6 @@ namespace AGame.Engine
             }
         }
 
-        public static List<EntityUpdate> GetPackedEntityUpdatesMaxByteSize(IByteEncoder encoder, List<(Entity, Component)> updates, int maxByteSize, out List<(Entity, Component)> usedUpdates)
-        {
-            List<EntityUpdate> entityUpdates = new List<EntityUpdate>();
-
-            List<(Entity, List<Component>)> updatedComponents = new List<(Entity, List<Component>)>();
-
-            foreach ((Entity e, Component c) in updates)
-            {
-                if (!updatedComponents.Any(tuple => tuple.Item1 == e))
-                {
-                    updatedComponents.Add((e, new List<Component>()));
-                }
-
-                updatedComponents.Find(tuple => tuple.Item1 == e).Item2.Add(c);
-            }
-
-            usedUpdates = new List<(Entity, Component)>();
-            List<byte> cumBytes = new List<byte>();
-
-            foreach ((Entity e, List<Component> components) in updatedComponents)
-            {
-                EntityUpdate eu = new EntityUpdate(e.ID, components.ToArray());
-                cumBytes.AddRange(eu.ToBytes());
-
-                if (encoder.Encode(cumBytes.ToArray()).Length <= maxByteSize)
-                {
-                    entityUpdates.Add(eu);
-                    foreach (Component c in components)
-                    {
-                        usedUpdates.Add((e, c));
-                    }
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            return entityUpdates;
-        }
-
         public static RectangleF Lerp(this RectangleF rec, RectangleF to, float amount)
         {
             RectangleF r = new RectangleF(

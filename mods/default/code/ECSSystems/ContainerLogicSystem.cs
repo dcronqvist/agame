@@ -2,10 +2,11 @@ using System.Collections.Generic;
 using AGame.Engine.Configuration;
 using AGame.Engine.ECSys;
 using AGame.Engine.World;
+using AGame.Engine.Assets.Scripting;
 
 namespace DefaultMod;
 
-[SystemRunsOn(SystemRunner.Server)]
+[SystemRunsOn(SystemRunner.Server), ScriptType(Name = "container_logic_system")]
 public class ContainerLogicSystem : BaseSystem
 {
     public override void Initialize()

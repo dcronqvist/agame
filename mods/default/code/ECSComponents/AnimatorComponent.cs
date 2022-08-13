@@ -14,10 +14,11 @@ using GameUDPProtocol;
 
 namespace DefaultMod;
 
-[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = false), ScriptClass(Name = "animator_component")]
+[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = false), ScriptType(Name = "animator_component")]
 public class AnimatorComponent : Component
 {
     private string _animator;
+    [ComponentProperty(0, typeof(StringPacker), typeof(StringInterpolator), InterpolationType.ToInstant)]
     public string Animator
     {
         get => _animator;
@@ -57,41 +58,11 @@ public class AnimatorComponent : Component
 
     public override ulong GetHash()
     {
-        return Utilities.Hash(this.ToBytes());
-    }
-
-    public override void InterpolateProperties(Component from, Component to, float amt)
-    {
-
-    }
-
-    public override int Populate(byte[] data, int offset)
-    {
-        int startOffset = offset;
-        int len = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-        this.Animator = Encoding.UTF8.GetString(data, offset, len);
-        offset += len;
-        return offset - startOffset;
-    }
-
-    public override byte[] ToBytes()
-    {
-        List<byte> bytes = new List<byte>();
-        bytes.AddRange(BitConverter.GetBytes(this.Animator.Length));
-        bytes.AddRange(Encoding.UTF8.GetBytes(this.Animator));
-        return bytes.ToArray();
+        return this.Animator.Hash();
     }
 
     public override string ToString()
     {
         return "PlayerAnimationsComponent";
-    }
-
-    public override void UpdateComponent(Component newComponent)
-    {
-        AnimatorComponent newPlayerAnimationsComponent = (AnimatorComponent)newComponent;
-        this.Animator = newPlayerAnimationsComponent.Animator;
-        this._animatorInstance = null;
     }
 }

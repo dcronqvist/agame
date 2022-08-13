@@ -10,10 +10,11 @@ using AGame.Engine.World;
 
 namespace DefaultMod;
 
-[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptClass(Name = "character_component")]
+[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true), ScriptType(Name = "character_component")]
 public class CharacterComponent : Component
 {
     private string _name;
+    [ComponentProperty(0, typeof(StringPacker), typeof(StringInterpolator), InterpolationType.ToInstant)]
     public string Name
     {
         get => _name;
@@ -28,6 +29,7 @@ public class CharacterComponent : Component
     }
 
     private Vector2 _nameRenderOffset;
+    [ComponentProperty(1, typeof(Vector2Packer), typeof(Vector2Interpolator), InterpolationType.Linear)]
     public Vector2 NameRenderOffset
     {
         get => _nameRenderOffset;
@@ -57,53 +59,11 @@ public class CharacterComponent : Component
 
     public override ulong GetHash()
     {
-        return Utilities.Hash(this.ToBytes());
-    }
-
-    public override void InterpolateProperties(Component from, Component to, float amt)
-    {
-        var fromC = (CharacterComponent)from;
-        var toC = (CharacterComponent)to;
-
-        this.Name = toC.Name;
-        this.NameRenderOffset = Vector2.Lerp(fromC.NameRenderOffset, toC.NameRenderOffset, amt);
-    }
-
-    public override int Populate(byte[] data, int offset)
-    {
-        int sOffset = offset;
-        var nameLength = BitConverter.ToInt32(data, offset);
-        offset += sizeof(int);
-        var name = Encoding.UTF8.GetString(data, offset, nameLength);
-        offset += nameLength;
-        this.Name = name;
-        var x = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-        var y = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-        this.NameRenderOffset = new Vector2(x, y);
-        return offset - sOffset;
-    }
-
-    public override byte[] ToBytes()
-    {
-        List<byte> bytes = new List<byte>();
-        bytes.AddRange(BitConverter.GetBytes(this.Name.Length));
-        bytes.AddRange(Encoding.UTF8.GetBytes(this.Name));
-        bytes.AddRange(BitConverter.GetBytes(this.NameRenderOffset.X));
-        bytes.AddRange(BitConverter.GetBytes(this.NameRenderOffset.Y));
-        return bytes.ToArray();
+        return Utilities.CombineHash(this.Name.Hash(), this.NameRenderOffset.X.Hash(), this.NameRenderOffset.Y.Hash());
     }
 
     public override string ToString()
     {
         return $"CharacterComponent: {this.Name}";
-    }
-
-    public override void UpdateComponent(Component newComponent)
-    {
-        var newC = (CharacterComponent)newComponent;
-        this.Name = newC.Name;
-        this.NameRenderOffset = newC.NameRenderOffset;
     }
 }

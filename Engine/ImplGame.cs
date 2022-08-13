@@ -87,7 +87,7 @@ namespace AGame.Engine
                     Localization.Init("default.locale.en_US");
                 }
 
-                ScriptingManager.LoadScripts();
+                ScriptingManager.Initialize();
                 ItemManager.RegisterComponentTypes();
                 ECS.Instance.Value.RegisterComponentTypes();
 

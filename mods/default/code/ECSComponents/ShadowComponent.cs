@@ -8,10 +8,11 @@ using AGame.Engine.World;
 
 namespace DefaultMod;
 
-[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true, NetworkUpdateRate = 5), ScriptClass(Name = "shadow_component")]
+[ComponentNetworking(CreateTriggersNetworkUpdate = true, UpdateTriggersNetworkUpdate = true, NetworkUpdateRate = 5), ScriptType(Name = "shadow_component")]
 public class ShadowComponent : Component
 {
     private float _radius;
+    [ComponentProperty(0, typeof(FloatPacker), typeof(FloatInterpolator), InterpolationType.Linear)]
     public float Radius
     {
         get => _radius;
@@ -26,6 +27,7 @@ public class ShadowComponent : Component
     }
 
     private float _opacity;
+    [ComponentProperty(1, typeof(FloatPacker), typeof(FloatInterpolator), InterpolationType.Linear)]
     public float Opacity
     {
         get => _opacity;
@@ -55,44 +57,11 @@ public class ShadowComponent : Component
 
     public override ulong GetHash()
     {
-        return Utilities.Hash(this.ToBytes());
-    }
-
-    public override void InterpolateProperties(Component from, Component to, float amt)
-    {
-        ShadowComponent fromShadow = from as ShadowComponent;
-        ShadowComponent toShadow = to as ShadowComponent;
-        this.Radius = Utilities.Lerp(fromShadow.Radius, toShadow.Radius, amt);
-        this.Opacity = Utilities.Lerp(fromShadow.Opacity, toShadow.Opacity, amt);
-    }
-
-    public override int Populate(byte[] data, int offset)
-    {
-        int sOffset = offset;
-        this.Radius = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-        this.Opacity = BitConverter.ToSingle(data, offset);
-        offset += sizeof(float);
-        return offset - sOffset;
-    }
-
-    public override byte[] ToBytes()
-    {
-        List<byte> bytes = new List<byte>();
-        bytes.AddRange(BitConverter.GetBytes(this.Radius));
-        bytes.AddRange(BitConverter.GetBytes(this.Opacity));
-        return bytes.ToArray();
+        return Utilities.CombineHash(this.Radius.Hash(), this.Opacity.Hash());
     }
 
     public override string ToString()
     {
         return $"ShadowComponent: {this.Radius}, {this.Opacity}";
-    }
-
-    public override void UpdateComponent(Component newComponent)
-    {
-        var newShadow = (ShadowComponent)newComponent;
-        this.Radius = newShadow.Radius;
-        this.Opacity = newShadow.Opacity;
     }
 }
